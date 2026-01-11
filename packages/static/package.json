@@ -1,0 +1,30 @@
+{
+  "name": "@funstack/static",
+  "version": "0.0.1",
+  "description": "FUNSTACK static library",
+  "type": "module",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.mts",
+      "import": "./dist/index.mjs"
+    }
+  },
+  "files": [
+    "dist"
+  ],
+  "scripts": {
+    "build": "tsdown",
+    "dev": "tsdown --watch",
+    "test": "vitest",
+    "test:run": "vitest run",
+    "typecheck": "tsc --noEmit"
+  },
+  "author": "uhyo <uhyo@uhy.ooo>",
+  "license": "MIT",
+  "devDependencies": {
+    "jsdom": "^27.3.0",
+    "tsdown": "^0.18.2",
+    "typescript": "^5.7.0",
+    "vitest": "^4.0.16"
+  }
+}

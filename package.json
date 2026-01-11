@@ -1,0 +1,19 @@
+{
+  "name": "funstack-static-monorepo",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "build": "turbo run build",
+    "dev": "turbo run dev",
+    "test": "turbo run test",
+    "test:run": "turbo run test:run",
+    "typecheck": "turbo run typecheck",
+    "format": "prettier --write .",
+    "format:check": "prettier --check ."
+  },
+  "devDependencies": {
+    "prettier": "^3.7.4",
+    "turbo": "^2.7.1"
+  },
+  "packageManager": "pnpm@10.25.0"
+}

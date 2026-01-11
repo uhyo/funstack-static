@@ -1,0 +1,47 @@
+name: Publish
+
+on:
+  release:
+    types: [created]
+
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+
+    permissions:
+      contents: read
+      id-token: write
+
+    steps:
+      - uses: actions/checkout@v6
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v6
+        with:
+          node-version: "24"
+          cache: "pnpm"
+          registry-url: "https://registry.npmjs.org"
+
+      - name: Install dependencies
+        run: pnpm install
+
+      - name: Build
+        run: pnpm build
+
+      - name: Determine npm tag
+        id: npm-tag
+        run: |
+          VERSION=$(node -p "require('./packages/static/package.json').version")
+          if [[ "$VERSION" == *"-"* ]]; then
+            # Prerelease version - extract tag (e.g., "alpha" from "0.0.1-alpha.0")
+            TAG=$(echo "$VERSION" | sed 's/.*-\([a-zA-Z]*\).*/\1/')
+            echo "tag=$TAG" >> $GITHUB_OUTPUT
+          else
+            echo "tag=latest" >> $GITHUB_OUTPUT
+          fi
+
+      - name: Publish
+        run: pnpm --filter @funstack/static publish --access public --tag ${{ steps.npm-tag.outputs.tag }} --no-git-checks
