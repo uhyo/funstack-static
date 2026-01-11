@@ -2,7 +2,7 @@
 
 A maximally minimal React framework.
 
-> ![WARNING]
+> [!WARNING]
 > This is work in progress.
 
 **Features:**
