@@ -29,7 +29,7 @@
     "jsdom": "^27.3.0",
     "react": "catalog:",
     "react-dom": "catalog:",
-    "tsdown": "^0.18.2",
+    "tsdown": "^0.19.0",
     "typescript": "^5.7.0",
     "vite": "catalog:",
     "vitest": "^4.0.16"
