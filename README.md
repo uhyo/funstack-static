@@ -42,8 +42,12 @@ pnpm build
 pnpm --filter funstack-static-example dev
 # Start a preview of the production build
 pnpm --filter funstack-static-example preview
+```
 
 ## License
 
 MIT
+
+```
+
 ```
