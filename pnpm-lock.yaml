@@ -30,7 +30,7 @@ importers:
         specifier: ^2.7.1
         version: 2.7.3
 
-  packages/example:
+  packages/docs:
     dependencies:
       '@funstack/static':
         specifier: workspace:*
@@ -57,6 +57,34 @@ importers:
       rsc-html-stream:
         specifier: ^0.0.7
         version: 0.0.7
+      vite:
+        specifier: 'catalog:'
+        version: 7.3.1(@types/node@25.0.6)(terser@5.44.1)
+
+  packages/example:
+    dependencies:
+      '@funstack/static':
+        specifier: workspace:*
+        version: link:../static
+      '@types/node':
+        specifier: 'catalog:'
+        version: 25.0.6
+      react:
+        specifier: 'catalog:'
+        version: 19.2.3
+      react-dom:
+        specifier: 'catalog:'
+        version: 19.2.3(react@19.2.3)
+    devDependencies:
+      '@types/react':
+        specifier: ^19.2.7
+        version: 19.2.8
+      '@types/react-dom':
+        specifier: ^19.2.3
+        version: 19.2.3(@types/react@19.2.8)
+      '@vitejs/plugin-react':
+        specifier: latest
+        version: 5.1.2(vite@7.3.1(@types/node@25.0.6)(terser@5.44.1))
       vite:
         specifier: 'catalog:'
         version: 7.3.1(@types/node@25.0.6)(terser@5.44.1)
