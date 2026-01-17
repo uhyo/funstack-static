@@ -1,7 +1,6 @@
 import type { FC } from "react";
 import { renderToReadableStream } from "@vitejs/plugin-rsc/react/rsc";
 import { ClientWrapper } from "@funstack/static/entries/rsc-client";
-import type { RscPayload } from "./entry";
 
 export interface SendEntry {
   component: FC<{}>;
@@ -44,9 +43,7 @@ export class SendRegistry {
     const { state, component: Component } = entry;
     switch (state.state) {
       case "pending": {
-        const stream = renderToReadableStream<RscPayload>({
-          root: <Component />,
-        });
+        const stream = renderToReadableStream<React.ReactNode>(<Component />);
         const [stream1, stream2] = stream.tee();
         entry.state = { state: "streaming", stream: stream1 };
         (async () => {

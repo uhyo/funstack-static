@@ -4,6 +4,7 @@ import { parseRenderRequest } from "./request";
 import { generateAppMarker } from "./marker";
 import { sendRegistry } from "./send";
 import { drainStream } from "../util/drainStream";
+import { extractIDFromModulePath } from "./rscModule";
 
 // The schema of payload which is serialized into RSC stream on rsc environment
 // and deserialized on ssr/client environments.
@@ -79,31 +80,58 @@ export async function serveHTML(request: Request): Promise<Response> {
   });
 }
 
+class ServeRSCError extends Error {
+  status: 404 | 500;
+  constructor(message: string, status: 404 | 500) {
+    super(message);
+    this.name = "ServeRSCError";
+    this.status = status;
+  }
+}
+
+export function isServeRSCError(error: unknown): error is ServeRSCError {
+  return error instanceof Error && error.name === "ServeRSCError";
+}
+
 /**
- * Generate ES Module for given RSC entrypoint
+ * Servers an RSC stream response
  */
-export async function serveRSC(moduleId: string) {
+export async function serveRSC(request: Request): Promise<Response> {
+  const url = new URL(request.url);
+  const moduleId = extractIDFromModulePath(url.pathname);
+  if (!moduleId) {
+    throw new ServeRSCError(`Invalid RSC module path: ${url.pathname}`, 404);
+  }
+
   const entry = sendRegistry.load(moduleId);
   if (!entry) {
-    throw new Error(`RSC component not found: ${moduleId}`);
+    throw new ServeRSCError(`RSC component not found: ${moduleId}`, 404);
   }
-  const rscStream = renderToReadableStream<RscPayload>({
-    root: <entry.component />,
-  });
-
-  const result = `"use client";
-import { use } from "react";
-const payload =\`${await drainStream(rscStream)}\`;
-let stream;
-export default () => {
-  stream ??= new ReadableStream([
-    new TextEncoder().encode(payload),
-  ]);
-  return use(stream);
-};
-`;
-
-  return result;
+  const { state } = entry;
+  switch (state.state) {
+    case "streaming": {
+      return new Response(state.stream, {
+        status: 200,
+        headers: {
+          "content-type": "text/x-component;charset=utf-8",
+        },
+      });
+    }
+    case "ready": {
+      return new Response(state.data, {
+        status: 200,
+        headers: {
+          "content-type": "text/x-component;charset=utf-8",
+        },
+      });
+    }
+    case "error": {
+      throw new ServeRSCError(
+        `Failed to load RSC component: ${state.error}`,
+        500,
+      );
+    }
+  }
 }
 
 /**

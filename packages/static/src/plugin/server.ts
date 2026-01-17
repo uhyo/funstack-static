@@ -22,16 +22,23 @@ export const serverPlugin = (): Plugin => {
 
       return () => {
         server.middlewares.use(async (req, res, next) => {
-          if (!req.headers.accept?.includes("text/html")) {
-            next();
-            return;
-          }
           try {
             const rscEntry = await getRSCEntryPoint(rscEnv);
-            const fetchHandler = toNodeHandler(rscEntry.serveHTML);
-
-            await fetchHandler(req as any, res as any);
-            return;
+            if (req.headers.accept?.includes("text/html")) {
+              const fetchHandler = toNodeHandler(rscEntry.serveHTML);
+              await fetchHandler(req as any, res as any);
+              return;
+            }
+            const fetchHandler = toNodeHandler(rscEntry.serveRSC);
+            try {
+              await fetchHandler(req as any, res as any);
+            } catch (error) {
+              if (rscEntry.isServeRSCError(error) && error.status === 404) {
+                next();
+                return;
+              }
+              next(error);
+            }
           } catch (error) {
             next(error);
           }
