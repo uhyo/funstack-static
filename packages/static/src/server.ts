@@ -31,10 +31,6 @@ export const serverPlugin = (): Plugin => {
 
       return () => {
         server.middlewares.use(async (req, res, next) => {
-          if (!req.headers.accept?.includes("text/html")) {
-            next();
-            return;
-          }
           try {
             const resolved = await rscEnv.pluginContainer.resolveId(source);
             if (!resolved) {
@@ -43,9 +39,22 @@ export const serverPlugin = (): Plugin => {
             const rscEntry = await rscEnv.runner.import<
               typeof import("./rsc/entry")
             >(resolved.id);
-            const fetchHandler = toNodeHandler(rscEntry.default);
+            try {
+              if (req.headers.accept?.includes("text/html")) {
+                const fetchHandler = toNodeHandler(rscEntry.serveHTML);
 
-            await fetchHandler(req as any, res as any);
+                await fetchHandler(req as any, res as any);
+                return;
+              }
+              const fetchHandler = toNodeHandler(rscEntry.serveRSC);
+              await fetchHandler(req as any, res as any);
+            } catch (error) {
+              if (rscEntry.isServeRSCError(error) && error.status === 404) {
+                next();
+                return;
+              }
+              throw error;
+            }
           } catch (error) {
             next(error);
           }
