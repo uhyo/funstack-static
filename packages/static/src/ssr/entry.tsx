@@ -6,6 +6,8 @@ import type { RscPayload } from "../rsc/entry";
 import { appClientManifestVar } from "../client/globals";
 import { rscPayloadPath } from "../build/rscPath";
 import { preload } from "react-dom";
+import type { SendRegistry } from "../rsc/send";
+import { RegistryContext } from "../rsc-client/clientWrapper";
 
 export async function renderHTML(
   rscStream: ReadableStream<Uint8Array>,
@@ -13,6 +15,7 @@ export async function renderHTML(
     appEntryMarker: string;
     build: boolean;
     nonce?: string;
+    sendRegistry?: SendRegistry;
   },
 ): Promise<{ stream: ReadableStream<Uint8Array>; status?: number }> {
   const [rscStream1, rscStream2] = rscStream.tee();
@@ -28,7 +31,11 @@ export async function renderHTML(
         as: "fetch",
       });
     }
-    return use(payload).root;
+    return (
+      <RegistryContext value={options.sendRegistry}>
+        {use(payload).root}
+      </RegistryContext>
+    );
   }
 
   const builtRscUrl = rscPayloadPath;

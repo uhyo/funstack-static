@@ -2,8 +2,8 @@ import "./send";
 import { renderToReadableStream } from "@vitejs/plugin-rsc/rsc";
 import { parseRenderRequest } from "./request";
 import { generateAppMarker } from "./marker";
-import { extractIDFromModuleID, sendRegistry } from "./send";
-import { rscToESModule } from "./rscToESModule";
+import { sendRegistry } from "./send";
+import { drainStream } from "../util/drainStream";
 
 // The schema of payload which is serialized into RSC stream on rsc environment
 // and deserialized on ssr/client environments.
@@ -79,43 +79,31 @@ export async function serveHTML(request: Request): Promise<Response> {
   });
 }
 
-class ServeRSCError extends Error {
-  status: number;
-  constructor(message: string, status: number) {
-    super(message);
-    this.name = "ServeRSCError";
-    this.status = status;
-  }
-}
-
-export function isServeRSCError(error: unknown): error is ServeRSCError {
-  return error != null && error instanceof ServeRSCError;
-}
-
 /**
- * Entrypoint to serve RSC endpoints
+ * Generate ES Module for given RSC entrypoint
  */
-export async function serveRSC(request: Request): Promise<Response> {
-  const url = new URL(request.url);
-  // lazy RSC entries
-  const moduleId = extractIDFromModuleID(url.pathname);
-  if (moduleId !== undefined) {
-    const Component = sendRegistry.get(moduleId);
-    if (!Component) {
-      return new Response("Not Found", { status: 404 });
-    }
-    const rscStream = renderToReadableStream<RscPayload>({
-      root: <Component />,
-    });
-
-    return new Response(rscToESModule(rscStream), {
-      status: 200,
-      headers: {
-        "content-type": "application/javascript",
-      },
-    });
+export async function serveRSC(moduleId: string) {
+  const entry = sendRegistry.load(moduleId);
+  if (!entry) {
+    throw new Error(`RSC component not found: ${moduleId}`);
   }
-  throw new ServeRSCError("Not Found", 404);
+  const rscStream = renderToReadableStream<RscPayload>({
+    root: <entry.component />,
+  });
+
+  const result = `"use client";
+import { use } from "react";
+const payload =\`${await drainStream(rscStream)}\`;
+let stream;
+export default () => {
+  stream ??= new ReadableStream([
+    new TextEncoder().encode(payload),
+  ]);
+  return use(stream);
+};
+`;
+
+  return result;
 }
 
 /**
@@ -154,7 +142,7 @@ export async function build() {
   };
 }
 
-export { send } from "./send";
+export { send, sendRegistry } from "./send";
 
 if (import.meta.hot) {
   import.meta.hot.accept();
