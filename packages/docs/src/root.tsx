@@ -10,14 +10,14 @@ export default function Root({ children }: { children: React.ReactNode }) {
         <title>FUNSTACK Static - docs</title>
         <meta
           name="description"
-          content="FUNSTACK Static - A static site generator for React"
+          content="FUNSTACK Static - A React framework without servers"
         />
         {/* Open Graph / Facebook */}
         <meta property="og:type" content="website" />
         <meta property="og:title" content="FUNSTACK Static - docs" />
         <meta
           property="og:description"
-          content="FUNSTACK Static - A static site generator for React"
+          content="FUNSTACK Static - A React framework without servers"
         />
         <meta
           property="og:image"
@@ -28,7 +28,7 @@ export default function Root({ children }: { children: React.ReactNode }) {
         <meta name="twitter:title" content="FUNSTACK Static - docs" />
         <meta
           name="twitter:description"
-          content="FUNSTACK Static - A static site generator for React"
+          content="FUNSTACK Static - A React framework without servers"
         />
         <meta
           name="twitter:image"
