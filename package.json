@@ -12,7 +12,7 @@
     "format:check": "prettier --check --experimental-cli ."
   },
   "devDependencies": {
-    "prettier": "^3.7.4",
+    "prettier": "^3.8.0",
     "turbo": "^2.7.1"
   },
   "packageManager": "pnpm@10.25.0"
