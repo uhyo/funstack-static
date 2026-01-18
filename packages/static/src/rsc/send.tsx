@@ -87,28 +87,74 @@ export class SendRegistry {
   }
 
   /**
-   * Iterates over all entries.
+   * Iterates over all entries in parallel.
+   * Yields results as each stream completes.
    */
   async *loadAll() {
     const errors: unknown[] = [];
-    for (const [id, entry] of this.#registry) {
-      const loadedEntry = this.#loadEntry(entry);
-      switch (loadedEntry.state.state) {
-        case "streaming": {
-          const result = await drainStream(loadedEntry.state.stream);
-          yield { id, data: result };
-          break;
+
+    // Phase 1: Start all entries loading
+    const loadedEntries = Array.from(
+      this.#registry,
+      ([id, entry]) => [id, this.#loadEntry(entry)] as const,
+    );
+
+    if (loadedEntries.length === 0) return;
+
+    type Result = { id: string; data: string };
+
+    // Completion queue
+    const completed: Array<Result | { error: unknown }> = [];
+    let waiting: (() => void) | undefined;
+    let remainingCount = loadedEntries.length;
+
+    const onComplete = (result: Result | { error: unknown }) => {
+      completed.push(result);
+      remainingCount--;
+      waiting?.();
+    };
+
+    // Phase 2: Start all operations (each pushes to queue when done)
+    for (const [id, loadedEntry] of loadedEntries) {
+      (async () => {
+        try {
+          switch (loadedEntry.state.state) {
+            case "streaming":
+              onComplete({
+                id,
+                data: await drainStream(loadedEntry.state.stream),
+              });
+              break;
+            case "ready":
+              onComplete({ id, data: loadedEntry.state.data });
+              break;
+            case "error":
+              onComplete({ error: loadedEntry.state.error });
+              break;
+          }
+        } catch (error) {
+          onComplete({ error });
         }
-        case "ready": {
-          yield { id, data: loadedEntry.state.data };
-          break;
-        }
-        case "error": {
-          errors.push(loadedEntry.state.error);
-          break;
+      })();
+    }
+
+    // Phase 3: Yield from queue as results arrive
+    while (remainingCount > 0 || completed.length > 0) {
+      if (completed.length === 0) {
+        await new Promise<void>((r) => {
+          waiting = r;
+        });
+        waiting = undefined;
+      }
+      for (const result of completed.splice(0)) {
+        if ("error" in result) {
+          errors.push(result.error);
+        } else {
+          yield result;
         }
       }
     }
+
     if (errors.length > 0) {
       throw new AggregateError(errors);
     }
