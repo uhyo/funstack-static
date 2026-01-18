@@ -39,10 +39,14 @@ jobs:
       - name: Setup Pages
         uses: actions/configure-pages@v5
 
+      - name: Create Pages artifact
+        run: tar -cvzf artifact.tar.gz -C packages/docs/dist/public .
+
       - name: Upload artifact
-        uses: actions/upload-pages-artifact@v4
+        uses: actions/upload-artifact@v6
         with:
-          path: packages/docs/dist/public
+          name: github-pages
+          path: artifact.tar.gz
 
   deploy:
     environment:
