@@ -9,7 +9,7 @@ export default defineConfig({
       root: "./src/root.tsx",
       app: "./src/App.tsx",
     }),
-    mdx(),
+    { enforce: "pre", ...mdx() },
     react({ include: /\.(jsx|js|mdx|md|tsx|ts)$/ }),
   ],
 });
