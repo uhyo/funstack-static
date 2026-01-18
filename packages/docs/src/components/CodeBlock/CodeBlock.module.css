@@ -1,0 +1,49 @@
+.codeBlock {
+  position: relative;
+  margin: var(--spacing-lg) 0;
+  border-radius: var(--radius-lg);
+  overflow: hidden;
+}
+
+.codeContent {
+  font-size: var(--text-sm);
+  line-height: 1.6;
+}
+
+/* Style Shiki's generated pre element */
+.codeContent :global(pre) {
+  margin: 0;
+  padding: var(--spacing-lg);
+  overflow-x: auto;
+  border-radius: var(--radius-lg);
+}
+
+.codeContent :global(code) {
+  font-family: var(--font-mono);
+}
+
+/* Shiki code styling */
+.codeContent :global(.shiki code) {
+  background: transparent;
+}
+
+/* Dark mode: override Shiki's default light colors */
+@media (prefers-color-scheme: dark) {
+  .codeContent :global(.shiki) {
+    background-color: var(--shiki-dark-bg) !important;
+  }
+
+  .codeContent :global(.shiki span) {
+    color: var(--shiki-dark) !important;
+  }
+}
+
+/* Inline code */
+.inlineCode {
+  font-family: var(--font-mono);
+  font-size: 0.9em;
+  padding: 0.15em 0.4em;
+  background-color: var(--color-bg-tertiary);
+  border-radius: var(--radius-sm);
+  color: var(--color-accent);
+}

@@ -1,15 +1,138 @@
 # Getting Started
 
-Welcome to **FUNSTACK Static**! This page is written in MDX.
+Welcome to **FUNSTACK Static**! Build high-performance Single Page Applications powered by React Server Components - no server required at runtime.
 
 ## Installation
 
+Install `@funstack/static` and its peer dependencies:
+
 ```bash
-npm install @funstack/static
+npm install @funstack/static react react-dom
 ```
 
-## Features
+Or with pnpm:
 
-- React Server Components without a server
-- Static site generation
-- Vite-powered development
+```bash
+pnpm add @funstack/static react react-dom
+```
+
+## Quick Start
+
+### 1. Configure Vite
+
+Create or update your `vite.config.ts`:
+
+```typescript
+import { funstackStatic } from "@funstack/static";
+import react from "@vitejs/plugin-react";
+import { defineConfig } from "vite";
+
+export default defineConfig({
+  plugins: [
+    funstackStatic({
+      root: "./src/Root.tsx",
+      app: "./src/App.tsx",
+    }),
+    react(),
+  ],
+});
+```
+
+### 2. Create Your Root Component
+
+The Root component wraps your entire application and defines the HTML structure.
+
+```tsx
+// src/Root.tsx
+import type React from "react";
+
+export default function Root({ children }: { children: React.ReactNode }) {
+  return (
+    <html lang="en">
+      <head>
+        <meta charSet="UTF-8" />
+        <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+        <title>My App</title>
+      </head>
+      <body>{children}</body>
+    </html>
+  );
+}
+```
+
+The Root component:
+
+- is responsible for defining the shell HTML structure of your app
+- is a server component
+- **CANNOT** import client components; you could, but they are fully rendered into static HTML and never hydrated
+
+### 3. Create Your App Component
+
+The App component defines what comes into the `children` of the Root.
+
+This is the entrypoint of your SPA and you can do anything you want. If you want routing, you can bring your favorite SPA router. Here, we use `@funstack/router` as an example:
+
+```tsx
+// src/App.tsx
+import { Router } from "@funstack/router";
+import { route } from "@funstack/router/server";
+
+const routes = [
+  route({
+    path: "/",
+    component: <h1>Welcome to my site!</h1>,
+  }),
+  route({
+    path: "/about",
+    component: <h1>About Us</h1>,
+  }),
+];
+
+export default function App() {
+  return <Router routes={routes} />;
+}
+```
+
+The App component:
+
+- is a server component
+- **CAN** import client components and use them within the app
+
+### 4. Start Development Server
+
+```bash
+npm run dev
+```
+
+Your site is now running at `http://localhost:5173`!
+
+### 5. Build for Production
+
+```bash
+npm run build
+```
+
+Your SPA is pre-rendered to static files in the `dist/public` directory, ready to deploy to any static hosting provider.
+
+## Project Structure
+
+A typical FUNSTACK Static project looks like this:
+
+```
+my-site/
+├── src/
+│   ├── ...
+│   ├── Root.tsx        # HTML wrapper component
+│   └── App.tsx         # Routes and main app
+├── public/             # Static assets
+├── vite.config.ts      # Vite configuration
+└── package.json
+```
+
+Only two files are required: `Root.tsx` and `App.tsx`. The paths to these files can be customized in the `funstackStatic()` configuration.
+
+## What's Next?
+
+- Learn about the [funstackStatic() API](/api/funstack-static) for configuration options
+- Understand [defer()](/api/defer) for streaming content
+- Dive into [React Server Components](/concepts/rsc) concepts

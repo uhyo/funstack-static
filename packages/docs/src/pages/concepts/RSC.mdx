@@ -1,0 +1,207 @@
+# React Server Components
+
+React Server Components (RSC) are a new paradigm for building React applications where components can run on the server (or at build time) rather than in the browser.
+
+## What Are Server Components?
+
+Server Components are React components that:
+
+- **Run on the server/build time** - Not in the browser
+- **Can be async** - Use `async/await` directly in components
+- **Have zero client bundle impact** - Their code never ships to the browser
+- **Can access server-side resources** - Files, databases, environment variables
+
+```tsx
+// This component runs at build time, not in the browser
+async function UserList() {
+  // Direct file system access
+  const data = await fs.readFile("./data/users.json", "utf-8");
+  const users = JSON.parse(data);
+
+  return (
+    <ul>
+      {users.map((user) => (
+        <li key={user.id}>{user.name}</li>
+      ))}
+    </ul>
+  );
+}
+```
+
+## Server Components vs Client Components
+
+| Feature              | Server Components | Client Components |
+| -------------------- | ----------------- | ----------------- |
+| Runs on              | Server/Build time | Browser           |
+| Can use hooks        | No                | Yes               |
+| Can use browser APIs | No                | Yes               |
+| Can be async         | Yes               | No                |
+| Bundle size impact   | Zero              | Included          |
+| Data fetching        | Direct            | Via APIs          |
+
+## FUNSTACK Static and RSC
+
+FUNSTACK Static leverages React Server Components to build **high-performance SPAs**:
+
+1. Server Components run at **build time** to pre-render your app
+2. Client Components hydrate in the browser for **full SPA interactivity**
+3. No runtime server required - deploy anywhere that serves static files
+4. Get RSC performance benefits without server infrastructure complexity
+
+```tsx
+// Build-time data fetching
+async function BlogPost({ slug }: { slug: string }) {
+  // Runs during build, not at runtime
+  const content = await fetchMarkdownFile(`./posts/${slug}.md`);
+
+  return (
+    <article>
+      <Markdown content={content} />
+    </article>
+  );
+}
+```
+
+## Async Components
+
+One of the most powerful features of Server Components is native async support:
+
+```tsx
+// No useEffect, no loading states - just async/await
+async function WeatherWidget() {
+  const weather = await fetch("https://api.weather.com/current").then((r) =>
+    r.json(),
+  );
+
+  return (
+    <div>
+      <span>{weather.temperature}°</span>
+      <span>{weather.condition}</span>
+    </div>
+  );
+}
+```
+
+> **Note:** In FUNSTACK Static, async data is fetched at build time. For truly dynamic data, you'll need client-side JavaScript.
+
+## Composing Server and Client Components
+
+While Server Components can't use hooks or browser APIs, they can render Client Components that do:
+
+```tsx
+// Server Component (runs at build time)
+async function ProductPage({ id }: { id: string }) {
+  const product = await fetchProduct(id);
+
+  return (
+    <div>
+      <h1>{product.name}</h1>
+      <p>{product.description}</p>
+
+      {/* Client Component for interactivity */}
+      <AddToCartButton productId={id} />
+    </div>
+  );
+}
+```
+
+```tsx
+// Client Component (runs in browser)
+// Add "use client" directive at the top of your file
+
+import { useState } from "react";
+
+export function AddToCartButton({ productId }: { productId: string }) {
+  const [added, setAdded] = useState(false);
+
+  return (
+    <button onClick={() => setAdded(true)}>
+      {added ? "Added!" : "Add to Cart"}
+    </button>
+  );
+}
+```
+
+## Benefits for SPAs
+
+### 1. Instant Initial Load
+
+Server Components pre-render your app at build time. Users see content immediately while the SPA hydrates in the background.
+
+### 2. Reduced Bundle Size
+
+Server Component code stays on the build server. Only Client Components and their dependencies ship to the browser.
+
+### 3. Build-Time Data Fetching
+
+Fetch data once at build time, embedded directly into your pre-rendered HTML:
+
+```tsx
+async function BlogIndex() {
+  // Fetched once during build, not on every page view
+  const posts = await fetchAllPosts();
+  return <PostList posts={posts} />;
+}
+```
+
+### 4. Full SPA Interactivity
+
+After hydration, your app behaves like any SPA - client-side navigation, state management, and all the interactivity you need:
+
+```tsx
+// Client Component for interactive features
+"use client";
+
+import { useState } from "react";
+import { useNavigate } from "@funstack/router";
+
+export function SearchBox() {
+  const [query, setQuery] = useState("");
+  const navigate = useNavigate();
+
+  return (
+    <input
+      value={query}
+      onChange={(e) => setQuery(e.target.value)}
+      onKeyDown={(e) => {
+        if (e.key === "Enter") {
+          navigate(`/search?q=${query}`);
+        }
+      }}
+    />
+  );
+}
+```
+
+### 5. Type-Safe Data Flow
+
+Data flows from Server Components to Client Components with full TypeScript support:
+
+```tsx
+interface Post {
+  id: string;
+  title: string;
+  content: string;
+}
+
+async function BlogPost({ slug }: { slug: string }): Promise<JSX.Element> {
+  const post: Post = await fetchPost(slug);
+  return <Article post={post} />;
+}
+```
+
+## Considerations
+
+When using FUNSTACK Static, keep in mind:
+
+1. **Build-time data** - Server Component data is fetched during build. For runtime data, use Client Components with standard fetch patterns.
+2. **No server context** - No access to cookies, headers, or request data in Server Components.
+3. **Pre-rendered routes** - Each route is pre-rendered at build time. Dynamic route segments work, but the content is fixed at build.
+
+This makes FUNSTACK Static ideal for apps where most content is known at build time, with Client Components handling any truly dynamic features.
+
+## See Also
+
+- [Getting Started](/getting-started) - Set up your first project
+- [defer()](/api/defer) - Stream content progressively
+- [funstackStatic()](/api/funstack-static) - Plugin configuration

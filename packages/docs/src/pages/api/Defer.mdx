@@ -1,0 +1,137 @@
+# defer()
+
+The `defer()` function enables deferred rendering for React Server Components, allowing content to be streamed progressively to the client.
+
+## Import
+
+```typescript
+import { defer } from "@funstack/static/server";
+```
+
+## Usage
+
+```tsx
+import { defer } from "@funstack/static/server";
+import { route } from "@funstack/router/server";
+import HeavyComponent from "./HeavyComponent";
+
+const routes = [
+  route({
+    path: "/",
+    component: defer(HeavyComponent),
+  }),
+];
+```
+
+## Signature
+
+```typescript
+function defer<T extends React.ComponentType<any>>(
+  Component: T,
+): React.ReactNode;
+```
+
+### Parameters
+
+- **Component:** A React component to render with deferred streaming.
+
+### Returns
+
+A React node that will stream its content when rendered.
+
+## When to Use defer()
+
+Use `defer()` when you have components that:
+
+- Fetch data asynchronously (e.g., from APIs or databases)
+- Perform expensive computations
+- Include large amounts of content
+- Have children that can be rendered independently
+
+```tsx
+// Async component that fetches data
+async function BlogPosts() {
+  const posts = await fetchPosts(); // Slow API call
+
+  return (
+    <ul>
+      {posts.map((post) => (
+        <li key={post.id}>{post.title}</li>
+      ))}
+    </ul>
+  );
+}
+
+// Wrap with defer() to stream
+route({
+  path: "/blog",
+  component: defer(BlogPosts),
+});
+```
+
+## How It Works
+
+1. **Without defer():** The entire page waits for all components to render before sending any HTML.
+
+2. **With defer():**
+   - The page shell renders immediately
+   - A placeholder is inserted for the deferred content
+   - The deferred content streams in once ready
+   - The placeholder is replaced with the actual content
+
+## Example: Mixing Static and Deferred Content
+
+```tsx
+import { defer } from "@funstack/static/server";
+
+// Fast, static header
+function Header() {
+  return (
+    <header>
+      <h1>My Blog</h1>
+    </header>
+  );
+}
+
+// Slow, data-fetching component
+async function RecentPosts() {
+  const posts = await fetchRecentPosts();
+  return <PostList posts={posts} />;
+}
+
+// Page component
+function BlogPage() {
+  return (
+    <div>
+      <Header /> {/* Renders immediately */}
+      {defer(RecentPosts)} {/* Streams when ready */}
+    </div>
+  );
+}
+```
+
+## MDX Integration
+
+`defer()` works seamlessly with MDX files:
+
+```tsx
+import { defer } from "@funstack/static/server";
+import BlogPost from "./BlogPost.mdx";
+
+route({
+  path: "/blog/post",
+  component: defer(BlogPost),
+});
+```
+
+## Best Practices
+
+1. **Defer at the route level** for pages with async data fetching
+2. **Don't over-defer** - only use it when you have genuinely slow components
+3. **Consider user experience** - streaming can cause layout shifts; design accordingly
+4. **Test without defer** first to understand baseline performance
+
+## See Also
+
+- [funstackStatic()](/api/funstack-static) - Main plugin configuration
+- [React Server Components](/concepts/rsc) - Understanding async components

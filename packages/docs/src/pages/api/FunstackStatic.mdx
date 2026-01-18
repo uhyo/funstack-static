@@ -1,0 +1,137 @@
+# funstackStatic()
+
+The `funstackStatic()` function is the main Vite plugin that enables React Server Components for building SPAs without a runtime server.
+
+## Import
+
+```typescript
+import { funstackStatic } from "@funstack/static";
+```
+
+## Usage
+
+```typescript
+// vite.config.ts
+import { funstackStatic } from "@funstack/static";
+import { defineConfig } from "vite";
+
+export default defineConfig({
+  plugins: [
+    funstackStatic({
+      root: "./src/root.tsx",
+      app: "./src/App.tsx",
+    }),
+  ],
+});
+```
+
+## Options
+
+### root (required)
+
+**Type:** `string`
+
+Path to the root component file. This component wraps your entire application and defines the HTML document structure (`<html>`, `<head>`, `<body>`).
+
+```typescript
+funstackStatic({
+  root: "./src/root.tsx",
+  // ...
+});
+```
+
+The root component receives `children` as a prop:
+
+```tsx
+// src/root.tsx
+export default function Root({ children }: { children: React.ReactNode }) {
+  return (
+    <html lang="en">
+      <head>
+        <meta charSet="UTF-8" />
+        <title>My Site</title>
+      </head>
+      <body>{children}</body>
+    </html>
+  );
+}
+```
+
+### app (required)
+
+**Type:** `string`
+
+Path to the app component file. This component defines your application's routes and content.
+
+```typescript
+funstackStatic({
+  root: "./src/root.tsx",
+  app: "./src/App.tsx",
+});
+```
+
+The app component typically uses the Router to define routes:
+
+```tsx
+// src/App.tsx
+import { Router } from "@funstack/router";
+import { route } from "@funstack/router/server";
+
+const routes = [
+  route({ path: "/", component: <HomePage /> }),
+  route({ path: "/about", component: <AboutPage /> }),
+];
+
+export default function App() {
+  return <Router routes={routes} />;
+}
+```
+
+### publicOutDir (optional)
+
+**Type:** `string`
+**Default:** `"dist/public"`
+
+Output directory for the generated static files.
+
+```typescript
+funstackStatic({
+  root: "./src/root.tsx",
+  app: "./src/App.tsx",
+  publicOutDir: "build/static",
+});
+```
+
+## Full Example
+
+```typescript
+// vite.config.ts
+import { funstackStatic } from "@funstack/static";
+import { defineConfig } from "vite";
+
+export default defineConfig({
+  plugins: [
+    funstackStatic({
+      root: "./src/root.tsx",
+      app: "./src/App.tsx",
+      publicOutDir: "dist/public",
+    }),
+  ],
+});
+```
+
+## How It Works
+
+1. **Development:** The plugin starts a development server with hot module replacement. Server Components run on-demand, and Client Components hot-reload instantly.
+
+2. **Build:** During production build, the plugin:
+   - Discovers all routes defined in your app
+   - Pre-renders each route using React Server Components
+   - Bundles Client Components for hydration
+   - Outputs static files to `publicOutDir` that hydrate into a full SPA
+
+## See Also
+
+- [Getting Started](/getting-started) - Quick start guide
+- [defer()](/api/defer) - Deferred rendering for streaming
+- [React Server Components](/concepts/rsc) - Understanding RSC
