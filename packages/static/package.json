@@ -40,7 +40,7 @@
     "react": "catalog:",
     "react-dom": "catalog:",
     "tsdown": "^0.19.0",
-    "typescript": "^5.7.0",
+    "typescript": "catalog:",
     "vite": "catalog:",
     "vitest": "^4.0.16"
   },

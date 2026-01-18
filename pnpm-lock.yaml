@@ -15,6 +15,9 @@ catalogs:
     react-dom:
       specifier: ^19.2.3
       version: 19.2.3
+    typescript:
+      specifier: ^5.9.3
+      version: 5.9.3
     vite:
       specifier: ^7.3.1
       version: 7.3.1
@@ -66,6 +69,9 @@ importers:
       rsc-html-stream:
         specifier: ^0.0.7
         version: 0.0.7
+      typescript:
+        specifier: 'catalog:'
+        version: 5.9.3
       vite:
         specifier: 'catalog:'
         version: 7.3.1(@types/node@25.0.6)(terser@5.44.1)
@@ -135,7 +141,7 @@ importers:
         specifier: ^0.19.0
         version: 0.19.0(typescript@5.9.3)
       typescript:
-        specifier: ^5.7.0
+        specifier: 'catalog:'
         version: 5.9.3
       vite:
         specifier: 'catalog:'
