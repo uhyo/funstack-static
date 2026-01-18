@@ -201,18 +201,18 @@ pre.shiki {
   margin: var(--spacing-lg) 0;
 }
 
-/* Shiki dual theme switching */
-.shiki,
-.shiki span {
-  color: var(--shiki-light);
-  background-color: var(--shiki-light-bg);
+.shiki code {
+  background: transparent;
 }
 
+/* Dark mode: override Shiki's default light colors */
 @media (prefers-color-scheme: dark) {
-  .shiki,
+  pre.shiki {
+    background-color: var(--shiki-dark-bg) !important;
+  }
+
   .shiki span {
-    color: var(--shiki-dark);
-    background-color: var(--shiki-dark-bg);
+    color: var(--shiki-dark) !important;
   }
 }
 

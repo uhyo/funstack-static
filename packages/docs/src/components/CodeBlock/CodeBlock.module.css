@@ -22,18 +22,19 @@
   font-family: var(--font-mono);
 }
 
-/* Light/dark theme switching for Shiki dual themes */
-.codeContent :global(.shiki),
-.codeContent :global(.shiki span) {
-  color: var(--shiki-light);
-  background-color: var(--shiki-light-bg);
+/* Shiki code styling */
+.codeContent :global(.shiki code) {
+  background: transparent;
 }
 
+/* Dark mode: override Shiki's default light colors */
 @media (prefers-color-scheme: dark) {
-  .codeContent :global(.shiki),
+  .codeContent :global(.shiki) {
+    background-color: var(--shiki-dark-bg) !important;
+  }
+
   .codeContent :global(.shiki span) {
-    color: var(--shiki-dark);
-    background-color: var(--shiki-dark-bg);
+    color: var(--shiki-dark) !important;
   }
 }
 
