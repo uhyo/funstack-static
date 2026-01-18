@@ -3,7 +3,6 @@ import { renderToReadableStream } from "@vitejs/plugin-rsc/react/rsc";
 import { ClientWrapper } from "@funstack/static/entries/rsc-client";
 
 export interface SendEntry {
-  component: FC<{}>;
   state: SendEntryState;
 }
 
@@ -14,6 +13,7 @@ export interface LoadedSendEntry extends SendEntry {
 type SendEntryState =
   | {
       state: "pending";
+      component: FC<{}>;
     }
   | {
       state: "streaming";
@@ -30,9 +30,13 @@ type SendEntryState =
 
 export class SendRegistry {
   #registry = new Map<string, SendEntry>();
+  #finalization = new FinalizationRegistry((id: string) => {
+    this.#registry.delete(id);
+  });
 
   register(component: FC<{}>, id: string) {
-    this.#registry.set(id, { component, state: { state: "pending" } });
+    this.#registry.set(id, { state: { component, state: "pending" } });
+    this.#finalization.register(component, id);
   }
 
   load(id: string): LoadedSendEntry | undefined {
@@ -40,10 +44,12 @@ export class SendRegistry {
     if (!entry) {
       return undefined;
     }
-    const { state, component: Component } = entry;
+    const { state } = entry;
     switch (state.state) {
       case "pending": {
-        const stream = renderToReadableStream<React.ReactNode>(<Component />);
+        const stream = renderToReadableStream<React.ReactNode>(
+          <state.component />,
+        );
         const [stream1, stream2] = stream.tee();
         entry.state = { state: "streaming", stream: stream1 };
         (async () => {
