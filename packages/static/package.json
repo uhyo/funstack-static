@@ -8,6 +8,10 @@
       "types": "./dist/index.d.mts",
       "import": "./dist/index.mjs"
     },
+    "./server": {
+      "types": "./dist/entries/server.d.mts",
+      "import": "./dist/entries/server.mjs"
+    },
     "./entries/*": "./dist/entries/*.mjs"
   },
   "imports": {

@@ -166,6 +166,14 @@ export const deferRegistry = new DeferRegistry();
 
 const referenceIDMap = new WeakMap<FC<{}>, string>();
 
+/**
+ * Renders given Server Component into a separate RSC payload.
+ *
+ * During the client side rendering, fetching of the payload will be
+ * deferred until the returned ReactNode is actually rendered.
+ *
+ * @returns A ReactNode that virtually contains the result of rendering the given component.
+ */
 export function defer(component: FC<{}>): React.ReactNode {
   let id = referenceIDMap.get(component);
   if (id === undefined) {
