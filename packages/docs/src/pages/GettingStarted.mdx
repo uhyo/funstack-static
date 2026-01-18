@@ -24,24 +24,26 @@ Create or update your `vite.config.ts`:
 
 ```typescript
 import { funstackStatic } from "@funstack/static";
+import react from "@vitejs/plugin-react";
 import { defineConfig } from "vite";
 
 export default defineConfig({
   plugins: [
     funstackStatic({
-      root: "./src/root.tsx",
+      root: "./src/Root.tsx",
       app: "./src/App.tsx",
     }),
+    react(),
   ],
 });
 ```
 
 ### 2. Create Your Root Component
 
-The root component wraps your entire application and defines the HTML structure:
+The Root component wraps your entire application and defines the HTML structure.
 
 ```tsx
-// src/root.tsx
+// src/Root.tsx
 import type React from "react";
 
 export default function Root({ children }: { children: React.ReactNode }) {
@@ -58,9 +60,17 @@ export default function Root({ children }: { children: React.ReactNode }) {
 }
 ```
 
+The Root component:
+
+- is responsible for defining the shell HTML structure of your app
+- is a server component
+- **CANNOT** import client components; you could, but they are fully rendered into static HTML and never hydrated
+
 ### 3. Create Your App Component
 
-The app component defines your routes and page content:
+The App component defines what comes into the `children` of the Root.
+
+This is the entrypoint of your SPA and you can do anything you want. If you want routing, you can bring your favorite SPA router. Here, we use `@funstack/router` as an example:
 
 ```tsx
 // src/App.tsx
@@ -83,6 +93,11 @@ export default function App() {
 }
 ```
 
+The App component:
+
+- is a server component
+- **CAN** import client components and use them within the app
+
 ### 4. Start Development Server
 
 ```bash
@@ -97,7 +112,7 @@ Your site is now running at `http://localhost:5173`!
 npm run build
 ```
 
-Your SPA is pre-rendered to static files in the `dist/public` directory, ready to deploy to any static hosting provider. The app hydrates on the client for full SPA interactivity.
+Your SPA is pre-rendered to static files in the `dist/public` directory, ready to deploy to any static hosting provider.
 
 ## Project Structure
 
@@ -106,14 +121,15 @@ A typical FUNSTACK Static project looks like this:
 ```
 my-site/
 ├── src/
-│   ├── root.tsx        # HTML wrapper component
-│   ├── App.tsx         # Routes and main app
-│   ├── components/     # Your React components
-│   └── pages/          # Page components
+│   ├── ...
+│   ├── Root.tsx        # HTML wrapper component
+│   └── App.tsx         # Routes and main app
 ├── public/             # Static assets
 ├── vite.config.ts      # Vite configuration
 └── package.json
 ```
+
+Only two files are required: `Root.tsx` and `App.tsx`. The paths to these files can be customized in the `funstackStatic()` configuration.
 
 ## What's Next?
 
