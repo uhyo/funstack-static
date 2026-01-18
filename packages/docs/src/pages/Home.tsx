@@ -92,8 +92,8 @@ export const Home: React.FC = () => {
               </div>
               <h3 className={styles.featureTitle}>Pre-rendered for Speed</h3>
               <p className={styles.featureDescription}>
-                RSC runs at build time to generate optimized HTML. Your SPA
-                loads instantly with pre-rendered content.
+                RSC runs at build time to generate static HTML. Your SPA loads
+                instantly with minimal overhead.
               </p>
             </div>
 
@@ -154,53 +154,10 @@ export const Home: React.FC = () => {
                   <line x1="12" y1="3" x2="12" y2="15" />
                 </svg>
               </div>
-              <h3 className={styles.featureTitle}>Streaming Support</h3>
+              <h3 className={styles.featureTitle}>Code Splitting</h3>
               <p className={styles.featureDescription}>
-                Use defer() to stream content progressively. Perfect for large
-                pages and slow data sources.
-              </p>
-            </div>
-
-            <div className={styles.featureCard}>
-              <div className={styles.featureIcon}>
-                <svg
-                  width="24"
-                  height="24"
-                  viewBox="0 0 24 24"
-                  fill="none"
-                  stroke="currentColor"
-                  strokeWidth="2"
-                >
-                  <path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z" />
-                  <polyline points="22,6 12,13 2,6" />
-                </svg>
-              </div>
-              <h3 className={styles.featureTitle}>MDX Support</h3>
-              <p className={styles.featureDescription}>
-                Write content in MDX with full component support. Perfect for
-                documentation sites and blogs.
-              </p>
-            </div>
-
-            <div className={styles.featureCard}>
-              <div className={styles.featureIcon}>
-                <svg
-                  width="24"
-                  height="24"
-                  viewBox="0 0 24 24"
-                  fill="none"
-                  stroke="currentColor"
-                  strokeWidth="2"
-                >
-                  <rect x="3" y="3" width="18" height="18" rx="2" ry="2" />
-                  <line x1="3" y1="9" x2="21" y2="9" />
-                  <line x1="9" y1="21" x2="9" y2="9" />
-                </svg>
-              </div>
-              <h3 className={styles.featureTitle}>Client-Side Navigation</h3>
-              <p className={styles.featureDescription}>
-                Full SPA experience with @funstack/router. Instant page
-                transitions without full page reloads.
+                Meet <code>defer()</code>, an innovative way for programmatic
+                code splitting in the RSC era.
               </p>
             </div>
           </div>
