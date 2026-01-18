@@ -3,6 +3,7 @@ import { Header } from "../Header/Header";
 import { MobileMenu } from "../MobileMenu/MobileMenu";
 import { Sidebar } from "../Sidebar/Sidebar";
 import styles from "./Layout.module.css";
+import { Suspense } from "react";
 
 type LayoutVariant = "home" | "docs";
 
@@ -26,7 +27,7 @@ export const Layout: React.FC<LayoutProps> = ({
         <main
           className={`${styles.content} ${variant === "docs" ? styles.mdxContent : ""}`}
         >
-          {children}
+          <Suspense fallback={null}>{children}</Suspense>
         </main>
       </div>
     </div>
