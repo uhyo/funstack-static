@@ -42,7 +42,7 @@
     "tsdown": "^0.19.0",
     "typescript": "catalog:",
     "vite": "catalog:",
-    "vitest": "^4.0.16"
+    "vitest": "^4.0.17"
   },
   "dependencies": {
     "@vitejs/plugin-rsc": "^0.5.14",
