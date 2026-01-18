@@ -1,17 +1,37 @@
 import { Router } from "@funstack/router";
 import { route, type RouteDefinition } from "@funstack/router/server";
+import { defer } from "@funstack/static/server";
+import { Layout } from "./components/Layout/Layout";
+import DeferApi from "./pages/api/Defer.mdx";
+import FunstackStaticApi from "./pages/api/FunstackStatic.mdx";
+import RSCConcept from "./pages/concepts/RSC.mdx";
 import GettingStarted from "./pages/GettingStarted.mdx";
 import { Home } from "./pages/Home";
-import { defer } from "@funstack/static/server";
 
 const routes: RouteDefinition[] = [
   route({
     path: "/",
-    component: <Home />,
+    component: (
+      <Layout variant="home">
+        <Home />
+      </Layout>
+    ),
   }),
   route({
     path: "/getting-started",
-    component: defer(GettingStarted),
+    component: <Layout>{defer(GettingStarted)}</Layout>,
+  }),
+  route({
+    path: "/api/funstack-static",
+    component: <Layout>{defer(FunstackStaticApi)}</Layout>,
+  }),
+  route({
+    path: "/api/defer",
+    component: <Layout>{defer(DeferApi)}</Layout>,
+  }),
+  route({
+    path: "/concepts/rsc",
+    component: <Layout>{defer(RSCConcept)}</Layout>,
   }),
 ];
 
