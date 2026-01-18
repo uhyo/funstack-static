@@ -113,8 +113,8 @@ importers:
   packages/static:
     dependencies:
       '@vitejs/plugin-rsc':
-        specifier: ^0.5.11
-        version: 0.5.11(react-dom@19.2.3(react@19.2.3))(react-server-dom-webpack@19.2.3(react-dom@19.2.3(react@19.2.3))(react@19.2.3)(webpack@5.104.1))(react@19.2.3)(vite@7.3.1(@types/node@25.0.6)(terser@5.46.0))
+        specifier: ^0.5.14
+        version: 0.5.14(react-dom@19.2.3(react@19.2.3))(react-server-dom-webpack@19.2.3(react-dom@19.2.3(react@19.2.3))(react@19.2.3)(webpack@5.104.1))(react@19.2.3)(vite@7.3.1(@types/node@25.0.6)(terser@5.46.0))
       react-error-boundary:
         specifier: ^6.0.3
         version: 6.0.3(react@19.2.3)
@@ -824,8 +824,8 @@ packages:
     peerDependencies:
       vite: ^4.2.0 || ^5.0.0 || ^6.0.0 || ^7.0.0
 
-  '@vitejs/plugin-rsc@0.5.11':
-    resolution: {integrity: sha512-hDvBxRzlvKD8NwsbLCyNuhPrdhttokyb1uw+sH0p/loGj9NzaYtA61fv5qMdXsw6cV7yBj1UDnJUlxSwoPKZsg==}
+  '@vitejs/plugin-rsc@0.5.14':
+    resolution: {integrity: sha512-PW1vWMXzbOJSMuODV+clvWvzBKFE+SYmz0T0FBc8Jk5elZYKG4IWQLozX26w4omYN4HfbieOqRT2QVIWg/rpXg==}
     peerDependencies:
       react: '*'
       react-dom: '*'
@@ -2638,7 +2638,7 @@ snapshots:
     transitivePeerDependencies:
       - supports-color
 
-  '@vitejs/plugin-rsc@0.5.11(react-dom@19.2.3(react@19.2.3))(react-server-dom-webpack@19.2.3(react-dom@19.2.3(react@19.2.3))(react@19.2.3)(webpack@5.104.1))(react@19.2.3)(vite@7.3.1(@types/node@25.0.6)(terser@5.46.0))':
+  '@vitejs/plugin-rsc@0.5.14(react-dom@19.2.3(react@19.2.3))(react-server-dom-webpack@19.2.3(react-dom@19.2.3(react@19.2.3))(react@19.2.3)(webpack@5.104.1))(react@19.2.3)(vite@7.3.1(@types/node@25.0.6)(terser@5.46.0))':
     dependencies:
       es-module-lexer: 2.0.0
       estree-walker: 3.0.3
