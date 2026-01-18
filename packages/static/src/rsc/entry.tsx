@@ -4,6 +4,7 @@ import { devMainRscPath } from "./request";
 import { generateAppMarker } from "./marker";
 import { deferRegistry } from "./defer";
 import { extractIDFromModulePath } from "./rscModule";
+import { stripBasePath } from "../util/basePath";
 
 export type RscPayload = {
   root: React.ReactNode;
@@ -79,7 +80,8 @@ export function isServeRSCError(error: unknown): error is ServeRSCError {
  */
 export async function serveRSC(request: Request): Promise<Response> {
   const url = new URL(request.url);
-  if (url.pathname === devMainRscPath) {
+  const pathname = stripBasePath(url.pathname);
+  if (pathname === devMainRscPath) {
     // root RSC stream is requested
     const rootRscStream = await devMainRSCStream();
     return new Response(rootRscStream, {
@@ -90,9 +92,9 @@ export async function serveRSC(request: Request): Promise<Response> {
     });
   }
 
-  const moduleId = extractIDFromModulePath(url.pathname);
+  const moduleId = extractIDFromModulePath(pathname);
   if (!moduleId) {
-    throw new ServeRSCError(`Invalid RSC module path: ${url.pathname}`, 404);
+    throw new ServeRSCError(`Invalid RSC module path: ${pathname}`, 404);
   }
 
   const entry = deferRegistry.load(moduleId);

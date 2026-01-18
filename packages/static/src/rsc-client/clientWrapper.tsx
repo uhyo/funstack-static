@@ -6,6 +6,7 @@ import {
 import { getModulePathFor } from "../rsc/rscModule";
 import { createContext, use } from "react";
 import type { LoadedDeferEntry, DeferRegistry } from "../rsc/defer";
+import { withBasePath } from "../util/basePath";
 
 export const RegistryContext = createContext<DeferRegistry | undefined>(
   undefined,
@@ -25,7 +26,7 @@ export const ClientWrapper: React.FC<ClientWrapperProps> = ({ moduleID }) => {
     }
     return getRSCStreamFromRegistry(entry);
   }
-  const stream = getClientRSCStream(modulePath);
+  const stream = getClientRSCStream(withBasePath(modulePath));
   return use(stream);
 };
 
