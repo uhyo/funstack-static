@@ -20,7 +20,7 @@ async function UserList() {
 
   return (
     <ul>
-      {users.map(user => (
+      {users.map((user) => (
         <li key={user.id}>{user.name}</li>
       ))}
     </ul>
@@ -30,14 +30,14 @@ async function UserList() {
 
 ## Server Components vs Client Components
 
-| Feature | Server Components | Client Components |
-|---------|------------------|-------------------|
-| Runs on | Server/Build time | Browser |
-| Can use hooks | No | Yes |
-| Can use browser APIs | No | Yes |
-| Can be async | Yes | No |
-| Bundle size impact | Zero | Included |
-| Data fetching | Direct | Via APIs |
+| Feature              | Server Components | Client Components |
+| -------------------- | ----------------- | ----------------- |
+| Runs on              | Server/Build time | Browser           |
+| Can use hooks        | No                | Yes               |
+| Can use browser APIs | No                | Yes               |
+| Can be async         | Yes               | No                |
+| Bundle size impact   | Zero              | Included          |
+| Data fetching        | Direct            | Via APIs          |
 
 ## FUNSTACK Static and RSC
 
@@ -69,8 +69,9 @@ One of the most powerful features of Server Components is native async support:
 ```tsx
 // No useEffect, no loading states - just async/await
 async function WeatherWidget() {
-  const weather = await fetch("https://api.weather.com/current")
-    .then(r => r.json());
+  const weather = await fetch("https://api.weather.com/current").then((r) =>
+    r.json(),
+  );
 
   return (
     <div>
