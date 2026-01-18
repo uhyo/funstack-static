@@ -6,16 +6,14 @@ type RenderRequest = {
   url: URL; // normalized URL with _.rsc suffix removed
 };
 
-export function createRscRenderRequest(): Request {
-  const url = new URL("/.funstack/rsc", location.origin);
-  return new Request(url.toString(), {
-    method: "GET",
-  });
-}
+/**
+ * Path of RSC stream endpoint in development environment.
+ */
+export const devMainRscPath = "/.funstack/rsc";
 
 export function parseRenderRequest(request: Request): RenderRequest {
   const url = new URL(request.url);
-  if (url.pathname === "/.funstack/rsc") {
+  if (url.pathname === devMainRscPath) {
     return {
       isRsc: true,
       request: new Request(url, request),

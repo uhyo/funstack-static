@@ -7,7 +7,7 @@ import { createRoot, hydrateRoot } from "react-dom/client";
 import { rscStream } from "rsc-html-stream/client";
 import { GlobalErrorBoundary } from "./error-boundary";
 import type { RscPayload } from "../rsc/entry";
-import { createRscRenderRequest } from "../rsc/request";
+import { devMainRscPath } from "../rsc/request";
 import { appClientManifestVar, type AppClientManifest } from "./globals";
 
 async function devMain() {
@@ -27,8 +27,7 @@ async function devMain() {
 
   // re-fetch RSC and trigger re-rendering
   async function fetchRscPayload() {
-    const renderRequest = createRscRenderRequest();
-    const payload = await createFromFetch<RscPayload>(fetch(renderRequest));
+    const payload = await createFromFetch<RscPayload>(fetch(devMainRscPath));
     setPayload(payload);
   }
   // hydration
@@ -39,23 +38,6 @@ async function devMain() {
       </GlobalErrorBoundary>
     </React.StrictMode>
   );
-
-  // // @ts-expect-error
-  // const appRootId: string = globalThis[appEntrypointMarkerVar];
-
-  // const appMarker = document.getElementById(appRootId);
-  // if (!appMarker) {
-  //   throw new Error(
-  //     `Failed to find app root element by id "${appRootId}". This is likely a bug.`,
-  //   );
-  // }
-  // const appRoot = appMarker.parentElement;
-  // if (!appRoot) {
-  //   throw new Error(
-  //     `App root element has no parent element. This is likely a bug.`,
-  //   );
-  // }
-  // appMarker.remove();
 
   if (
     // @ts-expect-error

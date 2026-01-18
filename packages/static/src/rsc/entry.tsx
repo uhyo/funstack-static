@@ -1,28 +1,15 @@
 import "./send";
 import { renderToReadableStream } from "@vitejs/plugin-rsc/rsc";
-import { parseRenderRequest } from "./request";
+import { devMainRscPath, parseRenderRequest } from "./request";
 import { generateAppMarker } from "./marker";
 import { sendRegistry } from "./send";
-import { drainStream } from "../util/drainStream";
 import { extractIDFromModulePath } from "./rscModule";
 
-// The schema of payload which is serialized into RSC stream on rsc environment
-// and deserialized on ssr/client environments.
 export type RscPayload = {
-  // this demo renders/serializes/deserizlies entire root html element
-  // but this mechanism can be changed to render/fetch different parts of components
-  // based on your own route conventions.
   root: React.ReactNode;
 };
 
-/**
- * Entrypoint to serve HTML response
- */
-export async function serveHTML(request: Request): Promise<Response> {
-  // differentiate RSC, SSR, action, etc.
-  const renderRequest = parseRenderRequest(request);
-  request = renderRequest.request;
-
+async function devMainRSCStream() {
   const Root = (await import("virtual:funstack/root")).default;
   const App = (await import("virtual:funstack/app")).default;
 
@@ -39,8 +26,6 @@ export async function serveHTML(request: Request): Promise<Response> {
     );
   }
 
-  const marker = generateAppMarker();
-
   const rootRscStream = renderToReadableStream<RscPayload>({
     root: (
       <Root>
@@ -48,16 +33,16 @@ export async function serveHTML(request: Request): Promise<Response> {
       </Root>
     ),
   });
+  return rootRscStream;
+}
 
-  // Respond RSC stream without HTML rendering as decided by `RenderRequest`
-  if (renderRequest.isRsc) {
-    return new Response(rootRscStream, {
-      status: 200,
-      headers: {
-        "content-type": "text/x-component;charset=utf-8",
-      },
-    });
-  }
+/**
+ * Entrypoint to serve HTML response in dev environment
+ */
+export async function serveHTML(): Promise<Response> {
+  const marker = generateAppMarker();
+
+  const rootRscStream = await devMainRSCStream();
 
   // Delegate to SSR environment for html rendering.
   // The plugin provides `loadModule` helper to allow loading SSR environment entry module
@@ -98,6 +83,17 @@ export function isServeRSCError(error: unknown): error is ServeRSCError {
  */
 export async function serveRSC(request: Request): Promise<Response> {
   const url = new URL(request.url);
+  if (url.pathname === devMainRscPath) {
+    // root RSC stream is requested
+    const rootRscStream = await devMainRSCStream();
+    return new Response(rootRscStream, {
+      status: 200,
+      headers: {
+        "content-type": "text/x-component;charset=utf-8",
+      },
+    });
+  }
+
   const moduleId = extractIDFromModulePath(url.pathname);
   if (!moduleId) {
     throw new ServeRSCError(`Invalid RSC module path: ${url.pathname}`, 404);
