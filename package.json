@@ -8,8 +8,8 @@
     "test": "turbo run test",
     "test:run": "turbo run test:run",
     "typecheck": "turbo run typecheck",
-    "format": "prettier --write .",
-    "format:check": "prettier --check ."
+    "format": "prettier --write --experimental-cli .",
+    "format:check": "prettier --check --experimental-cli ."
   },
   "devDependencies": {
     "prettier": "^3.7.4",
