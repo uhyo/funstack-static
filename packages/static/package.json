@@ -23,7 +23,7 @@
     "build": "tsdown",
     "dev": "tsdown --watch",
     "test": "vitest",
-    "test:run": "echo 'TODO: add tests'",
+    "test:run": "vitest run",
     "typecheck": "tsc --noEmit"
   },
   "author": "uhyo <uhyo@uhy.ooo>",
