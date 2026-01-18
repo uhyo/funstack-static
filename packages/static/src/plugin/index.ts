@@ -101,7 +101,7 @@ export default function funstackStatic({
     {
       name: "@funstack/static:build",
       async buildApp(builder) {
-        await buildApp(builder);
+        await buildApp(builder, this);
       },
     },
   ];

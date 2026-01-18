@@ -44,10 +44,6 @@ export async function serveHTML(): Promise<Response> {
 
   const rootRscStream = await devMainRSCStream();
 
-  // Delegate to SSR environment for html rendering.
-  // The plugin provides `loadModule` helper to allow loading SSR environment entry module
-  // in RSC environment. however this can be customized by implementing own runtime communication
-  // e.g. `@cloudflare/vite-plugin`'s service binding.
   const ssrEntryModule = await import.meta.viteRsc.loadModule<
     typeof import("../ssr/entry")
   >("ssr");
@@ -163,10 +159,11 @@ export async function build() {
   return {
     html: ssrResult.stream,
     appRsc: appRscStream,
+    sendRegistry,
   };
 }
 
-export { send, sendRegistry } from "./send";
+export { send } from "./send";
 
 if (import.meta.hot) {
   import.meta.hot.accept();

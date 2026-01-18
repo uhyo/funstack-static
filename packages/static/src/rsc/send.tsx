@@ -1,6 +1,7 @@
 import type { FC } from "react";
 import { renderToReadableStream } from "@vitejs/plugin-rsc/react/rsc";
 import { ClientWrapper } from "@funstack/static/entries/rsc-client";
+import { drainStream } from "../util/drainStream";
 
 export interface SendEntry {
   state: SendEntryState;
@@ -44,6 +45,10 @@ export class SendRegistry {
     if (!entry) {
       return undefined;
     }
+    return this.#loadEntry(entry);
+  }
+
+  #loadEntry(entry: SendEntry): LoadedSendEntry {
     const { state } = entry;
     switch (state.state) {
       case "pending": {
@@ -79,6 +84,34 @@ export class SendRegistry {
 
   has(id: string): boolean {
     return this.#registry.has(id);
+  }
+
+  /**
+   * Iterates over all entries.
+   */
+  async *loadAll() {
+    const errors: unknown[] = [];
+    for (const [id, entry] of this.#registry) {
+      const loadedEntry = this.#loadEntry(entry);
+      switch (loadedEntry.state.state) {
+        case "streaming": {
+          const result = await drainStream(loadedEntry.state.stream);
+          yield { id, data: result };
+          break;
+        }
+        case "ready": {
+          yield { id, data: loadedEntry.state.data };
+          break;
+        }
+        case "error": {
+          errors.push(loadedEntry.state.error);
+          break;
+        }
+      }
+    }
+    if (errors.length > 0) {
+      throw new AggregateError(errors);
+    }
   }
 }
 
