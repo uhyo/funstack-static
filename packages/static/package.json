@@ -46,7 +46,7 @@
   },
   "dependencies": {
     "@vitejs/plugin-rsc": "^0.5.14",
-    "react-error-boundary": "^6.0.3",
+    "react-error-boundary": "^6.1.0",
     "rsc-html-stream": "^0.0.7",
     "srvx": "^0.10.0"
   },

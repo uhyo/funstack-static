@@ -1,7 +1,7 @@
 "use client";
 
 import React, { startTransition } from "react";
-import { ErrorBoundary } from "react-error-boundary";
+import { ErrorBoundary, type FallbackProps } from "react-error-boundary";
 
 /**
  * Whole-page error boundary for unexpected errors during development
@@ -14,12 +14,8 @@ export const GlobalErrorBoundary: React.FC<React.PropsWithChildren> = (
   );
 };
 
-interface FallbackProps {
-  error: Error;
-  resetErrorBoundary: () => void;
-}
-
 const Fallback: React.FC<FallbackProps> = ({ error, resetErrorBoundary }) => {
+  const errorMessage = error instanceof Error ? error.message : String(error);
   return (
     <html>
       <head>
@@ -39,7 +35,7 @@ const Fallback: React.FC<FallbackProps> = ({ error, resetErrorBoundary }) => {
       >
         <h1>Caught an unexpected error</h1>
         <p>See the console for details.</p>
-        <pre>Error: {error.message}</pre>
+        <pre>Error: {errorMessage}</pre>
         <button
           onClick={() => {
             startTransition(() => {
