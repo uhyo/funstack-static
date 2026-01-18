@@ -109,51 +109,9 @@
   max-width: 700px;
   margin: var(--spacing-3xl) auto 0;
   text-align: left;
-  background-color: var(--color-code-bg);
-  border-radius: var(--radius-lg);
   box-shadow: var(--shadow-xl);
+  border-radius: var(--radius-lg);
   overflow: hidden;
-}
-
-.codeHeader {
-  display: flex;
-  align-items: center;
-  gap: var(--spacing-sm);
-  padding: var(--spacing-sm) var(--spacing-md);
-  background-color: #161622;
-  border-bottom: 1px solid #2d2d4a;
-}
-
-.codeDot {
-  width: 12px;
-  height: 12px;
-  border-radius: 50%;
-}
-
-.codeDotRed {
-  background-color: #ff5f56;
-}
-
-.codeDotYellow {
-  background-color: #ffbd2e;
-}
-
-.codeDotGreen {
-  background-color: #27c93f;
-}
-
-.codeContent {
-  padding: var(--spacing-lg);
-  font-family: var(--font-mono);
-  font-size: var(--text-sm);
-  line-height: 1.6;
-  color: var(--color-code-text);
-  overflow-x: auto;
-}
-
-.codeContent code {
-  background: none;
-  padding: 0;
 }
 
 /* Features Section */

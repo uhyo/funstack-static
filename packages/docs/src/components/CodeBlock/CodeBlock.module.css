@@ -5,60 +5,36 @@
   overflow: hidden;
 }
 
-.header {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  padding: var(--spacing-sm) var(--spacing-md);
-  background-color: #161622;
-  border-bottom: 1px solid #2d2d4a;
-}
-
-.language {
-  font-family: var(--font-mono);
-  font-size: var(--text-xs);
-  color: var(--color-text-muted);
-  text-transform: uppercase;
-}
-
-.copyButton {
-  display: flex;
-  align-items: center;
-  gap: var(--spacing-xs);
-  padding: var(--spacing-xs) var(--spacing-sm);
-  font-size: var(--text-xs);
-  color: var(--color-text-muted);
-  background-color: transparent;
-  border: 1px solid #2d2d4a;
-  border-radius: var(--radius-sm);
-  cursor: pointer;
-  transition:
-    color var(--transition-fast),
-    border-color var(--transition-fast);
-}
-
-.copyButton:hover {
-  color: var(--color-text);
-  border-color: var(--color-text-muted);
-}
-
-.copyButton svg {
-  width: 14px;
-  height: 14px;
-}
-
-.pre {
-  margin: 0;
-  padding: var(--spacing-lg);
-  background-color: var(--color-code-bg);
-  overflow-x: auto;
-}
-
-.code {
-  font-family: var(--font-mono);
+.codeContent {
   font-size: var(--text-sm);
   line-height: 1.6;
-  color: var(--color-code-text);
+}
+
+/* Style Shiki's generated pre element */
+.codeContent :global(pre) {
+  margin: 0;
+  padding: var(--spacing-lg);
+  overflow-x: auto;
+  border-radius: var(--radius-lg);
+}
+
+.codeContent :global(code) {
+  font-family: var(--font-mono);
+}
+
+/* Light/dark theme switching for Shiki dual themes */
+.codeContent :global(.shiki),
+.codeContent :global(.shiki span) {
+  color: var(--shiki-light);
+  background-color: var(--shiki-light-bg);
+}
+
+@media (prefers-color-scheme: dark) {
+  .codeContent :global(.shiki),
+  .codeContent :global(.shiki span) {
+    color: var(--shiki-dark);
+    background-color: var(--shiki-dark-bg);
+  }
 }
 
 /* Inline code */

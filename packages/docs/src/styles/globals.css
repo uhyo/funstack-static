@@ -192,6 +192,30 @@ pre code {
   padding: 0;
 }
 
+/* Shiki Code Blocks (MDX) */
+pre.shiki {
+  padding: var(--spacing-lg);
+  border-radius: var(--radius-lg);
+  font-size: var(--text-sm);
+  line-height: 1.6;
+  margin: var(--spacing-lg) 0;
+}
+
+/* Shiki dual theme switching */
+.shiki,
+.shiki span {
+  color: var(--shiki-light);
+  background-color: var(--shiki-light-bg);
+}
+
+@media (prefers-color-scheme: dark) {
+  .shiki,
+  .shiki span {
+    color: var(--shiki-dark);
+    background-color: var(--shiki-dark-bg);
+  }
+}
+
 /* Selection */
 ::selection {
   background-color: var(--color-accent);

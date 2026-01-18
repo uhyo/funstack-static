@@ -1,4 +1,17 @@
+import { CodeBlock } from "../components/CodeBlock/CodeBlock";
 import styles from "./Home.module.css";
+
+const heroCode = `// vite.config.ts
+import { funstackStatic } from "@funstack/static";
+
+export default {
+  plugins: [
+    funstackStatic({
+      root: "./src/root.tsx",
+      app: "./src/App.tsx",
+    }),
+  ],
+};`;
 
 export const Home: React.FC = () => {
   return (
@@ -45,24 +58,7 @@ export const Home: React.FC = () => {
 
           {/* Code Preview */}
           <div className={styles.codePreview}>
-            <div className={styles.codeHeader}>
-              <span className={`${styles.codeDot} ${styles.codeDotRed}`} />
-              <span className={`${styles.codeDot} ${styles.codeDotYellow}`} />
-              <span className={`${styles.codeDot} ${styles.codeDotGreen}`} />
-            </div>
-            <pre className={styles.codeContent}>
-              <code>{`// vite.config.ts
-import { funstackStatic } from "@funstack/static";
-
-export default {
-  plugins: [
-    funstackStatic({
-      root: "./src/root.tsx",
-      app: "./src/App.tsx",
-    }),
-  ],
-};`}</code>
-            </pre>
+            <CodeBlock language="typescript">{heroCode}</CodeBlock>
           </div>
         </div>
       </section>
