@@ -1,6 +1,6 @@
 import type { FC } from "react";
 import { renderToReadableStream } from "@vitejs/plugin-rsc/react/rsc";
-import { ClientWrapper } from "../entries/rsc-client";
+import { ClientWrapper } from "#rsc-client";
 import { drainStream } from "../util/drainStream";
 
 export interface SendEntry {

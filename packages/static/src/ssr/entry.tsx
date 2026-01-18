@@ -7,7 +7,7 @@ import { appClientManifestVar } from "../client/globals";
 import { rscPayloadPath } from "../build/rscPath";
 import { preload } from "react-dom";
 import type { SendRegistry } from "../rsc/send";
-import { RegistryContext } from "../rsc-client/clientWrapper";
+import { RegistryContext } from "#rsc-client";
 
 export async function renderHTML(
   rscStream: ReadableStream<Uint8Array>,
