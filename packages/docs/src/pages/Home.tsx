@@ -27,7 +27,10 @@ export const Home: React.FC = () => {
             with full SPA interactivity.
           </p>
           <div className={styles.buttons}>
-            <a href="/getting-started" className={styles.primaryButton}>
+            <a
+              href={`${import.meta.env.BASE_URL}getting-started`}
+              className={styles.primaryButton}
+            >
               Get Started
               <svg
                 width="20"
@@ -211,7 +214,10 @@ export const Home: React.FC = () => {
           Build your next SPA with the performance benefits of React Server
           Components.
         </p>
-        <a href="/getting-started" className={styles.ctaButton}>
+        <a
+          href={`${import.meta.env.BASE_URL}getting-started`}
+          className={styles.ctaButton}
+        >
           Read the Documentation
           <svg
             width="20"
