@@ -1,6 +1,6 @@
 import "./send";
 import { renderToReadableStream } from "@vitejs/plugin-rsc/rsc";
-import { devMainRscPath, parseRenderRequest } from "./request";
+import { devMainRscPath } from "./request";
 import { generateAppMarker } from "./marker";
 import { sendRegistry } from "./send";
 import { extractIDFromModulePath } from "./rscModule";
