@@ -4,23 +4,32 @@ export const Header: React.FC = () => {
   return (
     <header className={styles.header}>
       <div className={styles.container}>
-        <a href="/" className={styles.logo}>
+        <a href={import.meta.env.BASE_URL} className={styles.logo}>
           <span className={styles.logoIcon}>F</span>
           <span className={styles.logoText}>FUNSTACK Static</span>
         </a>
 
         <nav className={styles.nav}>
-          <a href="/getting-started" className={styles.navLink}>
+          <a
+            href={`${import.meta.env.BASE_URL}getting-started`}
+            className={styles.navLink}
+          >
             Docs
           </a>
-          <a href="/api/funstack-static" className={styles.navLink}>
+          <a
+            href={`${import.meta.env.BASE_URL}api/funstack-static`}
+            className={styles.navLink}
+          >
             API
           </a>
-          <a href="/concepts/rsc" className={styles.navLink}>
+          <a
+            href={`${import.meta.env.BASE_URL}concepts/rsc`}
+            className={styles.navLink}
+          >
             Concepts
           </a>
           <a
-            href="https://github.com/user/funstack-static"
+            href="https://github.com/uhyo/funstack-static"
             target="_blank"
             rel="noopener noreferrer"
             className={styles.githubLink}

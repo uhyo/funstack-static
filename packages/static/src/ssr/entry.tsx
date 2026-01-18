@@ -8,6 +8,7 @@ import { rscPayloadPath } from "../build/rscPath";
 import { preload } from "react-dom";
 import type { DeferRegistry } from "../rsc/defer";
 import { RegistryContext } from "#rsc-client";
+import { withBasePath } from "../util/basePath";
 
 export async function renderHTML(
   rscStream: ReadableStream<Uint8Array>,
@@ -26,7 +27,7 @@ export async function renderHTML(
     // makes `preinit`/`preload` work properly.
     payload ??= createFromReadableStream<RscPayload>(rscStream1);
     if (options.build) {
-      preload(rscPayloadPath, {
+      preload(withBasePath(rscPayloadPath), {
         crossOrigin: "anonymous",
         as: "fetch",
       });
@@ -38,7 +39,7 @@ export async function renderHTML(
     );
   }
 
-  const builtRscUrl = rscPayloadPath;
+  const builtRscUrl = withBasePath(rscPayloadPath);
   let bootstrapScriptContent: string = "";
   if (options.build) {
     bootstrapScriptContent += `globalThis.${appClientManifestVar}={marker:"${options.appEntryMarker}",stream:"${builtRscUrl}"};\n`;

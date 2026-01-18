@@ -28,4 +28,5 @@ export default defineConfig({
     },
     react({ include: /\.(jsx|js|mdx|md|tsx|ts)$/ }),
   ],
+  base: "/funstack-static/",
 });

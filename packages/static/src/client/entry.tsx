@@ -9,6 +9,7 @@ import { GlobalErrorBoundary } from "./error-boundary";
 import type { RscPayload } from "../rsc/entry";
 import { devMainRscPath } from "../rsc/request";
 import { appClientManifestVar, type AppClientManifest } from "./globals";
+import { withBasePath } from "../util/basePath";
 
 async function devMain() {
   let setPayload: (v: RscPayload) => void;
@@ -27,7 +28,9 @@ async function devMain() {
 
   // re-fetch RSC and trigger re-rendering
   async function fetchRscPayload() {
-    const payload = await createFromFetch<RscPayload>(fetch(devMainRscPath));
+    const payload = await createFromFetch<RscPayload>(
+      fetch(withBasePath(devMainRscPath)),
+    );
     setPayload(payload);
   }
   // hydration
