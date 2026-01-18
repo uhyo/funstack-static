@@ -41,12 +41,12 @@ async function UserList() {
 
 ## FUNSTACK Static and RSC
 
-FUNSTACK Static leverages React Server Components for **static site generation**:
+FUNSTACK Static leverages React Server Components to build **high-performance SPAs**:
 
-1. Components run at **build time** (not on a live server)
-2. Output is **pure static HTML**
-3. No JavaScript framework runtime shipped by default
-4. Perfect for documentation, blogs, marketing sites
+1. Server Components run at **build time** to pre-render your app
+2. Client Components hydrate in the browser for **full SPA interactivity**
+3. No runtime server required - deploy anywhere that serves static files
+4. Get RSC performance benefits without server infrastructure complexity
 
 ```tsx
 // Build-time data fetching
@@ -121,41 +121,60 @@ export function AddToCartButton({ productId }: { productId: string }) {
 }
 ```
 
-## Benefits for Static Sites
+## Benefits for SPAs
 
-### 1. Zero JavaScript by Default
+### 1. Instant Initial Load
 
-Server Components render to HTML. No React runtime ships unless you add Client Components.
+Server Components pre-render your app at build time. Users see content immediately while the SPA hydrates in the background.
 
-### 2. Build-Time Data Fetching
+### 2. Reduced Bundle Size
 
-Fetch data once at build time, not on every page view:
+Server Component code stays on the build server. Only Client Components and their dependencies ship to the browser.
+
+### 3. Build-Time Data Fetching
+
+Fetch data once at build time, embedded directly into your pre-rendered HTML:
 
 ```tsx
 async function BlogIndex() {
-  // Fetched once during build
+  // Fetched once during build, not on every page view
   const posts = await fetchAllPosts();
   return <PostList posts={posts} />;
 }
 ```
 
-### 3. Direct File Access
+### 4. Full SPA Interactivity
 
-Read files, parse markdown, process images - all at build time:
+After hydration, your app behaves like any SPA - client-side navigation, state management, and all the interactivity you need:
 
 ```tsx
-async function Documentation() {
-  const files = await glob("./docs/**/*.md");
-  const docs = await Promise.all(
-    files.map(f => parseMarkdown(f))
+// Client Component for interactive features
+"use client";
+
+import { useState } from "react";
+import { useNavigate } from "@funstack/router";
+
+export function SearchBox() {
+  const [query, setQuery] = useState("");
+  const navigate = useNavigate();
+
+  return (
+    <input
+      value={query}
+      onChange={(e) => setQuery(e.target.value)}
+      onKeyDown={(e) => {
+        if (e.key === "Enter") {
+          navigate(`/search?q=${query}`);
+        }
+      }}
+    />
   );
-  return <DocTree docs={docs} />;
 }
 ```
 
-### 4. Type-Safe Data Flow
+### 5. Type-Safe Data Flow
 
-Data flows from server to client with full TypeScript support:
+Data flows from Server Components to Client Components with full TypeScript support:
 
 ```tsx
 interface Post {
@@ -170,15 +189,15 @@ async function BlogPost({ slug }: { slug: string }): Promise<JSX.Element> {
 }
 ```
 
-## Limitations
+## Considerations
 
 When using FUNSTACK Static, keep in mind:
 
-1. **Build-time only** - Data is fetched during build, not at runtime
-2. **No request context** - No access to cookies, headers, or request data
-3. **Static output** - Pages can't vary based on user or request
+1. **Build-time data** - Server Component data is fetched during build. For runtime data, use Client Components with standard fetch patterns.
+2. **No server context** - No access to cookies, headers, or request data in Server Components.
+3. **Pre-rendered routes** - Each route is pre-rendered at build time. Dynamic route segments work, but the content is fixed at build.
 
-For dynamic features, combine static pages with client-side JavaScript or consider a server-rendered solution.
+This makes FUNSTACK Static ideal for apps where most content is known at build time, with Client Components handling any truly dynamic features.
 
 ## See Also
 

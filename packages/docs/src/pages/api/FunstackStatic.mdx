@@ -1,6 +1,6 @@
 # funstackStatic()
 
-The `funstackStatic()` function is the main Vite plugin that enables React Server Components for static site generation.
+The `funstackStatic()` function is the main Vite plugin that enables React Server Components for building SPAs without a runtime server.
 
 ## Import
 
@@ -122,13 +122,13 @@ export default defineConfig({
 
 ## How It Works
 
-1. **Development:** The plugin starts a development server with hot module replacement. Your React Server Components run on-demand as you navigate.
+1. **Development:** The plugin starts a development server with hot module replacement. Server Components run on-demand, and Client Components hot-reload instantly.
 
 2. **Build:** During production build, the plugin:
    - Discovers all routes defined in your app
-   - Renders each route to static HTML
-   - Outputs HTML files to the specified `publicOutDir`
-   - Handles streaming content with `defer()`
+   - Pre-renders each route using React Server Components
+   - Bundles Client Components for hydration
+   - Outputs static files to `publicOutDir` that hydrate into a full SPA
 
 ## See Also
 

@@ -7,11 +7,11 @@ export const Home: React.FC = () => {
       <section className={styles.hero}>
         <div className={styles.heroContent}>
           <span className={styles.badge}>React Server Components</span>
-          <h1 className={styles.title}>Build Static Sites with RSC</h1>
+          <h1 className={styles.title}>SPAs Powered by RSC</h1>
           <p className={styles.subtitle}>
-            FUNSTACK Static brings the power of React Server Components to
-            static site generation. No server required, just pure static output
-            with modern DX.
+            Build high-performance Single Page Applications with React Server
+            Components. No server required at runtime - just pre-rendered HTML
+            with full SPA interactivity.
           </p>
           <div className={styles.buttons}>
             <a href="/getting-started" className={styles.primaryButton}>
@@ -72,8 +72,8 @@ export default {
         <div className={styles.featuresContainer}>
           <h2 className={styles.sectionTitle}>Why FUNSTACK Static?</h2>
           <p className={styles.sectionSubtitle}>
-            Modern static site generation with React Server Components, powered
-            by Vite.
+            The best of both worlds: SPA interactivity with RSC performance,
+            powered by Vite.
           </p>
 
           <div className={styles.featuresGrid}>
@@ -91,10 +91,10 @@ export default {
                   <path d="M12 6v6l4 2" />
                 </svg>
               </div>
-              <h3 className={styles.featureTitle}>Zero Runtime Overhead</h3>
+              <h3 className={styles.featureTitle}>Pre-rendered for Speed</h3>
               <p className={styles.featureDescription}>
-                Generate pure static HTML at build time. No JavaScript framework
-                shipped to the client unless you need it.
+                RSC runs at build time to generate optimized HTML. Your SPA
+                loads instantly with pre-rendered content.
               </p>
             </div>
 
@@ -113,10 +113,10 @@ export default {
                   <polyline points="2 12 12 17 22 12" />
                 </svg>
               </div>
-              <h3 className={styles.featureTitle}>React Server Components</h3>
+              <h3 className={styles.featureTitle}>No Server Required</h3>
               <p className={styles.featureDescription}>
-                Write components that run at build time. Fetch data, read files,
-                and render HTML without a server.
+                Deploy anywhere that serves static files. RSC benefits without
+                the complexity of server infrastructure.
               </p>
             </div>
 
@@ -198,10 +198,10 @@ export default {
                   <line x1="9" y1="21" x2="9" y2="9" />
                 </svg>
               </div>
-              <h3 className={styles.featureTitle}>File-Based Routing</h3>
+              <h3 className={styles.featureTitle}>Client-Side Navigation</h3>
               <p className={styles.featureDescription}>
-                Flexible routing with @funstack/router. Define routes
-                declaratively or use file-based conventions.
+                Full SPA experience with @funstack/router. Instant page
+                transitions without full page reloads.
               </p>
             </div>
           </div>
@@ -212,7 +212,8 @@ export default {
       <section className={styles.cta}>
         <h2 className={styles.ctaTitle}>Ready to Get Started?</h2>
         <p className={styles.ctaDescription}>
-          Build your next static site with the power of React Server Components.
+          Build your next SPA with the performance benefits of React Server
+          Components.
         </p>
         <a href="/getting-started" className={styles.ctaButton}>
           Read the Documentation

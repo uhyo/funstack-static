@@ -1,6 +1,6 @@
 # Getting Started
 
-Welcome to **FUNSTACK Static**! Build static sites powered by React Server Components with zero server runtime.
+Welcome to **FUNSTACK Static**! Build high-performance Single Page Applications powered by React Server Components - no server required at runtime.
 
 ## Installation
 
@@ -50,7 +50,7 @@ export default function Root({ children }: { children: React.ReactNode }) {
       <head>
         <meta charSet="UTF-8" />
         <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-        <title>My Static Site</title>
+        <title>My App</title>
       </head>
       <body>{children}</body>
     </html>
@@ -97,7 +97,7 @@ Your site is now running at `http://localhost:5173`!
 npm run build
 ```
 
-Static HTML files are generated in the `dist/public` directory, ready to deploy to any static hosting provider.
+Your SPA is pre-rendered to static files in the `dist/public` directory, ready to deploy to any static hosting provider. The app hydrates on the client for full SPA interactivity.
 
 ## Project Structure
 
