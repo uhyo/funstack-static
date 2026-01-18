@@ -8,6 +8,32 @@ export default function Root({ children }: { children: React.ReactNode }) {
         <meta charSet="UTF-8" />
         <meta name="viewport" content="width=device-width, initial-scale=1.0" />
         <title>FUNSTACK Static - docs</title>
+        <meta
+          name="description"
+          content="FUNSTACK Static - A static site generator for React"
+        />
+        {/* Open Graph / Facebook */}
+        <meta property="og:type" content="website" />
+        <meta property="og:title" content="FUNSTACK Static - docs" />
+        <meta
+          property="og:description"
+          content="FUNSTACK Static - A static site generator for React"
+        />
+        <meta
+          property="og:image"
+          content="https://uhyo.github.io/funstack-static/FUNSTACK_Static_Hero_small.png"
+        />
+        {/* Twitter */}
+        <meta name="twitter:card" content="summary_large_image" />
+        <meta name="twitter:title" content="FUNSTACK Static - docs" />
+        <meta
+          name="twitter:description"
+          content="FUNSTACK Static - A static site generator for React"
+        />
+        <meta
+          name="twitter:image"
+          content="https://uhyo.github.io/funstack-static/FUNSTACK_Static_Hero_small.png"
+        />
         <link rel="preconnect" href="https://fonts.googleapis.com" />
         <link
           rel="preconnect"
