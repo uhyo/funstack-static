@@ -11,7 +11,7 @@ export function getPayloadIDFor(rawId: string): string {
   return `${rscPayloadIDPrefix}${rawId}`;
 }
 
-const rscModulePathPrefix = "/funstack__/rsc/";
+const rscModulePathPrefix = "/funstack__/";
 const rscModulePathSuffix = ".txt";
 
 export function getModulePathFor(id: string): string {
