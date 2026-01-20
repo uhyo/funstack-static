@@ -24,19 +24,19 @@ const routes: RouteDefinition[] = [
       }),
       route({
         path: "/getting-started",
-        component: <Layout>{defer(GettingStarted)}</Layout>,
+        component: <Layout>{defer(<GettingStarted />)}</Layout>,
       }),
       route({
         path: "/api/funstack-static",
-        component: <Layout>{defer(FunstackStaticApi)}</Layout>,
+        component: <Layout>{defer(<FunstackStaticApi />)}</Layout>,
       }),
       route({
         path: "/api/defer",
-        component: <Layout>{defer(DeferApi)}</Layout>,
+        component: <Layout>{defer(<DeferApi />)}</Layout>,
       }),
       route({
         path: "/concepts/rsc",
-        component: <Layout>{defer(RSCConcept)}</Layout>,
+        component: <Layout>{defer(<RSCConcept />)}</Layout>,
       }),
     ],
   }),
