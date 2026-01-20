@@ -1,4 +1,4 @@
-import type { FC } from "react";
+import type { ReactElement, ReactNode } from "react";
 import { renderToReadableStream } from "@vitejs/plugin-rsc/react/rsc";
 import { ClientWrapper } from "#rsc-client";
 import { drainStream } from "../util/drainStream";
@@ -15,7 +15,7 @@ export interface LoadedDeferEntry extends DeferEntry {
 type DeferEntryState =
   | {
       state: "pending";
-      component: FC<{}>;
+      element: ReactElement;
     }
   | {
       state: "streaming";
@@ -32,13 +32,9 @@ type DeferEntryState =
 
 export class DeferRegistry {
   #registry = new Map<string, DeferEntry>();
-  #finalization = new FinalizationRegistry((id: string) => {
-    this.#registry.delete(id);
-  });
 
-  register(component: FC<{}>, id: string) {
-    this.#registry.set(id, { state: { component, state: "pending" } });
-    this.#finalization.register(component, id);
+  register(element: ReactElement, id: string) {
+    this.#registry.set(id, { state: { element, state: "pending" } });
   }
 
   load(id: string): LoadedDeferEntry | undefined {
@@ -53,9 +49,7 @@ export class DeferRegistry {
     const { state } = entry;
     switch (state.state) {
       case "pending": {
-        const stream = renderToReadableStream<React.ReactNode>(
-          <state.component />,
-        );
+        const stream = renderToReadableStream<ReactNode>(state.element);
         const [stream1, stream2] = stream.tee();
         entry.state = { state: "streaming", stream: stream1 };
         (async () => {
@@ -164,8 +158,6 @@ export class DeferRegistry {
 
 export const deferRegistry = new DeferRegistry();
 
-const referenceIDMap = new WeakMap<FC<{}>, string>();
-
 /**
  * Renders given Server Component into a separate RSC payload.
  *
@@ -174,13 +166,9 @@ const referenceIDMap = new WeakMap<FC<{}>, string>();
  *
  * @returns A ReactNode that virtually contains the result of rendering the given component.
  */
-export function defer(component: FC<{}>): React.ReactNode {
-  let id = referenceIDMap.get(component);
-  if (id === undefined) {
-    id = getPayloadIDFor(crypto.randomUUID());
-  }
-  referenceIDMap.set(component, id);
-  deferRegistry.register(component, id);
+export function defer(element: ReactElement): ReactNode {
+  const id = getPayloadIDFor(crypto.randomUUID());
+  deferRegistry.register(element, id);
 
   return <ClientWrapper moduleID={id} />;
 }

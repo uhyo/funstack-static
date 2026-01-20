@@ -22,7 +22,7 @@ function Page() {
     <details>
       <summary>Very long description</summary>
       <Suspense fallback={<p>Loading...</p>}>
-        {defer(HeavyServerComponent)}
+        {defer(<HeavyServerComponent />)}
       </Suspense>
     </details>
   );
@@ -34,23 +34,21 @@ By using `defer()`, the `HeavyServerComponent` will still be rendered on the ser
 This means that:
 
 - Client can start rendering the rest of the page without waiting for `HeavyServerComponent`'s data
-- When the `defer(HeavyServerComponent)` part is rendered on the client, it will fetch the separate RSC payload and show the content.
+- When the `defer(<HeavyServerComponent />)` part is rendered on the client, it will fetch the separate RSC payload and show the content.
 
 The key point is that `HeavyServerComponent` is still a Server Component, so only the rendered HTML (and usage of Client Components inside it) is sent to the client, not the component code itself.
-
-**Note:** you cannot pass any props to the component wrapped with `defer()`. This limitation may be lifted in the future.
 
 **Note:** `defer()` must be used inside a `Suspense` boundary since the content will be streamed in later.
 
 ## Signature
 
 ```typescript
-export function defer(component: FC<{}>): React.ReactNode;
+export function defer(element: ReactElement): ReactNode;
 ```
 
 ### Parameters
 
-- **component:** A server component to render with deferred loading.
+- **element:** A JSX element (Server Component) to render with deferred loading.
 
 ### Returns
 
@@ -73,11 +71,11 @@ import AboutPage from "./AboutPage";
 const routes = [
   route({
     path: "/",
-    component: defer(HomePage),
+    component: defer(<HomePage />),
   }),
   route({
     path: "/about",
-    component: defer(AboutPage),
+    component: defer(<AboutPage />),
   }),
   // ...
 ];
@@ -87,6 +85,6 @@ const routes = [
 
 By default, FUNSTACK Static puts the entire app (`<App />`) into one RSC payload (`/funstack__/index.txt`). The client fetches this payload to render your SPA.
 
-When you use `defer(Component)`, FUNSTACK Static creates **additional RSC payloads** for the rendering result of `<Component />`. This results in an additional emit of RSC payload files like `/funstack__/rsc/fun:rsc-payload/b5698be72eea3c37`.
+When you use `defer(<Component />)`, FUNSTACK Static creates **additional RSC payloads** for the rendering result of the element. This results in an additional emit of RSC payload files like `/funstack__/rsc/fun:rsc-payload/b5698be72eea3c37`.
 
 In the main RSC payload, the `defer` call is replaced with a client component `<ClientWrapper moduleId="fun:rsc-payload/b5698be72eea3c37" />`. This component is responsible for fetching the additional RSC payload from client and renders it when it's ready.
