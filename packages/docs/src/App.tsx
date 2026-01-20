@@ -43,5 +43,5 @@ const routes: RouteDefinition[] = [
 ];
 
 export default function App() {
-  return <Router routes={routes} />;
+  return <Router routes={routes} fallback="static" />;
 }
