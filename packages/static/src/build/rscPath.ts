@@ -1,4 +1,13 @@
+import { getModulePathFor, getPayloadIDFor } from "../rsc/rscModule";
+
 /**
- * Path to RSC payload in build output
+ * Placeholder used during SSR (will be replaced after hash is computed)
  */
-export const rscPayloadPath = "/funstack__/index.txt";
+export const rscPayloadPlaceholder = "__FUNSTACK_RSC_PAYLOAD_PATH__";
+
+/**
+ * Generate final path from content hash (reuses same folder as deferred payloads)
+ */
+export function getRscPayloadPath(contentHash: string): string {
+  return getModulePathFor(getPayloadIDFor(contentHash));
+}
