@@ -35,9 +35,13 @@ export async function buildApp(
 
   // Compute hash for main RSC payload and apply base path
   const mainPayloadHash = await computeContentHash(appRscContent);
-  const base = config.base.endsWith("/") ? config.base.slice(0, -1) : config.base;
+  const base = config.base.endsWith("/")
+    ? config.base.slice(0, -1)
+    : config.base;
   const mainPayloadPath =
-    base === "/" ? getRscPayloadPath(mainPayloadHash) : base + getRscPayloadPath(mainPayloadHash);
+    base === "/"
+      ? getRscPayloadPath(mainPayloadHash)
+      : base + getRscPayloadPath(mainPayloadHash);
 
   // Replace placeholder with final hashed path (including base path)
   const finalHtmlContent = htmlContent.replaceAll(
