@@ -50,8 +50,7 @@ export default function Root({ children }: { children: React.ReactNode }) {
 // See: https://github.com/rafgraph/spa-github-pages
 (function (l) {
   if (l.search[1] === "p") {
-    var decoded = l.search
-      .slice(3)
+    var decoded = decodeURIComponent(l.search.slice(3))
       .split("&")
       .map(function (s) {
         return s.replace(/~and~/g, "&");
