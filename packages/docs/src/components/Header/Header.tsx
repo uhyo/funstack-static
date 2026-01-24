@@ -27,7 +27,7 @@ export const Header: React.FC<HeaderProps> = ({ menuSlot }) => {
             API
           </a>
           <a
-            href={`${import.meta.env.BASE_URL}learn/rsc`}
+            href={`${import.meta.env.BASE_URL}learn/how-it-works`}
             className={styles.navLink}
           >
             Learn

@@ -1,0 +1,91 @@
+# How It Works
+
+FUNSTACK Static is a React framework that leverages React Server Components (RSC) to build a fully static Single Page Application. The result is a set of files that can be deployed to **any static file hosting service** - no server required at runtime.
+
+FUNSTACK Static is built on top of [@vitejs/plugin-rsc](https://www.npmjs.com/package/@vitejs/plugin-rsc) for its RSC support.
+
+## Architecture
+
+FUNSTACK Static applications have **a single entrypoint** which is a server component. This component is responsible for rendering the entire application.
+
+```tsx
+// src/App.tsx
+export default function App() {
+  return (
+    <div>
+      <h1>Welcome to my FUNSTACK Static app!</h1>
+      {/* Your app components go here */}
+    </div>
+  );
+}
+```
+
+Currently, no routing solution is built in. If you need routing, you can use your favorite routing library for SPAs, such as [React Router](https://reactrouter.com/) (SPA mode) or [FUNSTACK Router](https://github.com/uhyo/funstack-router).
+
+Server components cannot have any client-side interactivity. To add interactivity, you can use client components. FUNSTACK Static follows [the standard React Server Components conventions](https://react.dev/reference/rsc/server-components#adding-interactivity-to-server-components) (`"use client"`) for defining client components.
+
+Behind the scenes, server components are rendered into **RSC payloads** at build time (or inside the development server in development mode). These payloads are then loaded by the client-side React application to reflect the server-rendered content to the DOM.
+
+On production mode builds, FUNSTACK Static generates a set of static files that include:
+
+- An `index.html` file that bootstraps the client-side React application
+- JavaScript files for the client-side React application and its dependencies
+- Asset files (CSS, images, etc.)
+- RSC payload files generated from server components
+
+Typically, the output structure looks like this:
+
+```
+dist/public
+├── assets
+│   ├── app-91R2BjDJ.css
+│   ├── app-CQU2Svmn.js
+│   ├── app-ovZqc1Hu.css
+│   ├── index-CCEDZan_.js
+│   ├── root-DvE5ENz2.css
+│   └── rsc-D0fjt5Ie.js
+├── funstack__
+│   └── fun:rsc-payload
+│       └── db1923b9b6507ab4.txt
+└── index.html
+```
+
+The RSC payload files under `funstack__` are loaded by the client-side code to bootstrap the application with server-rendered content.
+
+This can been seen as an **optimized version of traditional client-only SPAs**, where the entire application is bundled into JavaScript files. By using RSC, some of the rendering work is offloaded to the build time, resulting in smaller JavaScript bundles combined with RSC payloads that require less client-side processing (parsing is easier, no JavaScript execution needed).
+
+## Root Entry Point
+
+The root entry point of a FUNSTACK Static application is defined in the `funstack.config.js` file using the `root` option. This is a **special endpoint** that defines the HTML shell of your application. This is a separate endpoint from the main App component.
+
+A typical Root component looks like this:
+
+```tsx
+// src/Root.tsx
+export default function Root({ children }: { children: React.ReactNode }) {
+  return (
+    <html lang="en">
+      <head>
+        <meta charSet="UTF-8" />
+        <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+        <title>My FUNSTACK Static App</title>
+      </head>
+      <body>{children}</body>
+    </html>
+  );
+}
+```
+
+The `children` prop contains the main App component.
+
+The Root component is special in two ways:
+
+1. Rendered into a fully static HTML file (`index.html`), not an RSC payload.
+2. Is **not hydrated** on the client side. This means that any client-side interactivity (e.g., event handlers) inside the Root component will not work.
+
+The Root entrypoint is a FUNSTACK Static counterpart to the `index.html` file in traditional SPAs. It allows you to still leverage some of the benefits of server components for defining the HTML shell of your application.
+
+## See Also
+
+- [React Server Components](/funstack-static/learn/rsc) - Understanding RSC in depth
+- [Getting Started](/funstack-static/getting-started) - Set up your first project

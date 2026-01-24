@@ -4,6 +4,7 @@ import { defer } from "@funstack/static/server";
 import { Layout } from "./components/Layout/Layout";
 import DeferApi from "./pages/api/Defer.mdx";
 import FunstackStaticApi from "./pages/api/FunstackStatic.mdx";
+import HowItWorks from "./pages/learn/HowItWorks.mdx";
 import RSCConcept from "./pages/learn/RSC.mdx";
 import GettingStarted from "./pages/GettingStarted.mdx";
 import { Home } from "./pages/Home";
@@ -34,6 +35,10 @@ const routes: RouteDefinition[] = [
       route({
         path: "/api/defer",
         component: <Layout>{defer(<DeferApi />)}</Layout>,
+      }),
+      route({
+        path: "/learn/how-it-works",
+        component: <Layout>{defer(<HowItWorks />)}</Layout>,
       }),
       route({
         path: "/learn/rsc",

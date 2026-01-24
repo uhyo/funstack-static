@@ -18,6 +18,19 @@ export const navigation: NavSection[] = [
     ],
   },
   {
+    title: "Learn",
+    items: [
+      {
+        label: "React Server Components",
+        href: "/funstack-static/learn/rsc",
+      },
+      {
+        label: "How It Works",
+        href: "/funstack-static/learn/how-it-works",
+      },
+    ],
+  },
+  {
     title: "API Reference",
     items: [
       {
@@ -25,15 +38,6 @@ export const navigation: NavSection[] = [
         href: "/funstack-static/api/funstack-static",
       },
       { label: "defer()", href: "/funstack-static/api/defer" },
-    ],
-  },
-  {
-    title: "Learn",
-    items: [
-      {
-        label: "React Server Components",
-        href: "/funstack-static/learn/rsc",
-      },
     ],
   },
 ];
