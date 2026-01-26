@@ -27,27 +27,43 @@ const routes: RouteDefinition[] = [
       }),
       route({
         path: "/getting-started",
-        component: <Layout>{defer(<GettingStarted />)}</Layout>,
+        component: (
+          <Layout>
+            {defer(<GettingStarted />, { name: "GettingStarted" })}
+          </Layout>
+        ),
       }),
       route({
         path: "/api/funstack-static",
-        component: <Layout>{defer(<FunstackStaticApi />)}</Layout>,
+        component: (
+          <Layout>
+            {defer(<FunstackStaticApi />, { name: "FunstackStaticApi" })}
+          </Layout>
+        ),
       }),
       route({
         path: "/api/defer",
-        component: <Layout>{defer(<DeferApi />)}</Layout>,
+        component: <Layout>{defer(<DeferApi />, { name: "DeferApi" })}</Layout>,
       }),
       route({
         path: "/learn/how-it-works",
-        component: <Layout>{defer(<HowItWorks />)}</Layout>,
+        component: (
+          <Layout>{defer(<HowItWorks />, { name: "HowItWorks" })}</Layout>
+        ),
       }),
       route({
         path: "/learn/rsc",
-        component: <Layout>{defer(<RSCConcept />)}</Layout>,
+        component: (
+          <Layout>{defer(<RSCConcept />, { name: "RSCConcept" })}</Layout>
+        ),
       }),
       route({
         path: "/learn/optimizing-payloads",
-        component: <Layout>{defer(<OptimizingPayloads />)}</Layout>,
+        component: (
+          <Layout>
+            {defer(<OptimizingPayloads />, { name: "OptimizingPayloads" })}
+          </Layout>
+        ),
       }),
       route({
         path: "*",
