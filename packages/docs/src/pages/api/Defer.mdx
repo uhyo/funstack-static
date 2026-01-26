@@ -43,12 +43,30 @@ The key point is that `HeavyServerComponent` is still a Server Component, so onl
 ## Signature
 
 ```typescript
-export function defer(element: ReactElement): ReactNode;
+export function defer(element: ReactElement, options?: DeferOptions): ReactNode;
 ```
 
 ### Parameters
 
 - **element:** A JSX element (Server Component) to render with deferred loading.
+- **options:** (optional) Configuration options for the deferred payload.
+
+### DeferOptions
+
+```typescript
+interface DeferOptions {
+  /**
+   * Optional name for debugging purposes.
+   * In development: included in the RSC payload file name.
+   * In production: logged when the payload file is emitted.
+   */
+  name?: string;
+}
+```
+
+- **name:** An optional identifier to help with debugging. When provided:
+  - In development mode, the name is included in the RSC payload file name (e.g., `/funstack__/fun:rsc-payload/HomePage-b5698be72eea3c37`)
+  - In production mode, the name is logged when the payload file is emitted
 
 ### Returns
 
@@ -71,20 +89,22 @@ import AboutPage from "./AboutPage";
 const routes = [
   route({
     path: "/",
-    component: defer(<HomePage />),
+    component: defer(<HomePage />, { name: "HomePage" }),
   }),
   route({
     path: "/about",
-    component: defer(<AboutPage />),
+    component: defer(<AboutPage />, { name: "AboutPage" }),
   }),
   // ...
 ];
 ```
 
+Using the `name` option makes it easier to identify which deferred component corresponds to which payload file during development and in build logs.
+
 ## How It Works
 
 By default, FUNSTACK Static puts the entire app (`<App />`) into one RSC payload (`/funstack__/index.txt`). The client fetches this payload to render your SPA.
 
-When you use `defer(<Component />)`, FUNSTACK Static creates **additional RSC payloads** for the rendering result of the element. This results in an additional emit of RSC payload files like `/funstack__/fun:rsc-payload/b5698be72eea3c37`.
+When you use `defer(<Component />)`, FUNSTACK Static creates **additional RSC payloads** for the rendering result of the element. This results in an additional emit of RSC payload files like `/funstack__/fun:rsc-payload/b5698be72eea3c37`. If you provide a `name` option, the file name will include it (e.g., `/funstack__/fun:rsc-payload/HomePage-b5698be72eea3c37`).
 
 In the main RSC payload, the `defer` call is replaced with a client component `<ClientWrapper moduleId="fun:rsc-payload/b5698be72eea3c37" />`. This component is responsible for fetching the additional RSC payload from client and renders it when it's ready.
