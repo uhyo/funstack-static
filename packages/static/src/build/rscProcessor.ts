@@ -6,6 +6,7 @@ import { findReferencedIds, topologicalSort } from "./dependencyGraph";
 export interface ProcessedComponent {
   finalId: string;
   finalContent: string;
+  name?: string;
 }
 
 export interface ProcessResult {
@@ -17,6 +18,7 @@ export interface ProcessResult {
 interface RawComponent {
   id: string;
   data: string;
+  name?: string;
 }
 
 /**
@@ -33,8 +35,10 @@ export async function processRscComponents(
 ): Promise<ProcessResult> {
   // Step 1: Collect all components from deferRegistry
   const components = new Map<string, string>();
-  for await (const { id, data } of deferRegistryIterator) {
+  const componentNames = new Map<string, string | undefined>();
+  for await (const { id, data, name } of deferRegistryIterator) {
     components.set(id, data);
+    componentNames.set(id, name);
   }
 
   // Step 2: Drain appRsc stream to string
@@ -99,6 +103,7 @@ export async function processRscComponents(
     processedComponents.push({
       finalId,
       finalContent: content,
+      name: componentNames.get(tempId),
     });
   }
 
@@ -116,6 +121,7 @@ export async function processRscComponents(
     processedComponents.push({
       finalId: tempId, // Keep original temp ID
       finalContent: content,
+      name: componentNames.get(tempId),
     });
   }
 

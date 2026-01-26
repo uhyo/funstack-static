@@ -1,1 +1,1 @@
-export { defer } from "../rsc/defer";
+export { defer, type DeferOptions } from "../rsc/defer";

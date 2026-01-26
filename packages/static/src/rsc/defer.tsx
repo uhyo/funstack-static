@@ -6,6 +6,19 @@ import { getPayloadIDFor } from "./rscModule";
 
 export interface DeferEntry {
   state: DeferEntryState;
+  name?: string;
+}
+
+/**
+ * Options for the defer function.
+ */
+export interface DeferOptions {
+  /**
+   * Optional name for debugging purposes.
+   * In development: included in the RSC payload file name.
+   * In production: logged when the payload file is emitted.
+   */
+  name?: string;
 }
 
 export interface LoadedDeferEntry extends DeferEntry {
@@ -30,11 +43,23 @@ type DeferEntryState =
       error: unknown;
     };
 
+/**
+ * Sanitizes a name for use in file paths.
+ * Replaces non-alphanumeric characters with underscores and limits length.
+ */
+function sanitizeName(name: string): string {
+  return name
+    .replace(/[^a-zA-Z0-9_-]/g, "_")
+    .replace(/_+/g, "_")
+    .replace(/^_|_$/g, "")
+    .slice(0, 50);
+}
+
 export class DeferRegistry {
   #registry = new Map<string, DeferEntry>();
 
-  register(element: ReactElement, id: string) {
-    this.#registry.set(id, { state: { element, state: "pending" } });
+  register(element: ReactElement, id: string, name?: string) {
+    this.#registry.set(id, { state: { element, state: "pending" }, name });
   }
 
   load(id: string): LoadedDeferEntry | undefined {
@@ -91,12 +116,12 @@ export class DeferRegistry {
     // Phase 1: Start all entries loading
     const loadedEntries = Array.from(
       this.#registry,
-      ([id, entry]) => [id, this.#loadEntry(entry)] as const,
+      ([id, entry]) => [id, this.#loadEntry(entry), entry.name] as const,
     );
 
     if (loadedEntries.length === 0) return;
 
-    type Result = { id: string; data: string };
+    type Result = { id: string; data: string; name?: string };
 
     // Completion queue
     const completed: Array<Result | { error: unknown }> = [];
@@ -110,7 +135,7 @@ export class DeferRegistry {
     };
 
     // Phase 2: Start all operations (each pushes to queue when done)
-    for (const [id, loadedEntry] of loadedEntries) {
+    for (const [id, loadedEntry, name] of loadedEntries) {
       (async () => {
         try {
           switch (loadedEntry.state.state) {
@@ -118,10 +143,11 @@ export class DeferRegistry {
               onComplete({
                 id,
                 data: await drainStream(loadedEntry.state.stream),
+                name,
               });
               break;
             case "ready":
-              onComplete({ id, data: loadedEntry.state.data });
+              onComplete({ id, data: loadedEntry.state.data, name });
               break;
             case "error":
               onComplete({ error: loadedEntry.state.error });
@@ -164,11 +190,21 @@ export const deferRegistry = new DeferRegistry();
  * During the client side rendering, fetching of the payload will be
  * deferred until the returned ReactNode is actually rendered.
  *
+ * @param element - The React element to defer.
+ * @param options - Optional configuration for the deferred payload.
  * @returns A ReactNode that virtually contains the result of rendering the given component.
  */
-export function defer(element: ReactElement): ReactNode {
-  const id = getPayloadIDFor(crypto.randomUUID());
-  deferRegistry.register(element, id);
+export function defer(
+  element: ReactElement,
+  options?: DeferOptions,
+): ReactNode {
+  const name = options?.name;
+  const sanitizedName = name ? sanitizeName(name) : undefined;
+  const rawId = sanitizedName
+    ? `${sanitizedName}-${crypto.randomUUID()}`
+    : crypto.randomUUID();
+  const id = getPayloadIDFor(rawId);
+  deferRegistry.register(element, id, name);
 
   return <ClientWrapper moduleID={id} />;
 }

@@ -64,12 +64,12 @@ export async function buildApp(
   );
 
   // Write processed components with hash-based IDs
-  for (const { finalId, finalContent } of components) {
+  for (const { finalId, finalContent, name } of components) {
     const filePath = path.join(
       baseDir,
       getModulePathFor(finalId).replace(/^\//, ""),
     );
-    await writeFileNormal(filePath, finalContent, context);
+    await writeFileNormal(filePath, finalContent, context, name);
   }
 }
 
@@ -77,8 +77,10 @@ async function writeFileNormal(
   filePath: string,
   data: string,
   context: MinimalPluginContextWithoutEnvironment,
+  name?: string,
 ) {
   await mkdir(path.dirname(filePath), { recursive: true });
-  context.info(`[funstack] Writing ${filePath}`);
+  const nameInfo = name ? ` (${name})` : "";
+  context.info(`[funstack] Writing ${filePath}${nameInfo}`);
   await writeFile(filePath, data);
 }
