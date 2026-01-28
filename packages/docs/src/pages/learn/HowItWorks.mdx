@@ -85,6 +85,24 @@ The Root component is special in two ways:
 
 The Root entrypoint is a FUNSTACK Static counterpart to the `index.html` file in traditional SPAs. It allows you to still leverage some of the benefits of server components for defining the HTML shell of your application.
 
+## Server-Side Rendering
+
+By default, FUNSTACK Static only renders the Root shell to HTML. The App component is rendered client-side from its RSC payload. This behavior keeps the initial HTML small and fast to deliver.
+
+If you want the App component to also be rendered to HTML (for better SEO or perceived performance), you can enable the `ssr` option:
+
+```typescript
+funstackStatic({
+  root: "./src/root.tsx",
+  app: "./src/App.tsx",
+  ssr: true,
+});
+```
+
+With `ssr: true`, the full page content is visible in the HTML before JavaScript loads. The client then hydrates the existing HTML instead of rendering from scratch.
+
+Note that in both modes, React Server Components are still used - the `ssr` option only controls whether the App's HTML is pre-rendered at build time or rendered client-side.
+
 ## See Also
 
 - [React Server Components](/funstack-static/learn/rsc) - Understanding RSC in depth

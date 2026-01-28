@@ -100,6 +100,27 @@ funstackStatic({
 });
 ```
 
+### ssr (optional)
+
+**Type:** `boolean`
+**Default:** `false`
+
+Enable server-side rendering of the App component.
+
+When `false` (default), only the Root shell is rendered to HTML at build time. The App component's RSC payload is fetched separately and rendered client-side using `createRoot`. This results in faster initial HTML delivery but requires JavaScript to display the App content.
+
+When `true`, both the Root and App components are fully rendered to HTML. The client hydrates the existing HTML using `hydrateRoot`, which can improve perceived performance and SEO since the full content is visible before JavaScript loads.
+
+```typescript
+funstackStatic({
+  root: "./src/root.tsx",
+  app: "./src/App.tsx",
+  ssr: true, // Enable full SSR
+});
+```
+
+**Note:** In both modes, React Server Components are used - the `ssr` option only controls whether the App's HTML is pre-rendered or rendered client-side.
+
 ## Full Example
 
 ```typescript
