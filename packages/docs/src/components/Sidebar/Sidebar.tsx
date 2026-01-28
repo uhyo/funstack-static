@@ -32,6 +32,10 @@ export const navigation: NavSection[] = [
         label: "Optimizing RSC Payloads",
         href: "/funstack-static/learn/optimizing-payloads",
       },
+      {
+        label: "Server-Side Rendering",
+        href: "/funstack-static/learn/ssr",
+      },
     ],
   },
   {

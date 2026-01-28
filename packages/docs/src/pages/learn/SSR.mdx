@@ -1,0 +1,93 @@
+# Server-Side Rendering
+
+FUNSTACK Static supports an optional `ssr` mode that pre-renders your App component to HTML at build time. This page explains when to enable this option and what to consider.
+
+## What is SSR?
+
+By default, FUNSTACK Static renders only the Root shell to HTML. The App component is delivered as an RSC payload and rendered client-side. When you enable `ssr: true`, the App component is also rendered to HTML at build time:
+
+```typescript
+funstackStatic({
+  root: "./src/root.tsx",
+  app: "./src/App.tsx",
+  ssr: true,
+});
+```
+
+## Pros
+
+### Faster Paint on Initial Page Load
+
+With SSR enabled, the full page content is visible in the HTML before JavaScript loads. Users see meaningful content immediately, rather than waiting for JavaScript to download, parse, and execute.
+
+This improves perceived performance, especially on:
+
+- Slower network connections
+- Lower-powered devices
+- Pages with significant content above the fold
+
+The browser can start painting content as soon as the HTML arrives, while JavaScript loads in the background. Once loaded, React hydrates the existing HTML to make it interactive.
+
+## Cons
+
+### Client Components Must Be SSR-Capable
+
+When SSR is enabled, your client components run during the build process to generate HTML. This means they must work in a server-like environment where browser APIs are not available.
+
+Components that directly access browser-only APIs will cause build errors:
+
+```tsx
+"use client";
+
+// This will fail during SSR build
+export function BrowserOnlyComponent() {
+  const width = window.innerWidth; // window is not defined during SSR
+  return <div>Width: {width}</div>;
+}
+```
+
+To make components SSR-capable, defer browser API access to effects or check for the browser environment:
+
+```tsx
+"use client";
+
+import { useState, useEffect } from "react";
+
+export function SSRSafeComponent() {
+  const [width, setWidth] = useState(0);
+
+  useEffect(() => {
+    // This runs only in the browser
+    setWidth(window.innerWidth);
+  }, []);
+
+  return <div>Width: {width}</div>;
+}
+```
+
+Common browser APIs to watch for:
+
+- `window` and `document`
+- `localStorage` and `sessionStorage`
+- `navigator`
+- `location` (use your router's APIs instead)
+
+## When to Use SSR
+
+**Enable SSR when:**
+
+- SEO is important for your application
+- You want the fastest possible initial paint
+- Your client components are already SSR-compatible
+- You're building content-heavy pages
+
+**Keep SSR disabled when:**
+
+- Your app relies heavily on browser-only APIs
+- You prefer simpler client component development
+- Initial paint speed is not a priority
+
+## See Also
+
+- [How It Works](/funstack-static/learn/how-it-works) - Understanding the build process
+- [funstackStatic()](/funstack-static/api/funstack-static) - Configuration reference
