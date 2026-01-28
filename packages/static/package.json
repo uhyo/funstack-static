@@ -8,6 +8,13 @@
     "url": "git+https://github.com/uhyo/funstack-static.git",
     "directory": "packages/static"
   },
+  "keywords": [
+    "vite-plugin",
+    "react",
+    "framework",
+    "react-server-components",
+    "rsc"
+  ],
   "exports": {
     ".": {
       "types": "./dist/index.d.mts",
