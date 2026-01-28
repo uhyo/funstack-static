@@ -22,12 +22,21 @@ export interface FunstackStaticOptions {
    * @default dist/public
    */
   publicOutDir?: string;
+  /**
+   * Enable server-side rendering of the App component.
+   * When false, only the Root shell is SSR'd and the App renders client-side.
+   * When true, both Root and App are SSR'd and the client hydrates.
+   *
+   * @default false
+   */
+  ssr?: boolean;
 }
 
 export default function funstackStatic({
   root,
   app,
   publicOutDir = "dist/public",
+  ssr = false,
 }: FunstackStaticOptions): (Plugin | Plugin[])[] {
   let resolvedRootEntry: string = "__uninitialized__";
   let resolvedAppEntry: string = "__uninitialized__";
@@ -88,6 +97,9 @@ export default function funstackStatic({
         if (id === "virtual:funstack/app") {
           return "\0virtual:funstack/app";
         }
+        if (id === "virtual:funstack/config") {
+          return "\0virtual:funstack/config";
+        }
       },
       load(id) {
         if (id === "\0virtual:funstack/root") {
@@ -95,6 +107,9 @@ export default function funstackStatic({
         }
         if (id === "\0virtual:funstack/app") {
           return `export { default } from "${resolvedAppEntry}";`;
+        }
+        if (id === "\0virtual:funstack/config") {
+          return `export const ssr = ${JSON.stringify(ssr)};`;
         }
       },
     },

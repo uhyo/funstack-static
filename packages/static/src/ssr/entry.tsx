@@ -14,8 +14,10 @@ export async function renderHTML(
   options: {
     appEntryMarker: string;
     build: boolean;
+    ssr?: boolean;
     nonce?: string;
     deferRegistry?: DeferRegistry;
+    clientRscStream?: ReadableStream<Uint8Array>;
   },
 ): Promise<{ stream: ReadableStream<Uint8Array>; status?: number }> {
   const [rscStream1, rscStream2] = rscStream.tee();
@@ -40,7 +42,13 @@ export async function renderHTML(
 
   let bootstrapScriptContent: string = "";
   if (options.build) {
-    bootstrapScriptContent += `globalThis.${appClientManifestVar}={marker:"${options.appEntryMarker}",stream:"${rscPayloadPlaceholder}"};\n`;
+    if (options.ssr) {
+      // SSR on: no marker needed, client hydrates full document
+      bootstrapScriptContent += `globalThis.${appClientManifestVar}={stream:"${rscPayloadPlaceholder}"};\n`;
+    } else {
+      // SSR off: marker needed for client to find mount point
+      bootstrapScriptContent += `globalThis.${appClientManifestVar}={marker:"${options.appEntryMarker}",stream:"${rscPayloadPlaceholder}"};\n`;
+    }
   }
   bootstrapScriptContent +=
     await import.meta.viteRsc.loadBootstrapScriptContent("index");
@@ -72,9 +80,14 @@ export async function renderHTML(
 
   let responseStream = htmlStream;
 
+  // Inject RSC payload into HTML for client consumption.
+  // In dev: always inject (client reads from inline stream).
+  // In build+SSR: skip (HTML already has full content, client hydrates directly).
+  // In build+no-SSR: skip (client fetches RSC from separate file).
   if (!options.build) {
+    const streamToInject = options.clientRscStream ?? rscStream2;
     responseStream = responseStream.pipeThrough(
-      injectRSCPayload(rscStream2, {
+      injectRSCPayload(streamToInject, {
         nonce: options?.nonce,
       }),
     );

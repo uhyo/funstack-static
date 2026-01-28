@@ -10,7 +10,9 @@ export type RscPayload = {
   root: React.ReactNode;
 };
 
-async function devMainRSCStream() {
+import { ssr as ssrEnabled } from "virtual:funstack/config";
+
+async function loadEntries() {
   const Root = (await import("virtual:funstack/root")).default;
   const App = (await import("virtual:funstack/app")).default;
 
@@ -26,15 +28,7 @@ async function devMainRSCStream() {
       "Failed to load RSC app entry module. Check your entry file to ensure it has a default export.",
     );
   }
-
-  const rootRscStream = renderToReadableStream<RscPayload>({
-    root: (
-      <Root>
-        <App />
-      </Root>
-    ),
-  });
-  return rootRscStream;
+  return { Root, App };
 }
 
 /**
@@ -42,24 +36,57 @@ async function devMainRSCStream() {
  */
 export async function serveHTML(): Promise<Response> {
   const marker = generateAppMarker();
-
-  const rootRscStream = await devMainRSCStream();
+  const { Root, App } = await loadEntries();
 
   const ssrEntryModule = await import.meta.viteRsc.loadModule<
     typeof import("../ssr/entry")
   >("ssr");
-  const ssrResult = await ssrEntryModule.renderHTML(rootRscStream, {
-    appEntryMarker: marker,
-    build: false,
-  });
 
-  // respond html
-  return new Response(ssrResult.stream, {
-    status: ssrResult.status,
-    headers: {
-      "Content-type": "text/html",
-    },
-  });
+  if (ssrEnabled) {
+    // SSR on: single RSC stream with full tree
+    const rootRscStream = renderToReadableStream<RscPayload>({
+      root: (
+        <Root>
+          <App />
+        </Root>
+      ),
+    });
+    const ssrResult = await ssrEntryModule.renderHTML(rootRscStream, {
+      appEntryMarker: marker,
+      build: false,
+      ssr: true,
+    });
+    return new Response(ssrResult.stream, {
+      status: ssrResult.status,
+      headers: { "Content-type": "text/html" },
+    });
+  } else {
+    // SSR off: shell RSC for SSR, full RSC for client
+    const shellRscStream = renderToReadableStream<RscPayload>({
+      root: (
+        <Root>
+          <span id={marker} />
+        </Root>
+      ),
+    });
+    const clientRscStream = renderToReadableStream<RscPayload>({
+      root: (
+        <Root>
+          <App />
+        </Root>
+      ),
+    });
+    const ssrResult = await ssrEntryModule.renderHTML(shellRscStream, {
+      appEntryMarker: marker,
+      build: false,
+      ssr: false,
+      clientRscStream,
+    });
+    return new Response(ssrResult.stream, {
+      status: ssrResult.status,
+      headers: { "Content-type": "text/html" },
+    });
+  }
 }
 
 class ServeRSCError extends Error {
@@ -82,8 +109,15 @@ export async function serveRSC(request: Request): Promise<Response> {
   const url = new URL(request.url);
   const pathname = stripBasePath(url.pathname);
   if (pathname === devMainRscPath) {
-    // root RSC stream is requested
-    const rootRscStream = await devMainRSCStream();
+    // root RSC stream is requested (HMR re-fetch always sends full tree)
+    const { Root, App } = await loadEntries();
+    const rootRscStream = renderToReadableStream<RscPayload>({
+      root: (
+        <Root>
+          <App />
+        </Root>
+      ),
+    });
     return new Response(rootRscStream, {
       status: 200,
       headers: {
@@ -133,21 +167,40 @@ export async function serveRSC(request: Request): Promise<Response> {
  */
 export async function build() {
   const marker = generateAppMarker();
+  const { Root, App } = await loadEntries();
 
-  const Root = (await import("virtual:funstack/root")).default;
-  const App = (await import("virtual:funstack/app")).default;
+  let rootRscStream: ReadableStream<Uint8Array>;
+  let appRscStream: ReadableStream<Uint8Array>;
 
-  const rootRscStream = renderToReadableStream<RscPayload>({
-    root: (
-      <Root>
-        <span id={marker} />
-      </Root>
-    ),
-  });
-
-  const appRscStream = renderToReadableStream<RscPayload>({
-    root: <App />,
-  });
+  if (ssrEnabled) {
+    // SSR on: both streams have full tree
+    rootRscStream = renderToReadableStream<RscPayload>({
+      root: (
+        <Root>
+          <App />
+        </Root>
+      ),
+    });
+    appRscStream = renderToReadableStream<RscPayload>({
+      root: (
+        <Root>
+          <App />
+        </Root>
+      ),
+    });
+  } else {
+    // SSR off: root stream has shell, app stream has App only
+    rootRscStream = renderToReadableStream<RscPayload>({
+      root: (
+        <Root>
+          <span id={marker} />
+        </Root>
+      ),
+    });
+    appRscStream = renderToReadableStream<RscPayload>({
+      root: <App />,
+    });
+  }
 
   const ssrEntryModule = await import.meta.viteRsc.loadModule<
     typeof import("../ssr/entry")
@@ -156,6 +209,7 @@ export async function build() {
   const ssrResult = await ssrEntryModule.renderHTML(rootRscStream, {
     appEntryMarker: marker,
     build: true,
+    ssr: ssrEnabled,
   });
 
   return {

@@ -11,6 +11,8 @@ import { devMainRscPath } from "../rsc/request";
 import { appClientManifestVar, type AppClientManifest } from "./globals";
 import { withBasePath } from "../util/basePath";
 
+import { ssr as ssrEnabled } from "virtual:funstack/config";
+
 async function devMain() {
   let setPayload: (v: RscPayload) => void;
 
@@ -33,7 +35,7 @@ async function devMain() {
     );
     setPayload(payload);
   }
-  // hydration
+
   const browserRoot = (
     <React.StrictMode>
       <GlobalErrorBoundary>
@@ -48,8 +50,11 @@ async function devMain() {
   ) {
     // This happens when SSR failed on server
     createRoot(document).render(browserRoot);
-  } else {
+  } else if (ssrEnabled) {
     hydrateRoot(document, browserRoot);
+  } else {
+    // SSR off: Root shell is static HTML, mount App client-side
+    createRoot(document).render(browserRoot);
   }
 
   // implement server HMR by triggering re-fetch/render of RSC upon server code change
@@ -70,24 +75,39 @@ async function prodMain() {
   function BrowserRoot() {
     return payload.root;
   }
-  const browserRoot = <BrowserRoot />;
-  const appRootId: string = manifest.marker;
 
-  const appMarker = document.getElementById(appRootId);
-  if (!appMarker) {
-    throw new Error(
-      `Failed to find app root element by id "${appRootId}". This is likely a bug.`,
+  if (ssrEnabled) {
+    // SSR on: full tree was SSR'd, hydrate from RSC payload
+    const browserRoot = (
+      <React.StrictMode>
+        <GlobalErrorBoundary>
+          <BrowserRoot />
+        </GlobalErrorBoundary>
+      </React.StrictMode>
     );
-  }
-  const appRoot = appMarker.parentElement;
-  if (!appRoot) {
-    throw new Error(
-      `App root element has no parent element. This is likely a bug.`,
-    );
-  }
-  appMarker.remove();
 
-  createRoot(appRoot).render(browserRoot);
+    hydrateRoot(document, browserRoot);
+  } else {
+    // SSR off: Root shell only, mount App client-side
+    const browserRoot = <BrowserRoot />;
+    const appRootId = manifest.marker!;
+
+    const appMarker = document.getElementById(appRootId);
+    if (!appMarker) {
+      throw new Error(
+        `Failed to find app root element by id "${appRootId}". This is likely a bug.`,
+      );
+    }
+    const appRoot = appMarker.parentElement;
+    if (!appRoot) {
+      throw new Error(
+        `App root element has no parent element. This is likely a bug.`,
+      );
+    }
+    appMarker.remove();
+
+    createRoot(appRoot).render(browserRoot);
+  }
 }
 
 if (import.meta.env.DEV) {
