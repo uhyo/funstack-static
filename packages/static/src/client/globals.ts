@@ -7,6 +7,6 @@ const globalPrefix = "FUNSTACK_STATIC_";
 export const appClientManifestVar = `${globalPrefix}appClientManifest`;
 
 export interface AppClientManifest {
-  marker: string;
+  marker?: string;
   stream: string;
 }
