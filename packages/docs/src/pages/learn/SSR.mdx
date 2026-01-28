@@ -46,21 +46,32 @@ export function BrowserOnlyComponent() {
 }
 ```
 
-To make components SSR-capable, defer browser API access to effects or check for the browser environment:
+To make components SSR-capable, use `useSyncExternalStore` with a server snapshot:
 
 ```tsx
 "use client";
 
-import { useState, useEffect } from "react";
+import { useSyncExternalStore } from "react";
+
+function subscribeToWidth(callback: () => void) {
+  window.addEventListener("resize", callback);
+  return () => window.removeEventListener("resize", callback);
+}
+
+function getWidth() {
+  return window.innerWidth;
+}
+
+function getServerWidth() {
+  return 0; // Fallback value during SSR
+}
 
 export function SSRSafeComponent() {
-  const [width, setWidth] = useState(0);
-
-  useEffect(() => {
-    // This runs only in the browser
-    setWidth(window.innerWidth);
-  }, []);
-
+  const width = useSyncExternalStore(
+    subscribeToWidth,
+    getWidth,
+    getServerWidth,
+  );
   return <div>Width: {width}</div>;
 }
 ```
