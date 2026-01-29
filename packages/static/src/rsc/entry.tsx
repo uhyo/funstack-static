@@ -35,15 +35,22 @@ async function loadEntries() {
  * Entrypoint to serve HTML response in dev environment
  */
 export async function serveHTML(): Promise<Response> {
+  const timings: string[] = [];
   const marker = generateAppMarker();
-  const { Root, App } = await loadEntries();
 
+  const entriesStart = performance.now();
+  const { Root, App } = await loadEntries();
+  timings.push(`entries;dur=${performance.now() - entriesStart}`);
+
+  const ssrModuleStart = performance.now();
   const ssrEntryModule = await import.meta.viteRsc.loadModule<
     typeof import("../ssr/entry")
   >("ssr");
+  timings.push(`ssr-module;dur=${performance.now() - ssrModuleStart}`);
 
   if (ssrEnabled) {
     // SSR on: single RSC stream with full tree
+    const rscStart = performance.now();
     const rootRscStream = renderToReadableStream<RscPayload>({
       root: (
         <Root>
@@ -51,17 +58,26 @@ export async function serveHTML(): Promise<Response> {
         </Root>
       ),
     });
+    timings.push(`rsc;dur=${performance.now() - rscStart}`);
+
+    const ssrStart = performance.now();
     const ssrResult = await ssrEntryModule.renderHTML(rootRscStream, {
       appEntryMarker: marker,
       build: false,
       ssr: true,
     });
+    timings.push(`ssr;dur=${performance.now() - ssrStart}`);
+
     return new Response(ssrResult.stream, {
       status: ssrResult.status,
-      headers: { "Content-type": "text/html" },
+      headers: {
+        "Content-type": "text/html",
+        "Server-Timing": timings.join(", "),
+      },
     });
   } else {
     // SSR off: shell RSC for SSR, full RSC for client
+    const rscStart = performance.now();
     const shellRscStream = renderToReadableStream<RscPayload>({
       root: (
         <Root>
@@ -76,15 +92,23 @@ export async function serveHTML(): Promise<Response> {
         </Root>
       ),
     });
+    timings.push(`rsc;dur=${performance.now() - rscStart}`);
+
+    const ssrStart = performance.now();
     const ssrResult = await ssrEntryModule.renderHTML(shellRscStream, {
       appEntryMarker: marker,
       build: false,
       ssr: false,
       clientRscStream,
     });
+    timings.push(`ssr;dur=${performance.now() - ssrStart}`);
+
     return new Response(ssrResult.stream, {
       status: ssrResult.status,
-      headers: { "Content-type": "text/html" },
+      headers: {
+        "Content-type": "text/html",
+        "Server-Timing": timings.join(", "),
+      },
     });
   }
 }
@@ -106,11 +130,16 @@ export function isServeRSCError(error: unknown): error is ServeRSCError {
  * Servers an RSC stream response
  */
 export async function serveRSC(request: Request): Promise<Response> {
+  const timings: string[] = [];
   const url = new URL(request.url);
   const pathname = stripBasePath(url.pathname);
   if (pathname === devMainRscPath) {
     // root RSC stream is requested (HMR re-fetch always sends full tree)
+    const entriesStart = performance.now();
     const { Root, App } = await loadEntries();
+    timings.push(`entries;dur=${performance.now() - entriesStart}`);
+
+    const rscStart = performance.now();
     const rootRscStream = renderToReadableStream<RscPayload>({
       root: (
         <Root>
@@ -118,10 +147,13 @@ export async function serveRSC(request: Request): Promise<Response> {
         </Root>
       ),
     });
+    timings.push(`rsc;dur=${performance.now() - rscStart}`);
+
     return new Response(rootRscStream, {
       status: 200,
       headers: {
         "content-type": "text/x-component;charset=utf-8",
+        "Server-Timing": timings.join(", "),
       },
     });
   }
@@ -131,10 +163,13 @@ export async function serveRSC(request: Request): Promise<Response> {
     throw new ServeRSCError(`Invalid RSC module path: ${pathname}`, 404);
   }
 
+  const deferLoadStart = performance.now();
   const entry = deferRegistry.load(moduleId);
   if (!entry) {
     throw new ServeRSCError(`RSC component not found: ${moduleId}`, 404);
   }
+  timings.push(`defer-load;dur=${performance.now() - deferLoadStart}`);
+
   const { state } = entry;
   switch (state.state) {
     case "streaming": {
@@ -142,6 +177,7 @@ export async function serveRSC(request: Request): Promise<Response> {
         status: 200,
         headers: {
           "content-type": "text/x-component;charset=utf-8",
+          "Server-Timing": timings.join(", "),
         },
       });
     }
@@ -150,6 +186,7 @@ export async function serveRSC(request: Request): Promise<Response> {
         status: 200,
         headers: {
           "content-type": "text/x-component;charset=utf-8",
+          "Server-Timing": timings.join(", "),
         },
       });
     }
