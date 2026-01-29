@@ -1,6 +1,8 @@
 # Server-Side Rendering
 
-FUNSTACK Static supports an optional `ssr` mode that pre-renders your App component to HTML at build time. This page explains when to enable this option and what to consider.
+In FUNSTACK Static, **Server-Side Rendering (SSR)** means a build-time process that pre-renders your React components (including client components) to HTML. This can make the initial paint faster.
+
+FUNSTACK Static supports a `ssr` option to enable SSR. This page explains when to enable this option and what to consider.
 
 ## What is SSR?
 
@@ -80,14 +82,12 @@ Common browser APIs to watch for:
 
 - `window` and `document`
 - `localStorage` and `sessionStorage`
-- `navigator`
 - `location` (use your router's APIs instead)
 
 ## When to Use SSR
 
 **Enable SSR when:**
 
-- SEO is important for your application
 - You want the fastest possible initial paint
 - Your client components are already SSR-compatible
 - You're building content-heavy pages
