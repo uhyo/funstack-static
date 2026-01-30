@@ -7,6 +7,7 @@
     "dev": "turbo run dev",
     "test": "turbo run test",
     "test:run": "turbo run test:run",
+    "test:e2e": "turbo run test:e2e",
     "typecheck": "turbo run typecheck",
     "format": "prettier --write --experimental-cli .",
     "format:check": "prettier --check --experimental-cli ."
