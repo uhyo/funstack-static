@@ -1,0 +1,14 @@
+{
+  "name": "e2e-fixture",
+  "private": true,
+  "type": "module",
+  "devDependencies": {
+    "@funstack/static": "workspace:*",
+    "@types/react": "^19.2.10",
+    "@types/react-dom": "^19.2.3",
+    "@vitejs/plugin-react": "^4.6.1",
+    "react": "catalog:",
+    "react-dom": "catalog:",
+    "vite": "catalog:"
+  }
+}
