@@ -1,3 +1,3 @@
 "use client";
 
-export { RegistryContext, ClientWrapper } from "./clientWrapper";
+export { RegistryContext, DeferredComponent } from "./clientWrapper";
