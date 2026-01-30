@@ -1,4 +1,4 @@
-import { codeToHtml } from "shiki";
+import { getHighlighter, shikiThemes } from "../../lib/shiki";
 import styles from "./CodeBlock.module.css";
 
 interface CodeBlockProps {
@@ -10,12 +10,10 @@ export async function CodeBlock({
   children,
   language = "typescript",
 }: CodeBlockProps) {
-  const html = await codeToHtml(children.trim(), {
+  const highlighter = await getHighlighter();
+  const html = highlighter.codeToHtml(children.trim(), {
     lang: language,
-    themes: {
-      light: "github-light",
-      dark: "github-dark",
-    },
+    themes: shikiThemes,
   });
 
   return (

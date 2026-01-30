@@ -1,32 +1,36 @@
 import funstackStatic from "@funstack/static";
 import mdx from "@mdx-js/rollup";
-import rehypeShiki from "@shikijs/rehype";
+import rehypeShikiFromHighlighter from "@shikijs/rehype/core";
 import react from "@vitejs/plugin-react";
-import { defineConfig } from "vite";
+import { defineConfig, type UserConfig } from "vite";
+import { getHighlighter, shikiThemes } from "./src/lib/shiki";
 
-export default defineConfig({
-  plugins: [
-    funstackStatic({
-      root: "./src/root.tsx",
-      app: "./src/App.tsx",
-    }),
-    {
-      enforce: "pre",
-      ...mdx({
-        rehypePlugins: [
-          [
-            rehypeShiki,
-            {
-              themes: {
-                light: "github-light",
-                dark: "github-dark",
-              },
-            },
-          ],
-        ],
+export default defineConfig(async () => {
+  const highlighter = await getHighlighter();
+
+  const config: UserConfig = {
+    plugins: [
+      funstackStatic({
+        root: "./src/root.tsx",
+        app: "./src/App.tsx",
       }),
-    },
-    react({ include: /\.(jsx|js|mdx|md|tsx|ts)$/ }),
-  ],
-  base: "/funstack-static/",
+      {
+        enforce: "pre",
+        ...mdx({
+          rehypePlugins: [
+            [
+              rehypeShikiFromHighlighter,
+              highlighter,
+              {
+                themes: shikiThemes,
+              },
+            ],
+          ],
+        }),
+      },
+      react({ include: /\.(jsx|js|mdx|md|tsx|ts)$/ }),
+    ],
+    base: "/funstack-static/",
+  };
+  return config;
 });
