@@ -12,11 +12,13 @@ export const RegistryContext = createContext<DeferRegistry | undefined>(
   undefined,
 );
 
-interface ClientWrapperProps {
+interface DeferredComponentProps {
   moduleID: string;
 }
 
-export const ClientWrapper: React.FC<ClientWrapperProps> = ({ moduleID }) => {
+export const DeferredComponent: React.FC<DeferredComponentProps> = ({
+  moduleID,
+}) => {
   const registry = use(RegistryContext);
   const modulePath = getModulePathFor(moduleID);
   if (registry) {

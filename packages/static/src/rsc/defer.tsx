@@ -1,6 +1,6 @@
 import type { ReactElement, ReactNode } from "react";
 import { renderToReadableStream } from "@vitejs/plugin-rsc/react/rsc";
-import { ClientWrapper } from "#rsc-client";
+import { DeferredComponent } from "#rsc-client";
 import { drainStream } from "../util/drainStream";
 import { getPayloadIDFor } from "./rscModule";
 
@@ -206,5 +206,5 @@ export function defer(
   const id = getPayloadIDFor(rawId);
   deferRegistry.register(element, id, name);
 
-  return <ClientWrapper moduleID={id} />;
+  return <DeferredComponent moduleID={id} />;
 }
