@@ -31,6 +31,9 @@ jobs:
       - name: Build
         run: pnpm build
 
+      - name: Build AI-friendly docs
+        run: pnpm --filter @funstack/static build:docs
+
       - name: Determine npm tag
         id: npm-tag
         run: |
