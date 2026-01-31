@@ -128,13 +128,46 @@ async function copyFile(relativePath: string): Promise<void> {
 }
 
 /**
+ * Converts a directory name to a readable section title
+ * e.g., "api" → "API", "getting-started" → "Getting Started"
+ */
+function toSectionTitle(dirName: string): string {
+  // Handle common acronyms
+  if (dirName.toLowerCase() === "api") {
+    return "API";
+  }
+  // Convert kebab-case or camelCase to Title Case
+  return dirName
+    .replace(/[-_]/g, " ")
+    .replace(/([a-z])([A-Z])/g, "$1 $2")
+    .replace(/\b\w/g, (c) => c.toUpperCase());
+}
+
+/**
+ * Groups docs by their top-level directory
+ */
+function groupDocsByDirectory(docs: DocFile[]): Map<string | null, DocFile[]> {
+  const groups = new Map<string | null, DocFile[]>();
+
+  for (const doc of docs) {
+    const parts = doc.outputPath.split("/");
+    // null for root-level files, directory name for nested files
+    const dir = parts.length > 1 ? parts[0] : null;
+
+    if (!groups.has(dir)) {
+      groups.set(dir, []);
+    }
+    groups.get(dir)!.push(doc);
+  }
+
+  return groups;
+}
+
+/**
  * Generates the index.md file with links to all docs
  */
 function generateIndex(docs: DocFile[]): string {
-  // Group docs by category
-  const gettingStarted = docs.filter((d) => d.outputPath === "GettingStarted");
-  const apiDocs = docs.filter((d) => d.outputPath.startsWith("api/"));
-  const learnDocs = docs.filter((d) => d.outputPath.startsWith("learn/"));
+  const groups = groupDocsByDirectory(docs);
 
   const lines: string[] = [
     "# @funstack/static Documentation",
@@ -145,32 +178,28 @@ function generateIndex(docs: DocFile[]): string {
     "",
   ];
 
-  // Getting Started
-  for (const doc of gettingStarted) {
+  // First, output root-level docs (no directory)
+  const rootDocs = groups.get(null) || [];
+  for (const doc of rootDocs) {
     lines.push(`- [${doc.title}](./${doc.outputPath}.md) - ${doc.description}`);
   }
 
-  // API Reference
-  if (apiDocs.length > 0) {
-    lines.push("");
-    lines.push("### API Reference");
-    lines.push("");
-    for (const doc of apiDocs) {
-      lines.push(
-        `- [${doc.title}](./${doc.outputPath}.md) - ${doc.description}`,
-      );
-    }
-  }
+  // Then, output each directory as a section
+  const sortedDirs = Array.from(groups.keys())
+    .filter((dir): dir is string => dir !== null)
+    .sort();
 
-  // Learn
-  if (learnDocs.length > 0) {
-    lines.push("");
-    lines.push("### Learn");
-    lines.push("");
-    for (const doc of learnDocs) {
-      lines.push(
-        `- [${doc.title}](./${doc.outputPath}.md) - ${doc.description}`,
-      );
+  for (const dir of sortedDirs) {
+    const dirDocs = groups.get(dir) || [];
+    if (dirDocs.length > 0) {
+      lines.push("");
+      lines.push(`### ${toSectionTitle(dir)}`);
+      lines.push("");
+      for (const doc of dirDocs) {
+        lines.push(
+          `- [${doc.title}](./${doc.outputPath}.md) - ${doc.description}`,
+        );
+      }
     }
   }
 
