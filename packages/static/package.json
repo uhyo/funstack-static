@@ -37,6 +37,7 @@
   ],
   "scripts": {
     "build": "tsdown",
+    "build:docs": "node --experimental-strip-types scripts/generate-ai-docs.ts",
     "dev": "tsdown --watch",
     "test": "vitest",
     "test:run": "vitest run",
