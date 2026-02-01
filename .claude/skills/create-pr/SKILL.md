@@ -21,3 +21,14 @@ Then inform the user that the pull request has been created successfully, provid
 ## Merging the Pull Request
 
 After the user reviews the pull request and requests to merge it, you can use the `gh` CLI to merge the pull request. Confirm with the user before merging.
+
+Note that you should use the squash merge.
+
+## Steps After Merging the Pull Request
+
+After merging the pull request, follow these steps so that the local repository is ready for future work:
+
+1. Switch back to the `master` branch.
+2. Pull the latest changes from the remote `master` branch to ensure the local repository is up to date.
+3. Delete the local branch that was used for the pull request. (Note: remote branch is automatically deleted by GitHub)
+4. Inform the user that the pull request is merged and the local repository is now up to date and ready for future work.

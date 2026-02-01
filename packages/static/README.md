@@ -38,6 +38,18 @@ export default defineConfig({
 });
 ```
 
+## CLI Commands
+
+### `funstack-static-skill-installer`
+
+Installs the `funstack-static-knowledge` skill for AI coding assistants (like [Claude Code](https://docs.anthropic.com/en/docs/claude-code)).
+
+```sh
+npx funstack-static-skill-installer
+```
+
+This command registers the skill that provides AI assistants with knowledge about the FUNSTACK Static framework, including API references, best practices, and architectural guidance. After installation, your AI assistant will be able to better understand and work with your FUNSTACK Static project.
+
 ## Documentation
 
 For detailed API documentation and guides, visit the **[Documentation](https://uhyo.github.io/funstack-static/)**.
