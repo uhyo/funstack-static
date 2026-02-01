@@ -25,7 +25,7 @@ export default function App() {
 }
 ```
 
-In a large application with many routes, this upfront loading adds latency to every request, even though only one route's component will actually render.
+In a large application with many routes, this upfront loading adds latency to the first request, even though only one route's component will actually render.
 
 While use of [defer()](./optimizing-payloads) helps reducing initial load by deferring _rendering_ of route components, the work to _import_ those components still happens immediately.
 
