@@ -112,6 +112,9 @@ importers:
 
   packages/static:
     dependencies:
+      '@funstack/skill-installer':
+        specifier: ^1.0.0
+        version: 1.0.0
       '@vitejs/plugin-rsc':
         specifier: ^0.5.17
         version: 0.5.17(react-dom@19.2.4(react@19.2.4))(react-server-dom-webpack@19.2.3(react-dom@19.2.4(react@19.2.4))(react@19.2.4)(webpack@5.104.1))(react@19.2.4)(vite@7.3.1(@types/node@25.0.10)(terser@5.46.0)(tsx@4.21.0))
@@ -511,6 +514,10 @@ packages:
     resolution: {integrity: sha512-oM80tKFeLku7EvY61RUE672p1if0L0r7pIsfmtTdqCn6Ff5ZCvfGxp6bdU7ZJO7MN1p2bGlJOBUKDZssB/lyUQ==}
     peerDependencies:
       react: ^18.0.0 || ^19.0.0
+
+  '@funstack/skill-installer@1.0.0':
+    resolution: {integrity: sha512-lEYZQ4tFOLidvxy60tE7/28LUy4bJOlbT8o0ebcolaFV/cluSGtnDpWEUWIQWORtnGhrWnYl7Gr9aHvjHYkoEQ==}
+    hasBin: true
 
   '@jridgewell/gen-mapping@0.3.13':
     resolution: {integrity: sha512-2kkt/7niJ6MgEPxF0bYdQ6etZaA+fQvDcLKckhy1yIQOzaoKjBBjSj63/aLVjYE3qhRt5dvM+uUyfCg6UKCBbA==}
@@ -1612,7 +1619,6 @@ packages:
   react-server-dom-webpack@19.2.3:
     resolution: {integrity: sha512-ifo7aqqdNJyV6U2zuvvWX4rRQ51pbleuUFNG7ZYhIuSuWZzQPbfmYv11GNsyJm/3uGNbt8buJ9wmoISn/uOAfw==}
     engines: {node: '>=0.10.0'}
-    deprecated: High Security Vulnerability in React Server Components
     peerDependencies:
       react: ^19.2.3
       react-dom: ^19.2.3
@@ -2391,6 +2397,8 @@ snapshots:
   '@funstack/router@0.0.4(react@19.2.4)':
     dependencies:
       react: 19.2.4
+
+  '@funstack/skill-installer@1.0.0': {}
 
   '@jridgewell/gen-mapping@0.3.13':
     dependencies:
