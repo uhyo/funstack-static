@@ -16,6 +16,20 @@ export default defineConfig(async () => {
         app: "./src/App.tsx",
       }),
       {
+        // to make .mdx loading lazy
+        name: "vite-plugin-mdx-lazy",
+        load(id) {
+          if (id.endsWith(".mdx")) {
+            return `
+import { lazy } from "react";
+
+export default lazy(() => import("${id}?lazy"));
+`;
+          }
+          return undefined;
+        },
+      },
+      {
         enforce: "pre",
         ...mdx({
           rehypePlugins: [
