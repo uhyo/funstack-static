@@ -15,39 +15,34 @@ export const TableOfContents: React.FC = () => {
   const intersectionObserverRef = useRef<IntersectionObserver | null>(null);
   const currentHeadingIdsRef = useRef<string>("");
 
-  const setupScrollSpy = useCallback(
-    (headingElements: NodeListOf<Element>) => {
-      // Clean up previous observer
-      intersectionObserverRef.current?.disconnect();
+  const setupScrollSpy = useCallback((headingElements: NodeListOf<Element>) => {
+    // Clean up previous observer
+    intersectionObserverRef.current?.disconnect();
 
-      intersectionObserverRef.current = new IntersectionObserver(
-        (entries) => {
-          const visibleEntries = entries.filter(
-            (entry) => entry.isIntersecting,
-          );
-          if (visibleEntries.length > 0) {
-            const sorted = visibleEntries.sort((a, b) => {
-              const aRect = a.target.getBoundingClientRect();
-              const bRect = b.target.getBoundingClientRect();
-              return aRect.top - bRect.top;
-            });
-            setActiveId(sorted[0].target.id);
-          }
-        },
-        {
-          rootMargin: "-80px 0px -80% 0px",
-          threshold: 0,
-        },
-      );
-
-      headingElements.forEach((heading) => {
-        if (heading.id) {
-          intersectionObserverRef.current?.observe(heading);
+    intersectionObserverRef.current = new IntersectionObserver(
+      (entries) => {
+        const visibleEntries = entries.filter((entry) => entry.isIntersecting);
+        if (visibleEntries.length > 0) {
+          const sorted = visibleEntries.sort((a, b) => {
+            const aRect = a.target.getBoundingClientRect();
+            const bRect = b.target.getBoundingClientRect();
+            return aRect.top - bRect.top;
+          });
+          setActiveId(sorted[0].target.id);
         }
-      });
-    },
-    [],
-  );
+      },
+      {
+        rootMargin: "-80px 0px -80% 0px",
+        threshold: 0,
+      },
+    );
+
+    headingElements.forEach((heading) => {
+      if (heading.id) {
+        intersectionObserverRef.current?.observe(heading);
+      }
+    });
+  }, []);
 
   const extractHeadings = useCallback(
     (container: Element): boolean => {
