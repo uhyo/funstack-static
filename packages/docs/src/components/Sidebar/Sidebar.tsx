@@ -33,6 +33,10 @@ export const navigation: NavSection[] = [
         href: "/funstack-static/learn/optimizing-payloads",
       },
       {
+        label: "Using lazy() in Server",
+        href: "/funstack-static/learn/lazy-server-components",
+      },
+      {
         label: "Server-Side Rendering",
         href: "/funstack-static/learn/ssr",
       },

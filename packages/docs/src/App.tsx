@@ -5,6 +5,7 @@ import { Layout } from "./components/Layout/Layout";
 import DeferApi from "./pages/api/Defer.mdx";
 import FunstackStaticApi from "./pages/api/FunstackStatic.mdx";
 import HowItWorks from "./pages/learn/HowItWorks.mdx";
+import LazyServerComponents from "./pages/learn/LazyServerComponents.mdx";
 import OptimizingPayloads from "./pages/learn/OptimizingPayloads.mdx";
 import RSCConcept from "./pages/learn/RSC.mdx";
 import SSR from "./pages/learn/SSR.mdx";
@@ -68,6 +69,14 @@ const routes: RouteDefinition[] = [
         component: (
           <Layout>
             {defer(<OptimizingPayloads />, { name: "OptimizingPayloads" })}
+          </Layout>
+        ),
+      }),
+      route({
+        path: "/learn/lazy-server-components",
+        component: (
+          <Layout>
+            {defer(<LazyServerComponents />, { name: "LazyServerComponents" })}
           </Layout>
         ),
       }),

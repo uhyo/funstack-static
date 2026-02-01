@@ -1,0 +1,120 @@
+# Using lazy() in Server Components
+
+React's `lazy()` API is typically associated with client-side code splitting. However, it can also be used in server environments to reduce the initial response time of the development server by deferring the work needed to compute your application.
+
+## The Problem: Development Server Latency
+
+When the development server receives a request, it needs to compute `<App />` to generate the response. This computation requires loading all imported modules, even those for contents that are not needed for the current request. For example, consider a routing setup like this:
+
+```tsx
+// All these imports are loaded immediately
+import HomePage from "./pages/Home";
+import AboutPage from "./pages/About";
+import DocsPage from "./pages/Docs";
+import SettingsPage from "./pages/Settings";
+// ... more page imports
+
+const routes = [
+  route({ path: "/", component: defer(<HomePage />) }),
+  route({ path: "/about", component: defer(<AboutPage />) }),
+  // ... more routes
+];
+
+export default function App() {
+  return <Router routes={routes} />;
+}
+```
+
+In a large application with many routes, this upfront loading adds latency to every request, even though only one route's component will actually render.
+
+While use of [defer()](./optimizing-payloads) helps reducing initial load by deferring _rendering_ of route components, the work to _import_ those components still happens immediately.
+
+## How lazy() Helps
+
+`lazy()` defers the import of a module until the component is actually rendered. In a server environment, this means:
+
+1. The initial `<App />` computation only loads the routing structure
+2. Page components are loaded on-demand when their route matches
+3. Unused route components are never loaded for that request
+
+```tsx
+import { lazy } from "react";
+
+// These imports are deferred
+const HomePage = lazy(() => import("./pages/Home"));
+const AboutPage = lazy(() => import("./pages/About"));
+const DocsPage = lazy(() => import("./pages/Docs"));
+const SettingsPage = lazy(() => import("./pages/Settings"));
+
+const routes = [
+  route({ path: "/", component: defer(<HomePage />) }),
+  route({ path: "/about", component: defer(<AboutPage />) }),
+  // ... more routes
+];
+```
+
+When a user visits `/about`, only `AboutPage` is actually imported. The other page modules remain unloaded, reducing the work the server needs to do.
+
+## Combining with `defer()`
+
+To use `lazy()` effectively in server components, you should combine it with `defer()`.
+
+Without `defer()`, the contents of the lazy-loaded components would be part of the initial RSC payload. This means the server would still need to fully render them before sending the response, negating the benefits of lazy loading.
+
+## Example
+
+Here's a complete example of using `lazy()` with FUNSTACK Router as a router library:
+
+```tsx
+import { lazy, Suspense } from "react";
+import { Outlet } from "@funstack/router";
+import { route } from "@funstack/router/server";
+import { defer } from "@funstack/static/server";
+import { Layout } from "./components/Layout";
+
+// Lazy load page components
+const HomePage = lazy(() => import("./pages/Home"));
+const AboutPage = lazy(() => import("./pages/About"));
+const DocsPage = lazy(() => import("./pages/Docs"));
+
+const routes = [
+  route({
+    path: "/",
+    component: (
+      <Layout>
+        <Outlet />
+      </Layout>
+    ),
+    children: [
+      route({
+        path: "/",
+        component: defer(<HomePage />),
+      }),
+      route({
+        path: "/about",
+        component: defer(<AboutPage />),
+      }),
+      route({
+        path: "/docs",
+        component: defer(<DocsPage />),
+      }),
+    ],
+  }),
+];
+```
+
+## When to Use This Pattern
+
+This optimization is most beneficial when:
+
+- **You have many routes** - The more unused routes you can skip loading, the bigger the win
+- **Page components have heavy dependencies** - If a page imports large libraries, deferring that import saves significant work
+- **Development server responsiveness matters** - This pattern primarily improves development experience; production builds pre-render everything anyway
+
+For small applications with few routes, the overhead of `lazy()` may not be worth it. But as your application grows, lazy loading routes becomes increasingly valuable.
+
+## See Also
+
+- [Optimizing RSC Payloads](/funstack-static/learn/optimizing-payloads) - Using `defer()` to split RSC payloads
+- [How It Works](/funstack-static/learn/how-it-works) - Overall FUNSTACK Static architecture
+- [defer()](/funstack-static/api/defer) - API reference for the defer function
