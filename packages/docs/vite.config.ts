@@ -2,6 +2,7 @@ import funstackStatic from "@funstack/static";
 import mdx from "@mdx-js/rollup";
 import rehypeShikiFromHighlighter from "@shikijs/rehype/core";
 import react from "@vitejs/plugin-react";
+import rehypeSlug from "rehype-slug";
 import { defineConfig, type UserConfig } from "vite";
 import { getHighlighter, shikiThemes } from "./src/lib/shiki";
 
@@ -18,6 +19,7 @@ export default defineConfig(async () => {
         enforce: "pre",
         ...mdx({
           rehypePlugins: [
+            rehypeSlug,
             [
               rehypeShikiFromHighlighter,
               highlighter,
