@@ -44,10 +44,16 @@ export default defineConfig({
 pnpm install
 pnpm build
 # Start a development server
-pnpm --filter funstack-static-example dev
+pnpm --filter docs dev
 # Start a preview of the production build
-pnpm --filter funstack-static-example preview
+pnpm --filter docs preview
 ```
+
+### :sailboat: Project Status
+
+This project is in early development, but we believe it is already usable. It has all the features needed for building CSR apps with RSC.
+
+We are not aware of any production deployments yet. Be the first!
 
 ## License
 
