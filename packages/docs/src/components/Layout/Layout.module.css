@@ -21,8 +21,19 @@
 /* Docs layout with sidebar */
 .docsLayout .content {
   margin-left: var(--sidebar-width);
-  max-width: calc(100% - var(--sidebar-width));
+  max-width: calc(100% - var(--sidebar-width) - var(--toc-width));
   padding: var(--spacing-2xl) var(--spacing-3xl);
+}
+
+/* Table of Contents container */
+.tocContainer {
+  position: fixed;
+  top: var(--header-height);
+  right: 0;
+  width: var(--toc-width);
+  height: calc(100vh - var(--header-height));
+  padding: var(--spacing-2xl) var(--spacing-lg);
+  overflow-y: auto;
 }
 
 /* Home page full width */
@@ -133,6 +144,16 @@
 }
 
 /* Responsive */
+@media (max-width: 1280px) {
+  .tocContainer {
+    display: none;
+  }
+
+  .docsLayout .content {
+    max-width: calc(100% - var(--sidebar-width));
+  }
+}
+
 @media (max-width: 1024px) {
   .docsLayout .content {
     margin-left: 0;

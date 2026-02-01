@@ -1,9 +1,10 @@
 import type React from "react";
+import { Suspense } from "react";
 import { Header } from "../Header/Header";
 import { MobileMenu } from "../MobileMenu/MobileMenu";
 import { Sidebar } from "../Sidebar/Sidebar";
+import { TableOfContents } from "../TableOfContents/TableOfContents";
 import styles from "./Layout.module.css";
-import { Suspense } from "react";
 
 type LayoutVariant = "home" | "docs";
 
@@ -26,9 +27,15 @@ export const Layout: React.FC<LayoutProps> = ({
         {variant === "docs" && <Sidebar />}
         <main
           className={`${styles.content} ${variant === "docs" ? styles.mdxContent : ""}`}
+          data-mdx-content={variant === "docs" ? "" : undefined}
         >
           <Suspense fallback={null}>{children}</Suspense>
         </main>
+        {variant === "docs" && (
+          <aside className={styles.tocContainer}>
+            <TableOfContents />
+          </aside>
+        )}
       </div>
     </div>
   );
