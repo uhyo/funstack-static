@@ -4,9 +4,6 @@
 
 A maximally minimal React framework.
 
-> [!WARNING]
-> This is work in progress.
-
 **Features:**
 
 - :x: **No server runs** - perfect for CSR (Client Side Rendering) app and static deployment.
@@ -19,7 +16,7 @@ A maximally minimal React framework.
 
 **[Documentation](https://uhyo.github.io/funstack-static/)**
 
-See [the example project](./packages/example/vite.config.ts) and [the docs project](./packages/docs/vite.config.ts) for complete usage.
+See [the docs project](./packages/docs/vite.config.ts) for complete usage.
 
 ```ts
 // vite.config.ts
@@ -36,6 +33,18 @@ export default defineConfig({
     react(),
   ],
 });
+```
+
+### :robot: FUNSTACK Static Skill
+
+FUNSTACK Static provides an Agent Skill to feed your AI agents with knowledge about this framework. After installing `@funstack/static`, run the following command to add the skill to the project:
+
+```sh
+npx funstack-static-skill-installer
+# or
+yarn funstack-static-skill-installer
+# or
+pnpm funstack-static-skill-installer
 ```
 
 ### See the framework in action

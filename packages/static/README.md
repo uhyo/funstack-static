@@ -2,9 +2,6 @@
 
 A maximally minimal React framework. Vite plugin for static sites with RSC support.
 
-> [!WARNING]
-> This is work in progress.
-
 ## Features
 
 - :x: **No server runs** - perfect for CSR (Client Side Rendering) app and static deployment.
@@ -38,21 +35,21 @@ export default defineConfig({
 });
 ```
 
-## CLI Commands
-
-### `funstack-static-skill-installer`
-
-Installs the `funstack-static-knowledge` skill for AI coding assistants (like [Claude Code](https://docs.anthropic.com/en/docs/claude-code)).
-
-```sh
-npx funstack-static-skill-installer
-```
-
-This command registers the skill that provides AI assistants with knowledge about the FUNSTACK Static framework, including API references, best practices, and architectural guidance. After installation, your AI assistant will be able to better understand and work with your FUNSTACK Static project.
-
 ## Documentation
 
 For detailed API documentation and guides, visit the **[Documentation](https://uhyo.github.io/funstack-static/)**.
+
+### :robot: FUNSTACK Static Skill
+
+FUNSTACK Static provides an Agent Skill to feed your AI agents with knowledge about this framework. After installing `@funstack/static`, run the following command to add the skill to the project:
+
+```sh
+npx funstack-static-skill-installer
+# or
+yarn funstack-static-skill-installer
+# or
+pnpm funstack-static-skill-installer
+```
 
 ## License
 
