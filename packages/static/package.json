@@ -51,11 +51,11 @@
   "author": "uhyo <uhyo@uhy.ooo>",
   "license": "MIT",
   "devDependencies": {
-    "@playwright/test": "^1.52.0",
+    "@playwright/test": "^1.58.1",
     "@types/node": "catalog:",
     "@types/react": "^19.2.10",
     "@types/react-dom": "^19.2.3",
-    "jsdom": "^27.3.0",
+    "jsdom": "^27.4.0",
     "react": "catalog:",
     "react-dom": "catalog:",
     "tsdown": "^0.20.1",

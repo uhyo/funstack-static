@@ -2,12 +2,12 @@ packages:
   - packages/*
   - packages/static/e2e/fixture
 
-onlyBuiltDependencies:
-  - esbuild
-
 catalog:
-  vite: ^7.3.1
-  "@types/node": ^25.0.10
+  '@types/node': ^25.1.0
   react: ^19.2.4
   react-dom: ^19.2.4
   typescript: ^5.9.3
+  vite: ^7.3.1
+
+onlyBuiltDependencies:
+  - esbuild

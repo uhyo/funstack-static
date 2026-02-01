@@ -13,15 +13,15 @@
   "dependencies": {
     "@funstack/router": "0.0.4",
     "@funstack/static": "workspace:*",
-    "@shikijs/rehype": "^3.21.0",
+    "@shikijs/rehype": "^3.22.0",
     "@types/node": "catalog:",
     "react": "catalog:",
     "react-dom": "catalog:",
     "rehype-slug": "^6.0.0",
-    "shiki": "^3.21.0"
+    "shiki": "^3.22.0"
   },
   "devDependencies": {
-    "@mdx-js/rollup": "^3.1.0",
+    "@mdx-js/rollup": "^3.1.1",
     "@types/mdx": "^2.0.13",
     "@types/react": "^19.2.10",
     "@types/react-dom": "^19.2.3",
