@@ -48,6 +48,10 @@ export const navigation: NavSection[] = [
       { label: "defer()", href: "/funstack-static/api/defer" },
     ],
   },
+  {
+    title: "Help",
+    items: [{ label: "FAQ", href: "/funstack-static/faq" }],
+  },
 ];
 
 export const Sidebar: React.FC = () => {

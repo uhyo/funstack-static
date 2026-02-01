@@ -8,6 +8,7 @@ import HowItWorks from "./pages/learn/HowItWorks.mdx";
 import OptimizingPayloads from "./pages/learn/OptimizingPayloads.mdx";
 import RSCConcept from "./pages/learn/RSC.mdx";
 import SSR from "./pages/learn/SSR.mdx";
+import FAQ from "./pages/FAQ.mdx";
 import GettingStarted from "./pages/GettingStarted.mdx";
 import { Home } from "./pages/Home";
 import { NotFound } from "./pages/NotFound";
@@ -33,6 +34,10 @@ const routes: RouteDefinition[] = [
             {defer(<GettingStarted />, { name: "GettingStarted" })}
           </Layout>
         ),
+      }),
+      route({
+        path: "/faq",
+        component: <Layout>{defer(<FAQ />, { name: "FAQ" })}</Layout>,
       }),
       route({
         path: "/api/funstack-static",
