@@ -121,6 +121,36 @@ funstackStatic({
 
 **Note:** In both modes, React Server Components are used - the `ssr` option only controls whether the App's HTML is pre-rendered or rendered client-side.
 
+### clientInit (optional)
+
+**Type:** `string`
+
+Path to a module that runs on the client side **before React hydration**. Use this for client-side instrumentation like Sentry, analytics, or feature flags.
+
+The module is imported for its side effects only - no exports are needed.
+
+```typescript
+funstackStatic({
+  root: "./src/root.tsx",
+  app: "./src/App.tsx",
+  clientInit: "./src/client-init.ts",
+});
+```
+
+Example client init file:
+
+```typescript
+// src/client-init.ts
+import * as Sentry from "@sentry/browser";
+
+Sentry.init({
+  dsn: "https://your-sentry-dsn",
+  environment: import.meta.env.MODE,
+});
+```
+
+**Note:** Errors in the client init module will propagate normally and prevent the app from rendering.
+
 ## Full Example
 
 ```typescript

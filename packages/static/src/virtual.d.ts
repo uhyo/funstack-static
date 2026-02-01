@@ -9,3 +9,4 @@ declare module "virtual:funstack/app" {
 declare module "virtual:funstack/config" {
   export const ssr: boolean;
 }
+declare module "virtual:funstack/client-init" {}
