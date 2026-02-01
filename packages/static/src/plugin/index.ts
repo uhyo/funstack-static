@@ -30,6 +30,12 @@ export interface FunstackStaticOptions {
    * @default false
    */
   ssr?: boolean;
+  /**
+   * Path to a module that runs on the client side before React hydration.
+   * Use this for client-side instrumentation like Sentry, analytics, or feature flags.
+   * The module is imported for its side effects only (no exports needed).
+   */
+  clientInit?: string;
 }
 
 export default function funstackStatic({
@@ -37,9 +43,11 @@ export default function funstackStatic({
   app,
   publicOutDir = "dist/public",
   ssr = false,
+  clientInit,
 }: FunstackStaticOptions): (Plugin | Plugin[])[] {
   let resolvedRootEntry: string = "__uninitialized__";
   let resolvedAppEntry: string = "__uninitialized__";
+  let resolvedClientInitEntry: string | undefined;
 
   return [
     {
@@ -72,6 +80,9 @@ export default function funstackStatic({
       configResolved(config) {
         resolvedRootEntry = path.resolve(config.root, root);
         resolvedAppEntry = path.resolve(config.root, app);
+        if (clientInit) {
+          resolvedClientInitEntry = path.resolve(config.root, clientInit);
+        }
       },
       // Needed for properly bundling @vitejs/plugin-rsc for browser.
       // See: https://github.com/vitejs/vite-plugin-react/tree/79bf57cc8b9c77e33970ec2e876bd6d2f1568d5d/packages/plugin-rsc#using-vitejsplugin-rsc-as-a-framework-packages-dependencies
@@ -100,6 +111,9 @@ export default function funstackStatic({
         if (id === "virtual:funstack/config") {
           return "\0virtual:funstack/config";
         }
+        if (id === "virtual:funstack/client-init") {
+          return "\0virtual:funstack/client-init";
+        }
       },
       load(id) {
         if (id === "\0virtual:funstack/root") {
@@ -110,6 +124,12 @@ export default function funstackStatic({
         }
         if (id === "\0virtual:funstack/config") {
           return `export const ssr = ${JSON.stringify(ssr)};`;
+        }
+        if (id === "\0virtual:funstack/client-init") {
+          if (resolvedClientInitEntry) {
+            return `import "${resolvedClientInitEntry}";`;
+          }
+          return "";
         }
       },
     },

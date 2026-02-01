@@ -1,3 +1,6 @@
+// Client initialization - runs before React (side effects only)
+import "virtual:funstack/client-init";
+
 import {
   createFromReadableStream,
   createFromFetch,

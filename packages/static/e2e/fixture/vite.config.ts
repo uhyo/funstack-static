@@ -7,6 +7,7 @@ export default defineConfig({
     funstackStatic({
       root: "./src/root.tsx",
       app: "./src/App.tsx",
+      clientInit: "./src/client-init.ts",
     }),
     react(),
   ],
