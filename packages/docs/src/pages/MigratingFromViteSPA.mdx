@@ -27,6 +27,8 @@ Or with pnpm:
 pnpm add @funstack/static
 ```
 
+**Hint:** at this point, a skill installer command is available to add FUNSTACK Static knowledge to your AI agents. Run `npx funstack-static-skill-installer` or similar to add the skill. Then you can ask your AI assistant for help with the migration!
+
 ## Step 2: Update Vite Config
 
 Modify your `vite.config.ts` to add the FUNSTACK Static plugin:
@@ -46,6 +48,8 @@ export default defineConfig({
   ],
 });
 ```
+
+Note that the existing React plugin remains; FUNSTACK Static works alongside it.
 
 ## Step 3: Create the Root Component
 
@@ -110,7 +114,19 @@ You can delete `main.tsx` - FUNSTACK Static handles the rendering.
 
 In a standard Vite SPA, all components are client components. With FUNSTACK Static, components are Server Components by default.
 
-You only need to add `"use client"` to components that are **directly imported by Server Components**. This marks the boundary between server and client code. Components imported by other client components don't need the directive.
+As a starting point, it is possible to mark the App component as a client component by adding `"use client"` at the top:
+
+```tsx
+// src/App.tsx
+"use client";
+// ...rest of the code
+```
+
+This makes the entire app a client component, similar to your previous SPA.
+
+However, to take advantage of Server Components, you should incrementally convert components to Server Components. This can be done by removing `"use client"` from components that don't need it and instead adding it only to components that require client-side interactivity.
+
+**Note:** you only need to add `"use client"` to components that are **directly imported by Server Components**. This marks the boundary between server and client code. Components imported by other client components don't need the directive.
 
 ```tsx
 // src/components/Counter.tsx
@@ -129,7 +145,7 @@ In this example, `Counter.tsx` needs `"use client"` because it's imported by a S
 
 A component is a client component if it:
 
-- Use React hooks (`useState`, `useEffect`, `useContext`, etc.)
+- Use client-only hooks (`useState`, `useEffect`, `useContext`, etc.)
 - Attach event handlers (`onClick`, `onChange`, etc.)
 - Use browser-only APIs (`window`, `document`, `localStorage`, etc.)
 
@@ -172,7 +188,7 @@ export function ClientRouter() {
 
 ### Option B: Use a Server-Compatible Router
 
-For better performance, consider using `@funstack/router` which supports Server Components:
+For better performance, consider migrating to [FUNSTACK Router](https://github.com/uhyo/funstack-router) which is a standalone router for SPAs but still integrates well with Server Components.
 
 ```bash
 npm install @funstack/router
