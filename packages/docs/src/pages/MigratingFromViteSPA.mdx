@@ -1,0 +1,302 @@
+# Migrating from Vite SPA
+
+Already have a Vite-powered React SPA? This guide walks you through migrating to FUNSTACK Static to unlock React Server Components and improved performance.
+
+## Overview
+
+Migrating from a standard Vite React SPA to FUNSTACK Static involves:
+
+1. Installing FUNSTACK Static
+2. Adding the Vite plugin
+3. Restructuring your entry point into Root and App components
+4. Converting appropriate components to Server Components
+
+The good news: your existing client components work as-is. You can migrate incrementally.
+
+## Step 1: Install Dependencies
+
+Add FUNSTACK Static to your existing project:
+
+```bash
+npm install @funstack/static
+```
+
+Or with pnpm:
+
+```bash
+pnpm add @funstack/static
+```
+
+## Step 2: Update Vite Config
+
+Modify your `vite.config.ts` to add the FUNSTACK Static plugin:
+
+```typescript
+import { funstackStatic } from "@funstack/static";
+import react from "@vitejs/plugin-react";
+import { defineConfig } from "vite";
+
+export default defineConfig({
+  plugins: [
+    funstackStatic({
+      root: "./src/Root.tsx",
+      app: "./src/App.tsx",
+    }),
+    react(),
+  ],
+});
+```
+
+## Step 3: Create the Root Component
+
+The Root component replaces your `index.html` file. Create `src/Root.tsx`:
+
+```tsx
+// src/Root.tsx
+import type React from "react";
+
+export default function Root({ children }: { children: React.ReactNode }) {
+  return (
+    <html lang="en">
+      <head>
+        <meta charSet="UTF-8" />
+        <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+        <title>My App</title>
+        {/* Add your existing <head> content here */}
+      </head>
+      <body>
+        <div id="root">{children}</div>
+      </body>
+    </html>
+  );
+}
+```
+
+Move any content from your `index.html` `<head>` section into this component.
+
+## Step 4: Update Your App Entry Point
+
+Your existing `main.tsx` or `index.tsx` likely looks like this:
+
+```tsx
+// Before: src/main.tsx
+import React from "react";
+import ReactDOM from "react-dom/client";
+import App from "./App";
+import "./index.css";
+
+ReactDOM.createRoot(document.getElementById("root")!).render(
+  <React.StrictMode>
+    <App />
+  </React.StrictMode>,
+);
+```
+
+With FUNSTACK Static, you no longer need this file. Instead, your `App.tsx` becomes the entry point and is automatically rendered as a Server Component:
+
+```tsx
+// After: src/App.tsx
+import "./index.css";
+import { HomePage } from "./pages/HomePage";
+
+export default function App() {
+  return <HomePage />;
+}
+```
+
+You can delete `main.tsx` - FUNSTACK Static handles the rendering.
+
+## Step 5: Mark Client Components
+
+In a standard Vite SPA, all components are client components. With FUNSTACK Static, components are Server Components by default.
+
+Add `"use client"` to components that need interactivity:
+
+```tsx
+// src/components/Counter.tsx
+"use client";
+
+import { useState } from "react";
+
+export function Counter() {
+  const [count, setCount] = useState(0);
+  return <button onClick={() => setCount(count + 1)}>Count: {count}</button>;
+}
+```
+
+Components need `"use client"` if they:
+
+- Use React hooks (`useState`, `useEffect`, `useContext`, etc.)
+- Attach event handlers (`onClick`, `onChange`, etc.)
+- Use browser-only APIs (`window`, `document`, `localStorage`, etc.)
+
+## Step 6: Update Your Router (If Applicable)
+
+If you're using React Router or another client-side router, you have two options:
+
+### Option A: Keep Your Existing Router
+
+You can continue using your existing router as a client component:
+
+```tsx
+// src/App.tsx
+import { ClientRouter } from "./ClientRouter";
+
+export default function App() {
+  return <ClientRouter />;
+}
+```
+
+```tsx
+// src/ClientRouter.tsx
+"use client";
+
+import { BrowserRouter, Routes, Route } from "react-router-dom";
+import { Home } from "./pages/Home";
+import { About } from "./pages/About";
+
+export function ClientRouter() {
+  return (
+    <BrowserRouter>
+      <Routes>
+        <Route path="/" element={<Home />} />
+        <Route path="/about" element={<About />} />
+      </Routes>
+    </BrowserRouter>
+  );
+}
+```
+
+### Option B: Use a Server-Compatible Router
+
+For better performance, consider using `@funstack/router` which supports Server Components:
+
+```bash
+npm install @funstack/router
+```
+
+```tsx
+// src/App.tsx
+import { Router } from "@funstack/router";
+import { route } from "@funstack/router/server";
+import { Home } from "./pages/Home";
+import { About } from "./pages/About";
+
+const routes = [
+  route({ path: "/", component: <Home /> }),
+  route({ path: "/about", component: <About /> }),
+];
+
+export default function App() {
+  return <Router routes={routes} />;
+}
+```
+
+## Step 7: Delete Unnecessary Files
+
+After migration, you can remove:
+
+- `src/main.tsx` (or `src/index.tsx`) - no longer needed
+- `index.html` - replaced by `Root.tsx`
+
+## Common Migration Patterns
+
+### Global Styles
+
+Import global CSS in your `App.tsx`:
+
+```tsx
+// src/App.tsx
+import "./index.css";
+import "./global.css";
+
+export default function App() {
+  // ...
+}
+```
+
+### Context Providers
+
+Wrap client-side providers in a client component:
+
+```tsx
+// src/Providers.tsx
+"use client";
+
+import { ThemeProvider } from "./ThemeContext";
+import { AuthProvider } from "./AuthContext";
+
+export function Providers({ children }: { children: React.ReactNode }) {
+  return (
+    <ThemeProvider>
+      <AuthProvider>{children}</AuthProvider>
+    </ThemeProvider>
+  );
+}
+```
+
+```tsx
+// src/App.tsx
+import { Providers } from "./Providers";
+import { HomePage } from "./pages/HomePage";
+
+export default function App() {
+  return (
+    <Providers>
+      <HomePage />
+    </Providers>
+  );
+}
+```
+
+### Environment Variables
+
+Client-side environment variables still work the same way with the `VITE_` prefix:
+
+```tsx
+// In client components
+const apiUrl = import.meta.env.VITE_API_URL;
+```
+
+## Verifying the Migration
+
+Run the development server:
+
+```bash
+npm run dev
+```
+
+Check that:
+
+- Your app loads correctly
+- Interactive components work (clicks, form inputs, etc.)
+- Routing works as expected
+- Styles are applied correctly
+
+Build for production:
+
+```bash
+npm run build
+```
+
+Your static files will be generated in `dist/public`, ready for deployment.
+
+## Troubleshooting
+
+### "Cannot use hooks in Server Component"
+
+Add `"use client"` at the top of components that use React hooks.
+
+### "window is not defined"
+
+Components using browser APIs must be client components. Add `"use client"` directive.
+
+### Styles not loading
+
+Ensure CSS imports are in `App.tsx` or in client components that are actually rendered.
+
+## What's Next?
+
+- Learn about [defer()](/funstack-static/api/defer) for code splitting Server Components
+- Explore [Optimizing RSC Payloads](/funstack-static/learn/optimizing-payloads) for better performance
+- Understand [How It Works](/funstack-static/learn/how-it-works) under the hood
