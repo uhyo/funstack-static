@@ -106,25 +106,28 @@ export default function App() {
 
 You can delete `main.tsx` - FUNSTACK Static handles the rendering.
 
-## Step 5: Mark Client Components
+## Step 5: Mark Client Component Boundaries
 
 In a standard Vite SPA, all components are client components. With FUNSTACK Static, components are Server Components by default.
 
-Add `"use client"` to components that need interactivity:
+You only need to add `"use client"` to components that are **directly imported by Server Components**. This marks the boundary between server and client code. Components imported by other client components don't need the directive.
 
 ```tsx
 // src/components/Counter.tsx
 "use client";
 
 import { useState } from "react";
+import { Button } from "./Button"; // No "use client" needed in Button.tsx
 
 export function Counter() {
   const [count, setCount] = useState(0);
-  return <button onClick={() => setCount(count + 1)}>Count: {count}</button>;
+  return <Button onClick={() => setCount(count + 1)}>Count: {count}</Button>;
 }
 ```
 
-Components need `"use client"` if they:
+In this example, `Counter.tsx` needs `"use client"` because it's imported by a Server Component. But `Button.tsx` doesn't need it since it's only imported by `Counter`, which is already a client component.
+
+A component is a client component if it:
 
 - Use React hooks (`useState`, `useEffect`, `useContext`, etc.)
 - Attach event handlers (`onClick`, `onChange`, etc.)
