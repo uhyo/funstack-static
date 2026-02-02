@@ -15,6 +15,10 @@ export const navigation: NavSection[] = [
     title: "Getting Started",
     items: [
       { label: "Introduction", href: "/funstack-static/getting-started" },
+      {
+        label: "Migrating from Vite SPA",
+        href: "/funstack-static/getting-started/migrating-from-vite-spa",
+      },
     ],
   },
   {

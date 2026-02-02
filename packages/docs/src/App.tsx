@@ -11,6 +11,7 @@ import RSCConcept from "./pages/learn/RSC.mdx";
 import SSR from "./pages/learn/SSR.mdx";
 import FAQ from "./pages/FAQ.mdx";
 import GettingStarted from "./pages/GettingStarted.mdx";
+import MigratingFromViteSPA from "./pages/MigratingFromViteSPA.mdx";
 import { Home } from "./pages/Home";
 import { NotFound } from "./pages/NotFound";
 import { Router } from "./Router";
@@ -33,6 +34,14 @@ const routes: RouteDefinition[] = [
         component: (
           <Layout>
             {defer(<GettingStarted />, { name: "GettingStarted" })}
+          </Layout>
+        ),
+      }),
+      route({
+        path: "/getting-started/migrating-from-vite-spa",
+        component: (
+          <Layout>
+            {defer(<MigratingFromViteSPA />, { name: "MigratingFromViteSPA" })}
           </Layout>
         ),
       }),
