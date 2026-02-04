@@ -84,10 +84,13 @@ export default function funstackStatic({
           resolvedClientInitEntry = path.resolve(config.root, clientInit);
         }
       },
-      // Needed for properly bundling @vitejs/plugin-rsc for browser.
-      // See: https://github.com/vitejs/vite-plugin-react/tree/79bf57cc8b9c77e33970ec2e876bd6d2f1568d5d/packages/plugin-rsc#using-vitejsplugin-rsc-as-a-framework-packages-dependencies
       configEnvironment(_name, config) {
-        if (config.optimizeDeps?.include) {
+        if (!config.optimizeDeps) {
+          config.optimizeDeps = {};
+        }
+        // Needed for properly bundling @vitejs/plugin-rsc for browser.
+        // See: https://github.com/vitejs/vite-plugin-react/tree/79bf57cc8b9c77e33970ec2e876bd6d2f1568d5d/packages/plugin-rsc#using-vitejsplugin-rsc-as-a-framework-packages-dependencies
+        if (config.optimizeDeps.include) {
           config.optimizeDeps.include = config.optimizeDeps.include.map(
             (entry) => {
               if (entry.startsWith("@vitejs/plugin-rsc")) {
@@ -97,6 +100,12 @@ export default function funstackStatic({
             },
           );
         }
+        if (!config.optimizeDeps.exclude) {
+          config.optimizeDeps.exclude = [];
+        }
+        // Since code includes imports to virtual modules, we need to exclude
+        // us from Optimize Deps.
+        config.optimizeDeps.exclude.push("@funstack/static");
       },
     },
     {
