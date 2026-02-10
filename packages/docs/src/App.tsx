@@ -8,6 +8,7 @@ import HowItWorks from "./pages/learn/HowItWorks.mdx";
 import LazyServerComponents from "./pages/learn/LazyServerComponents.mdx";
 import OptimizingPayloads from "./pages/learn/OptimizingPayloads.mdx";
 import RSCConcept from "./pages/learn/RSC.mdx";
+import DeferAndActivity from "./pages/learn/DeferAndActivity.mdx";
 import SSR from "./pages/learn/SSR.mdx";
 import FAQ from "./pages/FAQ.mdx";
 import GettingStarted from "./pages/GettingStarted.mdx";
@@ -86,6 +87,14 @@ const routes: RouteDefinition[] = [
         component: (
           <Layout>
             {defer(<LazyServerComponents />, { name: "LazyServerComponents" })}
+          </Layout>
+        ),
+      }),
+      route({
+        path: "/learn/defer-and-activity",
+        component: (
+          <Layout>
+            {defer(<DeferAndActivity />, { name: "DeferAndActivity" })}
           </Layout>
         ),
       }),

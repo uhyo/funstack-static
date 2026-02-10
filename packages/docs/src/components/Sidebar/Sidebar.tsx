@@ -41,6 +41,10 @@ export const navigation: NavSection[] = [
         href: "/funstack-static/learn/lazy-server-components",
       },
       {
+        label: "Prefetching with Activity",
+        href: "/funstack-static/learn/defer-and-activity",
+      },
+      {
         label: "Server-Side Rendering",
         href: "/funstack-static/learn/ssr",
       },
