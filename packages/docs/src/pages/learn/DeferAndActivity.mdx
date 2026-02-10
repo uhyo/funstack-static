@@ -1,0 +1,187 @@
+# Prefetching with defer() and Activity
+
+When using `defer()` to split RSC payloads, content is fetched on-demand as it renders. But what if you want to start fetching _before_ the user actually needs it? By combining `defer()` with React 19's `<Activity>` component, you can prefetch deferred payloads in the background so they're ready instantly when revealed.
+
+## What Is Activity?
+
+`<Activity>` is a React 19 component that controls whether its children are visible or hidden:
+
+```tsx
+import { Activity } from "react";
+
+<Activity mode="visible">
+  <Panel />   {/* Rendered and visible */}
+</Activity>
+
+<Activity mode="hidden">
+  <Panel />   {/* Rendered but not visible in the DOM */}
+</Activity>
+```
+
+When `mode` is `"hidden"`, React still renders the children and runs their effects, but the output is hidden from the user. This is useful for keeping off-screen UI alive (preserving state, pre-warming components) without showing it.
+
+## How defer() and Activity Work Together
+
+Recall that `defer()` wraps a server component so its RSC payload is fetched separately from the main payload. The fetch starts when the deferred component renders on the client.
+
+The key insight is: **rendering under `<Activity mode="hidden">` still triggers the fetch**. The deferred component renders (starting the network request for its RSC payload), but the result isn't displayed. When you later switch the Activity to `"visible"`, the content appears immediately because the payload has already been downloaded.
+
+```
+1. <Activity mode="hidden"> renders defer()'ed content
+2. Client starts fetching the RSC payload in the background
+3. Payload arrives and is cached
+4. User triggers the UI to become visible
+5. <Activity mode="visible"> — content shows instantly, no loading state
+```
+
+## Example: Tabbed Interface
+
+Consider a tabbed interface where each tab contains heavy server-rendered content. Without prefetching, switching tabs shows a loading spinner while the payload is fetched. With `<Activity>`, you can prefetch all tabs on initial load.
+
+```tsx
+"use client";
+
+import { Activity, Suspense, useState } from "react";
+
+export function Tabs({
+  tabs,
+}: {
+  tabs: { label: string; content: React.ReactNode }[];
+}) {
+  const [activeIndex, setActiveIndex] = useState(0);
+
+  return (
+    <div>
+      <div role="tablist">
+        {tabs.map((tab, i) => (
+          <button
+            key={i}
+            role="tab"
+            aria-selected={i === activeIndex}
+            onClick={() => setActiveIndex(i)}
+          >
+            {tab.label}
+          </button>
+        ))}
+      </div>
+      {tabs.map((tab, i) => (
+        <Activity key={i} mode={i === activeIndex ? "visible" : "hidden"}>
+          <div role="tabpanel">
+            <Suspense fallback={<p>Loading...</p>}>{tab.content}</Suspense>
+          </div>
+        </Activity>
+      ))}
+    </div>
+  );
+}
+```
+
+On the server side, each tab's content is wrapped with `defer()`:
+
+```tsx
+import { defer } from "@funstack/static/server";
+import { Tabs } from "./Tabs";
+import Overview from "./tabs/Overview";
+import Specifications from "./tabs/Specifications";
+import Reviews from "./tabs/Reviews";
+
+function ProductPage() {
+  return (
+    <Tabs
+      tabs={[
+        {
+          label: "Overview",
+          content: defer(<Overview />, { name: "Overview" }),
+        },
+        {
+          label: "Specifications",
+          content: defer(<Specifications />, { name: "Specifications" }),
+        },
+        {
+          label: "Reviews",
+          content: defer(<Reviews />, { name: "Reviews" }),
+        },
+      ]}
+    />
+  );
+}
+```
+
+When this page loads:
+
+1. The active tab ("Overview") renders visibly and fetches its payload
+2. The hidden tabs ("Specifications", "Reviews") also render under `<Activity mode="hidden">`, triggering their payload fetches in the background
+3. When the user clicks "Specifications", it appears instantly — no spinner
+
+## Example: Collapsible Sections
+
+Another common pattern is pre-fetching content inside a collapsible section:
+
+```tsx
+"use client";
+
+import { Activity, Suspense, useState } from "react";
+
+export function Collapsible({
+  title,
+  children,
+}: {
+  title: string;
+  children: React.ReactNode;
+}) {
+  const [isOpen, setIsOpen] = useState(false);
+
+  return (
+    <div>
+      <button onClick={() => setIsOpen(!isOpen)}>{title}</button>
+      <Activity mode={isOpen ? "visible" : "hidden"}>
+        <Suspense fallback={<p>Loading...</p>}>{children}</Suspense>
+      </Activity>
+    </div>
+  );
+}
+```
+
+```tsx
+import { defer } from "@funstack/static/server";
+import { Collapsible } from "./Collapsible";
+import DetailedSpecs from "./DetailedSpecs";
+
+function Product() {
+  return (
+    <Collapsible title="Show detailed specifications">
+      {defer(<DetailedSpecs />, { name: "DetailedSpecs" })}
+    </Collapsible>
+  );
+}
+```
+
+Even though the section starts collapsed, `<Activity mode="hidden">` causes the deferred content to start fetching immediately. When the user expands the section, the content is already there.
+
+## When to Use This Pattern
+
+This pattern works best when:
+
+- **Content is likely to be needed soon** — If the user will probably view a tab or expand a section, prefetching eliminates the wait.
+- **Payload sizes are reasonable** — Prefetching multiple large payloads may waste bandwidth if the user never views them. Use judgment based on your typical user behavior.
+- **You want instant transitions** — Tabs, accordions, and similar reveal-based UI patterns benefit most from this approach.
+
+Avoid this pattern when:
+
+- **Content is rarely accessed** — Prefetching content most users never see wastes bandwidth.
+- **You have many deferred sections** — Prefetching dozens of payloads simultaneously may slow down the initial page load. Consider prefetching only the most likely targets.
+
+## Comparison: With and Without Activity
+
+| Behavior              | `defer()` only                       | `defer()` + `<Activity mode="hidden">` |
+| --------------------- | ------------------------------------ | -------------------------------------- |
+| Initial payload fetch | Only active/visible content          | All sections (active + hidden)         |
+| Tab/section switch    | Shows loading spinner while fetching | Content appears instantly              |
+| Bandwidth usage       | Minimal (on-demand)                  | Higher (prefetches hidden content)     |
+| Best for              | Rarely accessed content              | Content likely to be viewed soon       |
+
+## See Also
+
+- [Optimizing RSC Payloads](/funstack-static/learn/optimizing-payloads) - Using `defer()` to split RSC payloads
+- [defer()](/funstack-static/api/defer) - API reference with full signature and technical details
+- [React Server Components](/funstack-static/learn/rsc) - Understanding RSC fundamentals
