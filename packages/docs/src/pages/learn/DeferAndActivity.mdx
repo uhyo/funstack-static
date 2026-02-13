@@ -18,7 +18,7 @@ import { Activity } from "react";
 </Activity>
 ```
 
-When `mode` is `"hidden"`, React still renders the children and runs their effects, but the output is hidden from the user. This is useful for keeping off-screen UI alive (preserving state, pre-warming components) without showing it.
+When `mode` is `"hidden"`, React still renders the children, but the output is hidden from the user and effects are not run until the `mode` becomes `"visible"`. The hidden content is rendered at a lower priority so it doesn't affect the performance of visible content. This is useful for keeping off-screen UI alive (preserving state, pre-warming components) without showing it.
 
 ## How defer() and Activity Work Together
 
@@ -26,13 +26,11 @@ Recall that `defer()` wraps a server component so its RSC payload is fetched sep
 
 The key insight is: **rendering under `<Activity mode="hidden">` still triggers the fetch**. The deferred component renders (starting the network request for its RSC payload), but the result isn't displayed. When you later switch the Activity to `"visible"`, the content appears immediately because the payload has already been downloaded.
 
-```
-1. <Activity mode="hidden"> renders defer()'ed content
+1. `<Activity mode="hidden">` renders defer()'ed content
 2. Client starts fetching the RSC payload in the background
 3. Payload arrives and is cached
 4. User triggers the UI to become visible
-5. <Activity mode="visible"> — content shows instantly, no loading state
-```
+5. `<Activity mode="visible">` — content shows instantly, no loading state
 
 ## Example: Tabbed Interface
 
@@ -170,15 +168,6 @@ Avoid this pattern when:
 
 - **Content is rarely accessed** — Prefetching content most users never see wastes bandwidth.
 - **You have many deferred sections** — Prefetching dozens of payloads simultaneously may slow down the initial page load. Consider prefetching only the most likely targets.
-
-## Comparison: With and Without Activity
-
-| Behavior              | `defer()` only                       | `defer()` + `<Activity mode="hidden">` |
-| --------------------- | ------------------------------------ | -------------------------------------- |
-| Initial payload fetch | Only active/visible content          | All sections (active + hidden)         |
-| Tab/section switch    | Shows loading spinner while fetching | Content appears instantly              |
-| Bandwidth usage       | Minimal (on-demand)                  | Higher (prefetches hidden content)     |
-| Best for              | Rarely accessed content              | Content likely to be viewed soon       |
 
 ## See Also
 
