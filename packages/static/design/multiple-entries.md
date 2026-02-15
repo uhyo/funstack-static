@@ -126,34 +126,53 @@ interface MultipleEntriesOptions {
 
 This enforces at the type level that you specify either `root`+`app` or `entries`, not both.
 
-### Internal Architecture Changes
+### Unified Internal Architecture
+
+Internally, both configuration styles are normalized to the same multi-entry codepath. When `root`+`app` is specified, the plugin synthesizes an entries module that wraps them as a single entry. This means there is only one rendering and build codepath to maintain.
 
 #### 1. Virtual Module Resolution
 
-Currently `virtual:funstack/root` and `virtual:funstack/app` resolve to fixed paths. With `entries` mode, these virtual modules are not used in the same way because each entry has its own root and app.
+A new virtual module `virtual:funstack/entries` is always generated, regardless of which configuration style the user chose.
 
-**Approach**: When `entries` is specified, introduce a new virtual module:
+**When `entries` is specified** — the virtual module re-exports the user's module:
 
-- `virtual:funstack/entries` — resolves to the user-provided entries module.
+```ts
+// Generated virtual:funstack/entries
+export { default } from "/resolved/path/to/user/entries.tsx";
+```
 
-The existing `virtual:funstack/root` and `virtual:funstack/app` modules become unused in entries mode. They can either be left unresolved (triggering an error if accidentally imported) or could point to a stub that throws an explanatory error.
+**When `root`+`app` is specified** — the virtual module synthesizes a single-entry array:
+
+```ts
+// Generated virtual:funstack/entries
+import Root from "/resolved/path/to/root.tsx";
+import App from "/resolved/path/to/app.tsx";
+export default function getEntries() {
+  return [{
+    path: "/",
+    root: () => Promise.resolve({ default: Root }),
+    app: () => Promise.resolve({ default: App }),
+  }];
+}
+```
+
+The existing `virtual:funstack/root` and `virtual:funstack/app` modules are removed. They are no longer needed since entry components are always loaded via the entries module.
 
 #### 2. RSC Entry Changes (`rsc/entry.tsx`)
 
-The RSC entry needs a new `buildEntries()` function alongside the existing `build()`:
+The existing `build()` function is replaced by a unified `build()` that iterates over all entries:
 
 ```ts
-// New: build all entries
-export async function buildEntries() {
+export async function build() {
   const getEntries = (await import("virtual:funstack/entries")).default;
   const entries = await getEntries();
 
+  const ssrEntryModule = await import.meta.viteRsc.loadModule<
+    typeof import("../ssr/entry")
+  >("ssr");
+
   const results: EntryBuildResult[] = [];
   for (const entry of entries) {
-    // Reset defer registry per entry so deferred components
-    // are scoped to each page.
-    deferRegistry.clear();
-
     const RootModule = await entry.root();
     const AppModule = await entry.app();
     const Root = RootModule.default;
@@ -161,7 +180,6 @@ export async function buildEntries() {
 
     const marker = generateAppMarker();
 
-    // Same RSC rendering logic as today, but with per-entry components
     let rootRscStream: ReadableStream<Uint8Array>;
     let appRscStream: ReadableStream<Uint8Array>;
 
@@ -181,10 +199,6 @@ export async function buildEntries() {
       });
     }
 
-    const ssrEntryModule = await import.meta.viteRsc.loadModule<
-      typeof import("../ssr/entry")
-    >("ssr");
-
     const ssrResult = await ssrEntryModule.renderHTML(rootRscStream, {
       appEntryMarker: marker,
       build: true,
@@ -195,19 +209,21 @@ export async function buildEntries() {
       path: entry.path,
       html: ssrResult.stream,
       appRsc: appRscStream,
-      deferredEntries: deferRegistry.loadAll(),
     });
   }
 
-  return results;
+  return {
+    entries: results,
+    deferRegistry,
+  };
 }
 ```
 
-**Key point**: the defer registry is cleared between entries. Each page gets its own set of deferred components. This avoids cross-page interference and keeps output predictable.
+**Key point**: the defer registry is **not** cleared between entries. All deferred components from all entries accumulate in the single global registry. This avoids redundant computation — if multiple entries defer the same component, it is rendered once and shared via content hashing. The registry is returned alongside the per-entry results so that the build pipeline can process all deferred components in one pass.
 
 #### 3. Build Pipeline Changes (`build/buildApp.ts`)
 
-The build function needs to handle the multi-entry case:
+Since single-entry and multi-entry are unified, the build function always receives the same shape from `build()`:
 
 ```ts
 export async function buildApp(builder: ViteBuilder, context: MinimalPluginContextWithoutEnvironment) {
@@ -218,32 +234,45 @@ export async function buildApp(builder: ViteBuilder, context: MinimalPluginConte
   const baseDir = config.environments.client.build.outDir;
   const base = normalizeBase(config.base);
 
-  if (entry.buildEntries) {
-    // Multi-entry mode
-    const results = await entry.buildEntries();
-    for (const result of results) {
-      await buildSingleEntry(result, baseDir, base, context);
-    }
-  } else {
-    // Single-entry mode (existing behavior, unchanged)
-    const { html, appRsc, deferRegistry } = await entry.build();
-    // ... existing logic ...
+  const { entries, deferRegistry } = await entry.build();
+
+  // Process all deferred components once across all entries
+  const allDeferredEntries = deferRegistry.loadAll();
+  const { components, idMapping } = await processDeferredComponents(
+    allDeferredEntries,
+    context,
+  );
+
+  // Write each entry's HTML and RSC payload
+  for (const result of entries) {
+    await buildSingleEntry(result, idMapping, baseDir, base, context);
+  }
+
+  // Write all deferred component payloads
+  for (const { finalId, finalContent, name } of components) {
+    const filePath = path.join(
+      baseDir,
+      getModulePathFor(finalId).replace(/^\//, ""),
+    );
+    await writeFileNormal(filePath, finalContent, context, name);
   }
 }
 
 async function buildSingleEntry(
   result: EntryBuildResult,
+  idMapping: Map<string, string>,
   baseDir: string,
   base: string,
   context: MinimalPluginContextWithoutEnvironment,
 ) {
-  const { path: entryPath, html, appRsc, deferredEntries } = result;
+  const { path: entryPath, html, appRsc } = result;
 
   const htmlContent = await drainStream(html);
-  const { components, appRscContent } = await processRscComponents(
-    deferredEntries,
-    appRsc,
-    context,
+
+  // Replace temp IDs with final hashed IDs in this entry's RSC payload
+  const appRscContent = replaceIdsInContent(
+    await drainStream(appRsc),
+    idMapping,
   );
 
   const mainPayloadHash = await computeContentHash(appRscContent);
@@ -270,47 +299,32 @@ async function buildSingleEntry(
     appRscContent,
     context,
   );
-
-  for (const { finalId, finalContent, name } of components) {
-    const filePath = path.join(
-      baseDir,
-      getModulePathFor(finalId).replace(/^\//, ""),
-    );
-    await writeFileNormal(filePath, finalContent, context, name);
-  }
 }
 ```
 
-**Note on deferred component deduplication**: If two entries share the same deferred component (same content), they will naturally get the same content hash and thus the same file path. The second write is a no-op overwrite of identical content. This is by design — no special deduplication logic is needed.
+Since the defer registry accumulates across all entries, deferred components are processed exactly once. The `idMapping` (temp UUID to final content hash) is computed once and then applied to each entry's RSC payload individually.
+
+**Note on deferred component deduplication**: If two entries defer the same component (same content), it naturally gets one content hash and one output file. No special deduplication logic is needed.
 
 #### 4. Dev Server Changes (`plugin/server.ts`)
 
-In dev mode, the dev server currently routes all HTML requests to a single `serveHTML()`. With multiple entries, the server needs to match the request path to the correct entry:
+Since the architecture is unified, the dev server always calls the same `serveHTML()` function, which now accepts a `Request` to determine the path:
 
 ```ts
 // In dev middleware
 if (req.headers.accept?.includes("text/html")) {
   const rscEntry = await getRSCEntryPoint(rscEnv);
-  if (rscEntry.serveHTMLForPath) {
-    // Multi-entry mode: pass the request path
-    const fetchHandler = toNodeHandler((request: Request) =>
-      rscEntry.serveHTMLForPath(request)
-    );
-    await fetchHandler(req, res);
-  } else {
-    // Single-entry mode (existing)
-    const fetchHandler = toNodeHandler(rscEntry.serveHTML);
-    await fetchHandler(req, res);
-  }
+  const fetchHandler = toNodeHandler(rscEntry.serveHTML);
+  await fetchHandler(req, res);
   return;
 }
 ```
 
-The RSC entry gains a new `serveHTMLForPath()` that:
-1. Loads the entries list.
-2. Matches the request URL path against entry paths.
-3. Loads the matched entry's root and app components.
-4. Renders and returns the HTML, same as today's `serveHTML()` but with per-entry components.
+The `serveHTML()` function in `rsc/entry.tsx` is updated to:
+1. Load the entries list via `virtual:funstack/entries`.
+2. Match the request URL path against entry paths (for single-entry `root`+`app` configs, the synthesized entries array has one entry with `path: "/"` which matches all requests).
+3. Load the matched entry's root and app components.
+4. Render and return the HTML.
 
 For dev, entries can be cached after first load and invalidated on HMR.
 
@@ -363,9 +377,9 @@ All pages share the same client JS bundle. Only the HTML and RSC payloads differ
 
 ### Migration & Backward Compatibility
 
-- The existing `root`+`app` API is fully preserved. No changes to existing behavior.
-- `entries` mode is purely additive. The single-entry path remains the default and recommended approach for single-page apps.
-- Internally, single-entry mode is **not** rewritten to use the entries codepath. Keeping the two paths separate avoids regressions and keeps the single-entry path simple.
+- The existing `root`+`app` API is fully preserved. No changes to user-facing behavior.
+- `entries` mode is purely additive. The single-entry configuration remains the default and recommended approach for single-page apps.
+- Internally, `root`+`app` is converted into a single-element entries array via the generated `virtual:funstack/entries` module. This means there is one unified codepath for rendering and building, reducing maintenance burden and ensuring feature parity.
 
 ### Edge Cases and Considerations
 
@@ -375,14 +389,11 @@ If two entries declare the same `path`, the build should fail with a clear error
 #### Trailing slashes
 Entry paths are normalized: `/about` and `/about/` are treated identically and both produce `about/index.html`.
 
-#### Defer registry isolation
-The defer registry is global mutable state. Between entries, it must be cleared to prevent one entry's deferred components from leaking into another's output. The `deferRegistry.clear()` method will be added for this purpose.
-
-#### Shared deferred components
-If the same component is deferred by multiple pages, each page's RSC payload will reference it by content hash. Since hashes are deterministic, the same content produces the same file — no conflicts, just idempotent writes.
+#### Shared defer registry
+The defer registry accumulates across all entries. This means deferred components are never rendered more than once, even if multiple entries reference them. The trade-off is higher memory usage (all deferred component data stays in memory until the build pipeline processes it), but this avoids redundant computation and simplifies the architecture. The existing content hashing ensures that identical components produce identical output files regardless of which entry triggered the deferral.
 
 #### Memory usage
-Entries are built sequentially (not in parallel) to keep memory usage bounded. Each entry's RSC streams and HTML are fully drained before moving to the next.
+Entries are built sequentially (not in parallel). All deferred component data accumulates in the registry across entries and is processed once at the end. For sites with many entries and many deferred components, this could use significant memory. This is acceptable for the initial implementation; if it becomes a problem, a batched approach can be added later.
 
 #### Client-side navigation between entries
 Each entry is a fully independent HTML page. Navigation between entries is a full page load (standard `<a>` link behavior). Client-side routing within an entry still works as before. This is intentional for SSG — each page is self-contained.
@@ -404,10 +415,10 @@ Each entry is a fully independent HTML page. Navigation between entries is a ful
 ## Implementation Plan
 
 1. **Type definitions**: Add `EntryDefinition` export and update `FunstackStaticOptions` union type.
-2. **Virtual module**: Add `virtual:funstack/entries` resolution in the plugin.
-3. **RSC entry**: Add `buildEntries()` and `serveHTMLForPath()` functions. Add `deferRegistry.clear()`.
-4. **Build pipeline**: Add multi-entry loop in `buildApp()`, with path normalization and duplicate detection.
-5. **Dev server**: Route HTML requests to the correct entry.
+2. **Virtual module**: Replace `virtual:funstack/root` and `virtual:funstack/app` with `virtual:funstack/entries`. Branch in the plugin to generate the appropriate module content based on whether the user specified `root`+`app` or `entries`.
+3. **RSC entry**: Rewrite `build()` and `serveHTML()` to load entries from `virtual:funstack/entries` and iterate. Remove direct imports of `virtual:funstack/root` and `virtual:funstack/app`.
+4. **Build pipeline**: Rewrite `buildApp()` to process the entries array and the shared defer registry. Extract deferred component processing into a separate pass that runs once after all entries.
+5. **Dev server**: Update `serveHTML()` to accept a `Request` and match the path against entries.
 6. **Preview server**: Serve the correct HTML file by path.
 7. **Tests**: Unit tests for path normalization and duplicate detection. E2E test with a multi-entry fixture.
 8. **Documentation**: Update README and docs site with the new option.
