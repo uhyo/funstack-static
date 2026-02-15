@@ -5,42 +5,62 @@ import { generateAppMarker } from "./marker";
 import { deferRegistry } from "./defer";
 import { extractIDFromModulePath } from "./rscModule";
 import { stripBasePath } from "../util/basePath";
+import { urlPathToFileCandidates } from "../util/urlPath";
+import { resolveRoot, resolveApp } from "./resolveEntry";
+import type { EntryDefinition, GetEntriesResult } from "../entryDefinition";
 
 export type RscPayload = {
   root: React.ReactNode;
 };
 
+export type EntryBuildResult = {
+  path: string;
+  html: ReadableStream<Uint8Array>;
+  appRsc: ReadableStream<Uint8Array>;
+};
+
 import { ssr as ssrEnabled } from "virtual:funstack/config";
 
-async function loadEntries() {
-  const Root = (await import("virtual:funstack/root")).default;
-  const App = (await import("virtual:funstack/app")).default;
-
-  // Sanity check; this may happen when user-provided entry file
-  // does not have a default export.
-  if (Root === undefined) {
-    throw new Error(
-      "Failed to load RSC root entry module. Check your entry file to ensure it has a default export.",
-    );
+async function loadEntriesList(): Promise<EntryDefinition[]> {
+  const getEntries = (await import("virtual:funstack/entries")).default;
+  const result: GetEntriesResult = getEntries();
+  const entries: EntryDefinition[] = [];
+  for await (const entry of result) {
+    entries.push(entry);
   }
-  if (App === undefined) {
-    throw new Error(
-      "Failed to load RSC app entry module. Check your entry file to ensure it has a default export.",
-    );
-  }
-  return { Root, App };
+  return entries;
 }
 
 /**
- * Entrypoint to serve HTML response in dev environment
+ * Find the entry matching a URL path from a list of entries.
  */
-export async function serveHTML(): Promise<Response> {
-  const timings: string[] = [];
+function findEntryForUrlPath(
+  entries: EntryDefinition[],
+  urlPath: string,
+): EntryDefinition | undefined {
+  const candidates = urlPathToFileCandidates(urlPath);
+  for (const candidate of candidates) {
+    const entry = entries.find((e) => e.path === candidate);
+    if (entry) {
+      return entry;
+    }
+  }
+  return undefined;
+}
+
+/**
+ * Renders a single entry to an HTML response.
+ */
+async function renderEntryToResponse(
+  entry: EntryDefinition,
+  timings: string[],
+): Promise<Response> {
   const marker = generateAppMarker();
 
-  const entriesStart = performance.now();
-  const { Root, App } = await loadEntries();
-  timings.push(`entries;dur=${performance.now() - entriesStart}`);
+  const resolveStart = performance.now();
+  const Root = await resolveRoot(entry.root);
+  const appNode = await resolveApp(entry.app);
+  timings.push(`resolve;dur=${performance.now() - resolveStart}`);
 
   const ssrModuleStart = performance.now();
   const ssrEntryModule = await import.meta.viteRsc.loadModule<
@@ -52,11 +72,7 @@ export async function serveHTML(): Promise<Response> {
     // SSR on: single RSC stream with full tree
     const rscStart = performance.now();
     const rootRscStream = renderToReadableStream<RscPayload>({
-      root: (
-        <Root>
-          <App />
-        </Root>
-      ),
+      root: <Root>{appNode}</Root>,
     });
     timings.push(`rsc;dur=${performance.now() - rscStart}`);
 
@@ -86,11 +102,7 @@ export async function serveHTML(): Promise<Response> {
       ),
     });
     const clientRscStream = renderToReadableStream<RscPayload>({
-      root: (
-        <Root>
-          <App />
-        </Root>
-      ),
+      root: <Root>{appNode}</Root>,
     });
     timings.push(`rsc;dur=${performance.now() - rscStart}`);
 
@@ -113,6 +125,31 @@ export async function serveHTML(): Promise<Response> {
   }
 }
 
+/**
+ * Entrypoint to serve HTML response in dev environment.
+ * Accepts a Request to determine which entry to render based on URL path.
+ */
+export async function serveHTML(request: Request): Promise<Response> {
+  const timings: string[] = [];
+
+  const entriesStart = performance.now();
+  const entries = await loadEntriesList();
+  timings.push(`entries;dur=${performance.now() - entriesStart}`);
+
+  const url = new URL(request.url);
+  const urlPath = stripBasePath(url.pathname);
+  const entry = findEntryForUrlPath(entries, urlPath);
+
+  if (!entry) {
+    return new Response("Not Found", {
+      status: 404,
+      headers: { "Content-type": "text/plain" },
+    });
+  }
+
+  return renderEntryToResponse(entry, timings);
+}
+
 class ServeRSCError extends Error {
   status: 404 | 500;
   constructor(message: string, status: 404 | 500) {
@@ -127,7 +164,7 @@ export function isServeRSCError(error: unknown): error is ServeRSCError {
 }
 
 /**
- * Servers an RSC stream response
+ * Serves an RSC stream response
  */
 export async function serveRSC(request: Request): Promise<Response> {
   const timings: string[] = [];
@@ -135,17 +172,25 @@ export async function serveRSC(request: Request): Promise<Response> {
   const pathname = stripBasePath(url.pathname);
   if (pathname === devMainRscPath) {
     // root RSC stream is requested (HMR re-fetch always sends full tree)
+    // For HMR, re-render the first entry (single-entry mode) or index.html entry
     const entriesStart = performance.now();
-    const { Root, App } = await loadEntries();
+    const entries = await loadEntriesList();
     timings.push(`entries;dur=${performance.now() - entriesStart}`);
+
+    // Use the first entry for HMR re-fetch
+    const entry = entries[0];
+    if (!entry) {
+      throw new ServeRSCError("No entries defined", 404);
+    }
+
+    const resolveStart = performance.now();
+    const Root = await resolveRoot(entry.root);
+    const appNode = await resolveApp(entry.app);
+    timings.push(`resolve;dur=${performance.now() - resolveStart}`);
 
     const rscStart = performance.now();
     const rootRscStream = renderToReadableStream<RscPayload>({
-      root: (
-        <Root>
-          <App />
-        </Root>
-      ),
+      root: <Root>{appNode}</Root>,
     });
     timings.push(`rsc;dur=${performance.now() - rscStart}`);
 
@@ -200,58 +245,63 @@ export async function serveRSC(request: Request): Promise<Response> {
 }
 
 /**
- * Build handler
+ * Build handler — iterates over all entries and returns per-entry results
+ * along with the shared defer registry.
  */
 export async function build() {
-  const marker = generateAppMarker();
-  const { Root, App } = await loadEntries();
-
-  let rootRscStream: ReadableStream<Uint8Array>;
-  let appRscStream: ReadableStream<Uint8Array>;
-
-  if (ssrEnabled) {
-    // SSR on: both streams have full tree
-    rootRscStream = renderToReadableStream<RscPayload>({
-      root: (
-        <Root>
-          <App />
-        </Root>
-      ),
-    });
-    appRscStream = renderToReadableStream<RscPayload>({
-      root: (
-        <Root>
-          <App />
-        </Root>
-      ),
-    });
-  } else {
-    // SSR off: root stream has shell, app stream has App only
-    rootRscStream = renderToReadableStream<RscPayload>({
-      root: (
-        <Root>
-          <span id={marker} />
-        </Root>
-      ),
-    });
-    appRscStream = renderToReadableStream<RscPayload>({
-      root: <App />,
-    });
-  }
+  const getEntries = (await import("virtual:funstack/entries")).default;
 
   const ssrEntryModule = await import.meta.viteRsc.loadModule<
     typeof import("../ssr/entry")
   >("ssr");
 
-  const ssrResult = await ssrEntryModule.renderHTML(rootRscStream, {
-    appEntryMarker: marker,
-    build: true,
-    ssr: ssrEnabled,
-  });
+  const results: EntryBuildResult[] = [];
+  for await (const entry of getEntries()) {
+    const Root = await resolveRoot(entry.root);
+    const appNode = await resolveApp(entry.app);
+
+    const marker = generateAppMarker();
+
+    let rootRscStream: ReadableStream<Uint8Array>;
+    let appRscStream: ReadableStream<Uint8Array>;
+
+    if (ssrEnabled) {
+      // SSR on: both streams have full tree
+      rootRscStream = renderToReadableStream<RscPayload>({
+        root: <Root>{appNode}</Root>,
+      });
+      appRscStream = renderToReadableStream<RscPayload>({
+        root: <Root>{appNode}</Root>,
+      });
+    } else {
+      // SSR off: root stream has shell, app stream has App only
+      rootRscStream = renderToReadableStream<RscPayload>({
+        root: (
+          <Root>
+            <span id={marker} />
+          </Root>
+        ),
+      });
+      appRscStream = renderToReadableStream<RscPayload>({
+        root: appNode,
+      });
+    }
+
+    const ssrResult = await ssrEntryModule.renderHTML(rootRscStream, {
+      appEntryMarker: marker,
+      build: true,
+      ssr: ssrEnabled,
+    });
+
+    results.push({
+      path: entry.path,
+      html: ssrResult.stream,
+      appRsc: appRscStream,
+    });
+  }
 
   return {
-    html: ssrResult.stream,
-    appRsc: appRscStream,
+    entries: results,
     deferRegistry,
   };
 }

@@ -9,17 +9,42 @@ export default defineConfig({
   reporter: "html",
 
   use: {
-    baseURL: "http://localhost:4173",
     trace: "on-first-retry",
   },
 
-  projects: [{ name: "chromium", use: { ...devices["Desktop Chrome"] } }],
+  projects: [
+    {
+      name: "single-entry",
+      use: {
+        ...devices["Desktop Chrome"],
+        baseURL: "http://localhost:4173",
+      },
+      testMatch: /\/(build|hydration|client-init)\.spec\.ts$/,
+    },
+    {
+      name: "multi-entry",
+      use: {
+        ...devices["Desktop Chrome"],
+        baseURL: "http://localhost:4174",
+      },
+      testMatch: /\/multi-entry\.spec\.ts$/,
+    },
+  ],
 
-  webServer: {
-    command:
-      "cd fixture && pnpm vite build && pnpm dlx serve -p 4173 dist/public",
-    url: "http://localhost:4173",
-    reuseExistingServer: !process.env.CI,
-    timeout: 120000,
-  },
+  webServer: [
+    {
+      command:
+        "cd fixture && pnpm vite build && pnpm dlx serve -p 4173 dist/public",
+      url: "http://localhost:4173",
+      reuseExistingServer: !process.env.CI,
+      timeout: 120000,
+    },
+    {
+      command:
+        "cd fixture-multi-entry && pnpm vite build && pnpm dlx serve -p 4174 dist/public",
+      url: "http://localhost:4174",
+      reuseExistingServer: !process.env.CI,
+      timeout: 120000,
+    },
+  ],
 });

@@ -4,18 +4,7 @@ import rsc from "@vitejs/plugin-rsc";
 import { buildApp } from "../build/buildApp";
 import { serverPlugin } from "./server";
 
-export interface FunstackStaticOptions {
-  /**
-   * Root component of the page.
-   * The file should `export default` a React component that renders the whole page.
-   * (`<html>...</html>`).
-   */
-  root: string;
-  /**
-   * Entry point of your application.
-   * The file should `export default` a React component that renders the application content.
-   */
-  app: string;
+interface FunstackStaticBaseOptions {
   /**
    * Output directory for build.
    *
@@ -38,16 +27,44 @@ export interface FunstackStaticOptions {
   clientInit?: string;
 }
 
-export default function funstackStatic({
-  root,
-  app,
-  publicOutDir = "dist/public",
-  ssr = false,
-  clientInit,
-}: FunstackStaticOptions): (Plugin | Plugin[])[] {
-  let resolvedRootEntry: string = "__uninitialized__";
-  let resolvedAppEntry: string = "__uninitialized__";
+interface SingleEntryOptions {
+  /**
+   * Root component of the page.
+   * The file should `export default` a React component that renders the whole page.
+   * (`<html>...</html>`).
+   */
+  root: string;
+  /**
+   * Entry point of your application.
+   * The file should `export default` a React component that renders the application content.
+   */
+  app: string;
+  entries?: never;
+}
+
+interface MultipleEntriesOptions {
+  root?: never;
+  app?: never;
+  /**
+   * Path to a module that exports a function returning entry definitions.
+   * Mutually exclusive with `root`+`app`.
+   */
+  entries: string;
+}
+
+export type FunstackStaticOptions = FunstackStaticBaseOptions &
+  (SingleEntryOptions | MultipleEntriesOptions);
+
+export default function funstackStatic(
+  options: FunstackStaticOptions,
+): (Plugin | Plugin[])[] {
+  const { publicOutDir = "dist/public", ssr = false, clientInit } = options;
+
+  let resolvedEntriesModule: string = "__uninitialized__";
   let resolvedClientInitEntry: string | undefined;
+
+  // Determine whether user specified entries or root+app
+  const isMultiEntry = "entries" in options && options.entries !== undefined;
 
   return [
     {
@@ -78,8 +95,19 @@ export default function funstackStatic({
     {
       name: "@funstack/static:config",
       configResolved(config) {
-        resolvedRootEntry = path.resolve(config.root, root);
-        resolvedAppEntry = path.resolve(config.root, app);
+        if (isMultiEntry) {
+          resolvedEntriesModule = path.resolve(config.root, options.entries);
+        } else {
+          // For single-entry, we store both resolved paths to generate a
+          // synthetic entries module in the virtual module loader.
+          const resolvedRoot = path.resolve(config.root, options.root);
+          const resolvedApp = path.resolve(config.root, options.app);
+          // Encode as JSON for safe embedding in generated code
+          resolvedEntriesModule = JSON.stringify({
+            root: resolvedRoot,
+            app: resolvedApp,
+          });
+        }
         if (clientInit) {
           resolvedClientInitEntry = path.resolve(config.root, clientInit);
         }
@@ -111,11 +139,8 @@ export default function funstackStatic({
     {
       name: "@funstack/static:virtual-entry",
       resolveId(id) {
-        if (id === "virtual:funstack/root") {
-          return "\0virtual:funstack/root";
-        }
-        if (id === "virtual:funstack/app") {
-          return "\0virtual:funstack/app";
+        if (id === "virtual:funstack/entries") {
+          return "\0virtual:funstack/entries";
         }
         if (id === "virtual:funstack/config") {
           return "\0virtual:funstack/config";
@@ -125,11 +150,20 @@ export default function funstackStatic({
         }
       },
       load(id) {
-        if (id === "\0virtual:funstack/root") {
-          return `export { default } from "${resolvedRootEntry}";`;
-        }
-        if (id === "\0virtual:funstack/app") {
-          return `export { default } from "${resolvedAppEntry}";`;
+        if (id === "\0virtual:funstack/entries") {
+          if (isMultiEntry) {
+            // Re-export the user's entries module
+            return `export { default } from "${resolvedEntriesModule}";`;
+          }
+          // Synthesize a single-entry array from root+app
+          const { root, app } = JSON.parse(resolvedEntriesModule);
+          return [
+            `import Root from "${root}";`,
+            `import App from "${app}";`,
+            `export default function getEntries() {`,
+            `  return [{ path: "index.html", root: { default: Root }, app: { default: App } }];`,
+            `}`,
+          ].join("\n");
         }
         if (id === "\0virtual:funstack/config") {
           return `export const ssr = ${JSON.stringify(ssr)};`;

@@ -23,6 +23,10 @@
       "types": "./dist/index.d.mts",
       "import": "./dist/index.mjs"
     },
+    "./entries": {
+      "types": "./dist/entryDefinition.d.mts",
+      "import": "./dist/entryDefinition.mjs"
+    },
     "./server": {
       "types": "./dist/entries/server.d.mts",
       "import": "./dist/entries/server.mjs"
