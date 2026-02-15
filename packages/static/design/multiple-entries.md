@@ -12,9 +12,9 @@ Today the plugin accepts a single entry point pair:
 
 ```ts
 funstackStatic({
-  root: "./src/root.tsx",   // HTML shell (<html>...</html>)
-  app: "./src/App.tsx",     // Application content
-})
+  root: "./src/root.tsx", // HTML shell (<html>...</html>)
+  app: "./src/App.tsx", // Application content
+});
 ```
 
 This flows through the system as:
@@ -38,12 +38,12 @@ A new `entries` option is added to `FunstackStaticOptions`, mutually exclusive w
 funstackStatic({
   root: "./src/root.tsx",
   app: "./src/App.tsx",
-})
+});
 
 // Option B: multiple entries (new)
 funstackStatic({
   entries: "./src/entries.tsx",
-})
+});
 ```
 
 The `entries` module is a meta-entry point. It exports a function that returns entry definitions. The simplest form returns an array:
@@ -62,7 +62,7 @@ export default function getEntries(): EntryDefinition[] {
     },
     {
       path: "about.html",
-      root: { default: Root },           // sync is fine too
+      root: { default: Root }, // sync is fine too
       app: () => import("./pages/About"),
     },
   ];
@@ -99,7 +99,9 @@ export default async function* getEntries() {
 ```ts
 type MaybePromise<T> = T | Promise<T>;
 
-type RootModule = { default: React.ComponentType<{ children: React.ReactNode }> };
+type RootModule = {
+  default: React.ComponentType<{ children: React.ReactNode }>;
+};
 type AppModule = { default: React.ComponentType };
 
 export interface EntryDefinition {
@@ -125,7 +127,10 @@ export interface EntryDefinition {
    * - A module (sync or lazy) with a `default` export component.
    * - A React node (JSX of a server component) for direct rendering.
    */
-  app: React.ReactNode | MaybePromise<AppModule> | (() => MaybePromise<AppModule>);
+  app:
+    | React.ReactNode
+    | MaybePromise<AppModule>
+    | (() => MaybePromise<AppModule>);
 }
 
 /**
@@ -229,11 +234,13 @@ export { default } from "/resolved/path/to/user/entries.tsx";
 import Root from "/resolved/path/to/root.tsx";
 import App from "/resolved/path/to/app.tsx";
 export default function getEntries() {
-  return [{
-    path: "index.html",
-    root: { default: Root },
-    app: { default: App },
-  }];
+  return [
+    {
+      path: "index.html",
+      root: { default: Root },
+      app: { default: App },
+    },
+  ];
 }
 ```
 
@@ -306,7 +313,10 @@ Note that `for await` works on both plain arrays and async iterables, so no bran
 Since single-entry and multi-entry are unified, the build function always receives the same shape from `build()`:
 
 ```ts
-export async function buildApp(builder: ViteBuilder, context: MinimalPluginContextWithoutEnvironment) {
+export async function buildApp(
+  builder: ViteBuilder,
+  context: MinimalPluginContextWithoutEnvironment,
+) {
   const { config } = builder;
   const entryPath = path.join(config.environments.rsc.build.outDir, "index.js");
   const entry = await import(pathToFileURL(entryPath).href);
@@ -397,12 +407,14 @@ if (req.headers.accept?.includes("text/html")) {
 ```
 
 The `serveHTML()` function in `rsc/entry.tsx` is updated to:
+
 1. Load the entries list via `virtual:funstack/entries`.
 2. Map the request URL path to candidate file names and find the matching entry.
 3. Resolve the matched entry's root and app.
 4. Render and return the HTML.
 
 **URL-to-filename matching**: The dev server maps a URL path to candidate file names using these rules:
+
 - `/` → `index.html`
 - `/about` → `about.html`, then `about/index.html`
 - `/blog/post-1` → `blog/post-1.html`, then `blog/post-1/index.html`
@@ -422,7 +434,10 @@ if (req.headers.accept?.includes("text/html")) {
   const candidates = urlPathToFileCandidates(urlPath);
   for (const candidate of candidates) {
     try {
-      const html = await readFile(path.join(resolvedOutDir, candidate), "utf-8");
+      const html = await readFile(
+        path.join(resolvedOutDir, candidate),
+        "utf-8",
+      );
       res.end(html);
       return;
     } catch {
@@ -484,32 +499,40 @@ All pages share the same client JS bundle. Only the HTML and RSC payloads differ
 ### Edge Cases and Considerations
 
 #### Duplicate paths
+
 If two entries declare the same `path`, the build should fail with a clear error message listing the conflicting path.
 
 #### Path validation
+
 Entry paths must end with `.html`. Paths must not start with `/` (they are relative to the output directory). Invalid paths cause a build error with a clear message.
 
 #### Ambiguous URL matching in dev/preview
+
 A URL path like `/about` produces candidates `about.html` and `about/index.html`. If entries for both exist, the first candidate (`about.html`) wins. This is documented behavior — users should avoid creating both `about.html` and `about/index.html` unless they understand the precedence.
 
 #### Shared defer registry
+
 The defer registry accumulates across all entries. This means deferred components are never rendered more than once, even if multiple entries reference them. The trade-off is higher memory usage (all deferred component data stays in memory until the build pipeline processes it), but this avoids redundant computation and simplifies the architecture. The existing content hashing ensures that identical components produce identical output files regardless of which entry triggered the deferral.
 
 #### Memory usage
+
 Entries are built sequentially (not in parallel). All deferred component data accumulates in the registry across entries and is processed once at the end. For sites with many entries and many deferred components, this could use significant memory. This is acceptable for the initial implementation; if it becomes a problem, a batched approach can be added later.
 
 #### Client-side navigation between entries
+
 Each entry is a fully independent HTML page. Navigation between entries is a full page load (standard `<a>` link behavior). Client-side routing within an entry still works as before. This is intentional for SSG — each page is self-contained.
 
 ## Scope and Non-Goals
 
 ### In scope
+
 - The `entries` option and `EntryDefinition` type.
 - Build pipeline producing multiple HTML files.
 - Dev server routing to the correct entry by path.
 - Preview server serving the correct HTML by path.
 
 ### Non-goals (future work)
+
 - **Shared layout deduplication**: Extracting shared layout RSC payloads between entries. Not needed initially; content hashing already handles shared deferred components.
 - **Incremental builds**: Only rebuilding changed entries. The build is fast enough for reasonable numbers of entries.
 - **Dynamic parameters / catch-all routes**: Something like `path: "/blog/[slug]"` that expands at build time. Users can achieve this by generating the entries array programmatically in their `getEntries()` function.
