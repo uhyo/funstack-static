@@ -60,7 +60,7 @@ export async function renderHTML(
       bootstrapScriptContent,
       nonce: options?.nonce,
     });
-  } catch (e) {
+  } catch {
     // In this case, RSC payload is still sent to client and we let client render from scratch anyway.
     // This triggers the error boundary on client side.
     status = 500;

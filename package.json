@@ -9,10 +9,12 @@
     "test:run": "turbo run test:run",
     "test:e2e": "turbo run test:e2e",
     "typecheck": "turbo run typecheck",
+    "lint": "oxlint",
     "format": "prettier --write --experimental-cli .",
     "format:check": "prettier --check --experimental-cli ."
   },
   "devDependencies": {
+    "oxlint": "^1.47.0",
     "prettier": "^3.8.1",
     "turbo": "^2.8.3"
   },
