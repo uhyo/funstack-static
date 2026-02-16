@@ -1,0 +1,139 @@
+# EntryDefinition
+
+The `EntryDefinition` type defines a single entry in a multi-page static site. Each entry produces one HTML file with its own RSC payload.
+
+## Import
+
+```typescript
+import type { EntryDefinition } from "@funstack/static/entries";
+```
+
+## Usage
+
+```tsx
+import type { EntryDefinition } from "@funstack/static/entries";
+
+export default function getEntries(): EntryDefinition[] {
+  return [
+    {
+      path: "index.html",
+      root: () => import("./root"),
+      app: () => import("./pages/Home"),
+    },
+    {
+      path: "about.html",
+      root: () => import("./root"),
+      app: () => import("./pages/About"),
+    },
+  ];
+}
+```
+
+## Type Definition
+
+```typescript
+interface EntryDefinition {
+  path: string;
+  root: MaybePromise<RootModule> | (() => MaybePromise<RootModule>);
+  app: ReactNode | MaybePromise<AppModule> | (() => MaybePromise<AppModule>);
+}
+
+type MaybePromise<T> = T | Promise<T>;
+type RootModule = {
+  default: React.ComponentType<{ children: React.ReactNode }>;
+};
+type AppModule = { default: React.ComponentType };
+```
+
+## Properties
+
+### path
+
+**Type:** `string`
+
+Output file path relative to the build output directory.
+
+- Must end with `.html`
+- Must not start with `/`
+- Duplicate paths cause a build error
+
+```typescript
+"index.html"; // -> /
+"about.html"; // -> /about
+"blog/post-1.html"; // -> /blog/post-1
+"blog/post-1/index.html"; // -> /blog/post-1/
+```
+
+### root
+
+**Type:** `MaybePromise<RootModule> | (() => MaybePromise<RootModule>)`
+
+The root component module. The module must have a `default` export of a component that accepts `{ children: React.ReactNode }`.
+
+```tsx
+// Lazy import (recommended)
+root: () => import("./root"),
+
+// Synchronous module object
+import Root from "./root";
+root: { default: Root },
+
+// Promise
+root: import("./root"),
+```
+
+Using lazy imports (`() => import(...)`) is recommended to keep memory usage low when generating many entries.
+
+### app
+
+**Type:** `ReactNode | MaybePromise<AppModule> | (() => MaybePromise<AppModule>)`
+
+The app content for this entry. Accepts three forms:
+
+**Module (sync or lazy)** -- the module must have a `default` export component:
+
+```tsx
+// Lazy import
+app: () => import("./pages/Home"),
+
+// Synchronous module
+import Home from "./pages/Home";
+app: { default: Home },
+```
+
+**React node** -- server component JSX rendered directly:
+
+```tsx
+app: <BlogPost slug="hello-world" content={content} />,
+```
+
+The React node form enables parameterized rendering for SSG, where each entry passes different data to the same component without needing a separate module file.
+
+## Return Type of getEntries
+
+The entries function can return either a synchronous iterable or an async iterable:
+
+```typescript
+type GetEntriesResult =
+  | Iterable<EntryDefinition>
+  | AsyncIterable<EntryDefinition>;
+```
+
+This allows returning arrays, generators, or async generators:
+
+```tsx
+// Array
+export default function getEntries(): EntryDefinition[] {
+  return [{ path: "index.html", root: ..., app: ... }];
+}
+
+// Async generator
+export default async function* getEntries() {
+  yield { path: "index.html", root: ..., app: ... };
+}
+```
+
+## See Also
+
+- [Multiple Entrypoints](/funstack-static/learn/multiple-entrypoints) - Guide and examples
+- [funstackStatic()](/funstack-static/api/funstack-static) - Plugin configuration

@@ -9,7 +9,9 @@ import LazyServerComponents from "./pages/learn/LazyServerComponents.mdx";
 import OptimizingPayloads from "./pages/learn/OptimizingPayloads.mdx";
 import RSCConcept from "./pages/learn/RSC.mdx";
 import DeferAndActivity from "./pages/learn/DeferAndActivity.mdx";
+import MultipleEntrypoints from "./pages/learn/MultipleEntrypoints.mdx";
 import SSR from "./pages/learn/SSR.mdx";
+import EntryDefinitionApi from "./pages/api/EntryDefinition.mdx";
 import FAQ from "./pages/FAQ.mdx";
 import GettingStarted from "./pages/GettingStarted.mdx";
 import MigratingFromViteSPA from "./pages/MigratingFromViteSPA.mdx";
@@ -63,6 +65,14 @@ const routes: RouteDefinition[] = [
         component: <Layout>{defer(<DeferApi />, { name: "DeferApi" })}</Layout>,
       }),
       route({
+        path: "/api/entry-definition",
+        component: (
+          <Layout>
+            {defer(<EntryDefinitionApi />, { name: "EntryDefinitionApi" })}
+          </Layout>
+        ),
+      }),
+      route({
         path: "/learn/how-it-works",
         component: (
           <Layout>{defer(<HowItWorks />, { name: "HowItWorks" })}</Layout>
@@ -95,6 +105,14 @@ const routes: RouteDefinition[] = [
         component: (
           <Layout>
             {defer(<DeferAndActivity />, { name: "DeferAndActivity" })}
+          </Layout>
+        ),
+      }),
+      route({
+        path: "/learn/multiple-entrypoints",
+        component: (
+          <Layout>
+            {defer(<MultipleEntrypoints />, { name: "MultipleEntrypoints" })}
           </Layout>
         ),
       }),

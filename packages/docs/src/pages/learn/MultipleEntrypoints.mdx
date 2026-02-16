@@ -1,0 +1,246 @@
+# Multiple Entrypoints
+
+By default, FUNSTACK Static produces a single `index.html` from one `root` + `app` pair. The **multiple entries** feature lets you produce multiple HTML pages from a single project, targeting SSG (Static Site Generation) use cases where a site has distinct pages like `index.html`, `about.html`, and `blog/post-1.html`.
+
+## When to Use Multiple Entries
+
+Use the `entries` option when you want to build a **multi-page static site** where each page is a self-contained HTML document. This is different from a single-page app with client-side routing:
+
+- **Single-entry mode** (`root` + `app`): One HTML file, client-side routing between pages. Best for app-like experiences where navigation should not trigger full page reloads.
+- **Multiple entries mode** (`entries`): Multiple HTML files, each independently pre-rendered. Best for content sites (blogs, docs, marketing pages) where each page should be a standalone document.
+
+## Basic Setup
+
+### 1. Configure Vite
+
+Instead of `root` and `app`, pass an `entries` path:
+
+```typescript
+// vite.config.ts
+import funstackStatic from "@funstack/static";
+import react from "@vitejs/plugin-react";
+import { defineConfig } from "vite";
+
+export default defineConfig({
+  plugins: [
+    funstackStatic({
+      entries: "./src/entries.tsx",
+    }),
+    react(),
+  ],
+});
+```
+
+### 2. Create the Entries Module
+
+The entries module default-exports a function that returns an array of entry definitions:
+
+```tsx
+// src/entries.tsx
+import type { EntryDefinition } from "@funstack/static/entries";
+
+export default function getEntries(): EntryDefinition[] {
+  return [
+    {
+      path: "index.html",
+      root: () => import("./root"),
+      app: () => import("./pages/Home"),
+    },
+    {
+      path: "about.html",
+      root: () => import("./root"),
+      app: () => import("./pages/About"),
+    },
+  ];
+}
+```
+
+### 3. Create Root and Page Components
+
+The root and page components work exactly the same as in single-entry mode:
+
+```tsx
+// src/root.tsx
+export default function Root({ children }: { children: React.ReactNode }) {
+  return (
+    <html lang="en">
+      <head>
+        <meta charSet="UTF-8" />
+        <title>My Site</title>
+      </head>
+      <body>{children}</body>
+    </html>
+  );
+}
+```
+
+```tsx
+// src/pages/Home.tsx
+export default function Home() {
+  return (
+    <main>
+      <h1>Home Page</h1>
+      <a href="/about">About</a>
+    </main>
+  );
+}
+```
+
+```tsx
+// src/pages/About.tsx
+export default function About() {
+  return (
+    <main>
+      <h1>About Page</h1>
+      <a href="/">Home</a>
+    </main>
+  );
+}
+```
+
+## EntryDefinition
+
+Each entry in the array is an `EntryDefinition` object imported from `@funstack/static/entries`:
+
+```typescript
+import type { EntryDefinition } from "@funstack/static/entries";
+```
+
+### path
+
+**Type:** `string`
+
+The output file path relative to the build output directory. Must end with `.html` and must not start with `/`.
+
+```typescript
+{
+  path: "index.html",          // -> /index.html
+  path: "about.html",          // -> /about.html
+  path: "blog/post-1.html",   // -> /blog/post-1.html
+}
+```
+
+The `path` specifies the exact output file name. The dev and preview servers handle mapping URL paths to these file names automatically (e.g., a request to `/about` finds `about.html`).
+
+### root
+
+**Type:** `MaybePromise<RootModule> | (() => MaybePromise<RootModule>)`
+
+The root component module. Accepts either a lazy import or a synchronous module object:
+
+```tsx
+// Lazy import (recommended for memory efficiency)
+root: () => import("./root"),
+
+// Synchronous module object
+import Root from "./root";
+root: { default: Root },
+```
+
+The module must have a `default` export of a component that accepts `children`.
+
+### app
+
+**Type:** `ReactNode | MaybePromise<AppModule> | (() => MaybePromise<AppModule>)`
+
+The app content for this entry. Accepts a module (sync or lazy), or a React node for direct rendering:
+
+```tsx
+// Lazy import
+app: () => import("./pages/Home"),
+
+// Synchronous module object
+import Home from "./pages/Home";
+app: { default: Home },
+
+// React node (server component JSX)
+app: <BlogPost slug="hello-world" />,
+```
+
+The React node form is especially useful for parameterized SSG, where each entry renders the same component with different data.
+
+## Advanced: Async Generators
+
+For sites with many pages generated from external data, use an async generator to stream entries without building the full array in memory:
+
+```tsx
+// src/entries.tsx
+import type { EntryDefinition } from "@funstack/static/entries";
+import Root from "./root";
+import { readdir } from "node:fs/promises";
+
+export default async function* getEntries(): AsyncGenerator<EntryDefinition> {
+  // Static pages
+  yield {
+    path: "index.html",
+    root: { default: Root },
+    app: () => import("./pages/Home"),
+  };
+
+  // Dynamic pages generated from the filesystem
+  for (const slug of await readdir("./content/blog")) {
+    const content = await loadMarkdown(`./content/blog/${slug}`);
+    yield {
+      path: `blog/${slug.replace(/\.md$/, ".html")}`,
+      root: { default: Root },
+      app: <BlogPost content={content} />,
+    };
+  }
+}
+```
+
+The entries function runs in the RSC environment at build time, so it has access to Node.js APIs like `fs`, making it straightforward to generate pages from files, a CMS, or a database.
+
+## Output Structure
+
+Given entries with paths `index.html`, `about.html`, and `blog/post-1.html`, the build produces:
+
+```
+dist/public/
+├── index.html
+├── about.html
+├── blog/
+│   └── post-1.html
+├── funstack__/
+│   └── fun:rsc-payload/
+│       ├── a1b2c3d4.txt          # RSC payload for index.html
+│       ├── e5f6g7h8.txt          # RSC payload for about.html
+│       ├── i9j0k1l2.txt          # RSC payload for blog/post-1.html
+│       └── ...                   # deferred component payloads
+└── assets/
+    └── client.js                 # Client bundle (shared)
+```
+
+All pages share the same client JavaScript bundle. Only the HTML and RSC payloads differ per entry.
+
+## Navigation Between Entries
+
+Each entry is a fully independent HTML page. Navigation between entries is a full page reload via standard `<a>` links. Client-side interactivity within each page works as usual.
+
+If you need client-side navigation between pages (SPA-style transitions), use single-entry mode with a client-side router instead.
+
+## Interaction with defer()
+
+The `defer()` function works with multiple entries. Deferred components are shared across entries via content hashing -- if multiple entries defer the same component, it is rendered once and reused.
+
+## Path Validation
+
+The build enforces these rules for entry paths:
+
+- Must end with `.html`
+- Must not start with `/` (paths are relative to the output directory)
+- Duplicate paths cause a build error
+
+## Dev and Preview Server
+
+Both the dev server (`vite dev`) and preview server (`vite preview`) handle URL-to-file mapping automatically:
+
+- `/` serves `index.html`
+- `/about` serves `about.html`, falling back to `about/index.html`
+- `/blog/post-1` serves `blog/post-1.html`, falling back to `blog/post-1/index.html`
+
+## See Also
+
+- [funstackStatic()](/funstack-static/api/funstack-static) - Configuration reference
+- [Getting Started](/funstack-static/getting-started) - Quick start guide
+- [defer()](/funstack-static/api/defer) - Deferred rendering for streaming
