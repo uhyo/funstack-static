@@ -16,7 +16,7 @@
     "@funstack/static": "workspace:*"
   },
   "devDependencies": {
-    "@types/react": "^19.2.13",
+    "@types/react": "^19.2.14",
     "@types/react-dom": "^19.2.3",
     "@vitejs/plugin-react": "latest",
     "vite": "catalog:"
