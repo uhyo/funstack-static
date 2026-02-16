@@ -1,24 +1,30 @@
 import { expect, test } from "@playwright/test";
 
 test.describe("Multi-entry build output", () => {
-  test("generates index.html for home page", async ({ request }) => {
+  test("generates index.html with expected HTML structure", async ({
+    request,
+  }) => {
     const response = await request.get("/");
     expect(response.ok()).toBe(true);
 
     const html = await response.text();
     expect(html).toContain("<!DOCTYPE html>");
     expect(html).toContain("<html");
-    expect(html).toContain("Home Page");
+    expect(html).toContain("__FUNSTACK_APP_ENTRY__");
+    expect(html).toContain("funstack__/fun:rsc-payload/");
   });
 
-  test("generates about.html for about page", async ({ request }) => {
+  test("generates about.html with expected HTML structure", async ({
+    request,
+  }) => {
     const response = await request.get("/about");
     expect(response.ok()).toBe(true);
 
     const html = await response.text();
     expect(html).toContain("<!DOCTYPE html>");
     expect(html).toContain("<html");
-    expect(html).toContain("About Page");
+    expect(html).toContain("__FUNSTACK_APP_ENTRY__");
+    expect(html).toContain("funstack__/fun:rsc-payload/");
   });
 
   test("each page has its own RSC payload", async ({ request }) => {
