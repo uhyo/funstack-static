@@ -11,7 +11,9 @@ export default function Root({ children }: { children: React.ReactNode }) {
         <title>Vite + RSC</title>
       </head>
       <body>
-        <h1>My RSC Application</h1>
+        <nav>
+          <a href="/">Home</a> | <a href="/about">About</a>
+        </nav>
         <div className="app">{children}</div>
       </body>
     </html>
