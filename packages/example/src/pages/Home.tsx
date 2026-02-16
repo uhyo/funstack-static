@@ -1,8 +1,8 @@
 import viteLogo from "/vite.svg";
-import reactLogo from "./assets/react.svg";
-import { ClientCounter } from "./client.tsx";
+import reactLogo from "../assets/react.svg";
+import { ClientCounter } from "../client.tsx";
 
-export default function App() {
+export default function Home() {
   return (
     <div id="root">
       <div>
