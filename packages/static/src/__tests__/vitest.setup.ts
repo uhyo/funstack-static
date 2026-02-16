@@ -1,1 +1,1 @@
-// Test setup file
+export {};
