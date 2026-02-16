@@ -10,6 +10,12 @@ import funstackStatic from "@funstack/static";
 
 ## Usage
 
+There are two configuration modes: **single-entry** (one HTML page) and **multiple entries** (multiple HTML pages).
+
+### Single-Entry Mode
+
+Use `root` and `app` to produce a single `index.html`:
+
 ```typescript
 // vite.config.ts
 import funstackStatic from "@funstack/static";
@@ -25,13 +31,40 @@ export default defineConfig({
 });
 ```
 
+### Multiple Entries Mode
+
+Use `entries` to produce multiple HTML pages from a single project:
+
+```typescript
+// vite.config.ts
+import funstackStatic from "@funstack/static";
+import react from "@vitejs/plugin-react";
+import { defineConfig } from "vite";
+
+export default defineConfig({
+  plugins: [
+    funstackStatic({
+      entries: "./src/entries.tsx",
+    }),
+    react(),
+  ],
+});
+```
+
+See [Multiple Entrypoints](/funstack-static/learn/multiple-entrypoints) for a full guide.
+
 ## Options
 
-### root (required)
+The plugin accepts either `root` + `app` (single-entry) or `entries` (multiple entries). These two modes are mutually exclusive.
+
+### root
 
 **Type:** `string`
+**Required in:** single-entry mode
 
 Path to the root component file. This component wraps your entire application and defines the HTML document structure (`<html>`, `<head>`, `<body>`).
+
+Cannot be used together with `entries`.
 
 ```typescript
 funstackStatic({
@@ -57,11 +90,14 @@ export default function Root({ children }: { children: React.ReactNode }) {
 }
 ```
 
-### app (required)
+### app
 
 **Type:** `string`
+**Required in:** single-entry mode
 
 Path to the app component file. This component defines your application's content.
+
+Cannot be used together with `entries`.
 
 ```typescript
 funstackStatic({
@@ -84,6 +120,45 @@ export default function App() {
 ```
 
 **Note:** if your app has multiple pages, you can use a routing library here just like in a traditional SPA.
+
+### entries
+
+**Type:** `string`
+**Required in:** multiple entries mode
+
+Path to an entries module that exports a function returning entry definitions. Each entry produces its own HTML file.
+
+Cannot be used together with `root` or `app`.
+
+```typescript
+funstackStatic({
+  entries: "./src/entries.tsx",
+});
+```
+
+The entries module must default-export a function that returns entry definitions:
+
+```tsx
+// src/entries.tsx
+import type { EntryDefinition } from "@funstack/static/entries";
+
+export default function getEntries(): EntryDefinition[] {
+  return [
+    {
+      path: "index.html",
+      root: () => import("./root"),
+      app: () => import("./pages/Home"),
+    },
+    {
+      path: "about.html",
+      root: () => import("./root"),
+      app: () => import("./pages/About"),
+    },
+  ];
+}
+```
+
+See [Multiple Entrypoints](/funstack-static/learn/multiple-entrypoints) for details on the `EntryDefinition` type and advanced usage patterns like async generators.
 
 ### publicOutDir (optional)
 
@@ -153,6 +228,8 @@ Sentry.init({
 
 ## Full Example
 
+### Single-Entry
+
 ```typescript
 // vite.config.ts
 import { funstackStatic } from "@funstack/static";
@@ -169,6 +246,24 @@ export default defineConfig({
 });
 ```
 
+### Multiple Entries
+
+```typescript
+// vite.config.ts
+import funstackStatic from "@funstack/static";
+import react from "@vitejs/plugin-react";
+import { defineConfig } from "vite";
+
+export default defineConfig({
+  plugins: [
+    funstackStatic({
+      entries: "./src/entries.tsx",
+    }),
+    react(),
+  ],
+});
+```
+
 ## Vite Commands
 
 You can use the same Vite commands you would use in a normal Vite project:
@@ -180,5 +275,6 @@ You can use the same Vite commands you would use in a normal Vite project:
 ## See Also
 
 - [Getting Started](/funstack-static/getting-started) - Quick start guide
+- [Multiple Entrypoints](/funstack-static/learn/multiple-entrypoints) - Multi-page static site generation
 - [defer()](/funstack-static/api/defer) - Deferred rendering for streaming
 - [React Server Components](/funstack-static/learn/rsc) - Understanding RSC

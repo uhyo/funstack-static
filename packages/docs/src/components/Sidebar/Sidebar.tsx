@@ -45,6 +45,10 @@ export const navigation: NavSection[] = [
         href: "/funstack-static/learn/defer-and-activity",
       },
       {
+        label: "Multiple Entrypoints",
+        href: "/funstack-static/learn/multiple-entrypoints",
+      },
+      {
         label: "Server-Side Rendering",
         href: "/funstack-static/learn/ssr",
       },
@@ -58,6 +62,10 @@ export const navigation: NavSection[] = [
         href: "/funstack-static/api/funstack-static",
       },
       { label: "defer()", href: "/funstack-static/api/defer" },
+      {
+        label: "EntryDefinition",
+        href: "/funstack-static/api/entry-definition",
+      },
     ],
   },
   {
