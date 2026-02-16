@@ -1,6 +1,7 @@
 packages:
   - packages/*
   - packages/static/e2e/fixture
+  - packages/static/e2e/fixture-multi-entry
 
 catalog:
   "@types/node": ^25.2.2

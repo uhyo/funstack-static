@@ -3,6 +3,7 @@ import { readFile } from "node:fs/promises";
 import { toNodeHandler } from "srvx/node";
 import path from "node:path";
 import { getRSCEntryPoint } from "./getRSCEntryPoint";
+import { urlPathToFileCandidates } from "../util/urlPath";
 
 export const serverPlugin = (): Plugin => {
   let resolvedOutDir = "__uninitialized__";
@@ -25,6 +26,7 @@ export const serverPlugin = (): Plugin => {
           try {
             const rscEntry = await getRSCEntryPoint(rscEnv);
             if (req.headers.accept?.includes("text/html")) {
+              // serveHTML now accepts a Request and routes by URL path
               const fetchHandler = toNodeHandler(rscEntry.serveHTML);
               await fetchHandler(req as any, res as any);
               return;
@@ -50,11 +52,23 @@ export const serverPlugin = (): Plugin => {
         server.middlewares.use(async (req, res, next) => {
           try {
             if (req.headers.accept?.includes("text/html")) {
-              const html = await readFile(
-                path.join(resolvedOutDir, "index.html"),
-                "utf-8",
-              );
-              res.end(html);
+              const urlPath = new URL(req.url!, `http://${req.headers.host}`)
+                .pathname;
+              const candidates = urlPathToFileCandidates(urlPath);
+              for (const candidate of candidates) {
+                try {
+                  const html = await readFile(
+                    path.join(resolvedOutDir, candidate),
+                    "utf-8",
+                  );
+                  res.end(html);
+                  return;
+                } catch {
+                  // Try next candidate
+                }
+              }
+              // No matching file found — fall through to 404
+              next();
               return;
             }
           } catch (error) {

@@ -7,6 +7,8 @@ import { getModulePathFor } from "../rsc/rscModule";
 import { processRscComponents } from "./rscProcessor";
 import { computeContentHash } from "./contentHash";
 import { drainStream } from "../util/drainStream";
+import { validateEntryPath, checkDuplicatePaths } from "./validateEntryPath";
+import type { EntryBuildResult } from "../rsc/entry";
 
 export async function buildApp(
   builder: ViteBuilder,
@@ -19,51 +21,44 @@ export async function buildApp(
     pathToFileURL(entryPath).href
   );
 
-  // render rsc and html
   const baseDir = config.environments.client.build.outDir;
-  const { html, appRsc, deferRegistry } = await entry.build();
+  const base = normalizeBase(config.base);
 
-  // Drain HTML stream to string (needed for placeholder replacement later)
-  const htmlContent = await drainStream(html);
+  const { entries, deferRegistry } = await entry.build();
 
-  // Process RSC components with content-based hashes for deterministic file names
-  const { components, appRscContent } = await processRscComponents(
+  // Validate all entry paths
+  const paths: string[] = [];
+  for (const result of entries) {
+    const error = validateEntryPath(result.path);
+    if (error) {
+      throw new Error(error);
+    }
+    paths.push(result.path);
+  }
+  const dupError = checkDuplicatePaths(paths);
+  if (dupError) {
+    throw new Error(dupError);
+  }
+
+  // Process all deferred components once across all entries.
+  // We pass a dummy empty stream since we handle per-entry RSC payloads separately.
+  const dummyStream = new ReadableStream<Uint8Array>({
+    start(controller) {
+      controller.close();
+    },
+  });
+  const { components, idMapping } = await processRscComponents(
     deferRegistry.loadAll(),
-    appRsc,
+    dummyStream,
     context,
   );
 
-  // Compute hash for main RSC payload and apply base path
-  const mainPayloadHash = await computeContentHash(appRscContent);
-  const base = config.base.endsWith("/")
-    ? config.base.slice(0, -1)
-    : config.base;
-  const mainPayloadPath =
-    base === "/"
-      ? getRscPayloadPath(mainPayloadHash)
-      : base + getRscPayloadPath(mainPayloadHash);
+  // Write each entry's HTML and RSC payload
+  for (const result of entries) {
+    await buildSingleEntry(result, idMapping, baseDir, base, context);
+  }
 
-  // Replace placeholder with final hashed path (including base path)
-  const finalHtmlContent = htmlContent.replaceAll(
-    rscPayloadPlaceholder,
-    mainPayloadPath,
-  );
-
-  // Write HTML with replaced path
-  await writeFileNormal(
-    path.join(baseDir, "index.html"),
-    finalHtmlContent,
-    context,
-  );
-
-  // Write main RSC payload with hashed filename
-  await writeFileNormal(
-    path.join(baseDir, getRscPayloadPath(mainPayloadHash).replace(/^\//, "")),
-    appRscContent,
-    context,
-  );
-
-  // Write processed components with hash-based IDs
+  // Write all deferred component payloads
   for (const { finalId, finalContent, name } of components) {
     const filePath = path.join(
       baseDir,
@@ -71,6 +66,71 @@ export async function buildApp(
     );
     await writeFileNormal(filePath, finalContent, context, name);
   }
+}
+
+function normalizeBase(base: string): string {
+  const normalized = base.endsWith("/") ? base.slice(0, -1) : base;
+  return normalized === "/" ? "" : normalized;
+}
+
+/**
+ * Replaces temporary IDs with final hashed IDs in content.
+ */
+function replaceIdsInContent(
+  content: string,
+  idMapping: Map<string, string>,
+): string {
+  let result = content;
+  for (const [oldId, newId] of idMapping) {
+    if (oldId !== newId) {
+      result = result.replaceAll(oldId, newId);
+    }
+  }
+  return result;
+}
+
+async function buildSingleEntry(
+  result: EntryBuildResult,
+  idMapping: Map<string, string>,
+  baseDir: string,
+  base: string,
+  context: MinimalPluginContextWithoutEnvironment,
+) {
+  const { path: entryPath, html, appRsc } = result;
+
+  // Drain HTML stream to string
+  const htmlContent = await drainStream(html);
+
+  // Drain and process RSC payload: replace temp IDs with final hashed IDs
+  const rawAppRscContent = await drainStream(appRsc);
+  const appRscContent = replaceIdsInContent(rawAppRscContent, idMapping);
+
+  // Compute hash for this entry's RSC payload
+  const mainPayloadHash = await computeContentHash(appRscContent);
+  const mainPayloadPath =
+    base === ""
+      ? getRscPayloadPath(mainPayloadHash)
+      : base + getRscPayloadPath(mainPayloadHash);
+
+  // Replace placeholder with final hashed path
+  const finalHtmlContent = htmlContent.replaceAll(
+    rscPayloadPlaceholder,
+    mainPayloadPath,
+  );
+
+  // entryPath is already a file name (e.g. "index.html", "about.html")
+  await writeFileNormal(
+    path.join(baseDir, entryPath),
+    finalHtmlContent,
+    context,
+  );
+
+  // Write RSC payload with hashed filename
+  await writeFileNormal(
+    path.join(baseDir, getRscPayloadPath(mainPayloadHash).replace(/^\//, "")),
+    appRscContent,
+    context,
+  );
 }
 
 async function writeFileNormal(
