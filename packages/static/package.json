@@ -57,7 +57,7 @@
   "devDependencies": {
     "@playwright/test": "^1.58.2",
     "@types/node": "catalog:",
-    "@types/react": "^19.2.13",
+    "@types/react": "^19.2.14",
     "@types/react-dom": "^19.2.3",
     "jsdom": "^27.4.0",
     "react": "catalog:",
@@ -70,9 +70,9 @@
   "dependencies": {
     "@funstack/skill-installer": "^1.0.0",
     "@vitejs/plugin-rsc": "^0.5.19",
-    "react-error-boundary": "^6.1.0",
+    "react-error-boundary": "^6.1.1",
     "rsc-html-stream": "^0.0.7",
-    "srvx": "^0.11.2"
+    "srvx": "^0.11.4"
   },
   "peerDependencies": {
     "react": "^19.2.3",

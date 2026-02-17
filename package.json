@@ -16,7 +16,7 @@
   "devDependencies": {
     "oxlint": "^1.47.0",
     "prettier": "^3.8.1",
-    "turbo": "^2.8.3"
+    "turbo": "^2.8.9"
   },
   "packageManager": "pnpm@10.25.0"
 }
