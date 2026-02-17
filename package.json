@@ -8,6 +8,7 @@
     "test": "turbo run test",
     "test:run": "turbo run test:run",
     "test:e2e": "turbo run test:e2e",
+    "test:e2e:dev": "turbo run test:e2e:dev",
     "typecheck": "turbo run typecheck",
     "lint": "oxlint",
     "format": "prettier --write --experimental-cli .",
