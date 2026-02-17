@@ -54,13 +54,24 @@ jobs:
       - name: Install Playwright browsers
         run: pnpm --filter @funstack/static exec playwright install chromium
 
-      - name: Run e2e tests
+      - name: Run e2e tests (build)
         run: pnpm run test:e2e
 
-      - name: Upload Playwright report
+      - name: Run e2e tests (dev server)
+        run: pnpm run test:e2e:dev
+
+      - name: Upload Playwright report (build)
         uses: actions/upload-artifact@v6
         if: ${{ !cancelled() }}
         with:
-          name: playwright-report
+          name: playwright-report-build
           path: packages/static/playwright-report/
+          retention-days: 30
+
+      - name: Upload Playwright report (dev server)
+        uses: actions/upload-artifact@v6
+        if: ${{ !cancelled() }}
+        with:
+          name: playwright-report-dev
+          path: packages/static/playwright-report-dev/
           retention-days: 30
