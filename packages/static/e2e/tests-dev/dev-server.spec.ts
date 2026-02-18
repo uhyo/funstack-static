@@ -38,4 +38,17 @@ test.describe("Dev server response verification", () => {
     // (unlike build mode which uses separate .txt files)
     expect(html).toContain("__FLIGHT_DATA");
   });
+
+  test("SPA fallback: serves index.html for unmatched routes", async ({
+    request,
+  }) => {
+    const response = await request.get("/some/non-existent/path", {
+      headers: htmlHeaders,
+    });
+    expect(response.ok()).toBe(true);
+
+    const html = await response.text();
+    expect(html).toContain("<!DOCTYPE html>");
+    expect(html).toContain("__FUNSTACK_APP_ENTRY__");
+  });
 });

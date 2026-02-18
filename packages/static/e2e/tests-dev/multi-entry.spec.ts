@@ -26,6 +26,19 @@ test.describe("Multi-entry dev server response", () => {
     expect(html).toContain("<html");
     expect(html).toContain("__FUNSTACK_APP_ENTRY__");
   });
+
+  test("SPA fallback: serves index.html for unmatched routes", async ({
+    request,
+  }) => {
+    const response = await request.get("/non-existent", {
+      headers: htmlHeaders,
+    });
+    expect(response.ok()).toBe(true);
+
+    const html = await response.text();
+    expect(html).toContain("<!DOCTYPE html>");
+    expect(html).toContain("__FUNSTACK_APP_ENTRY__");
+  });
 });
 
 test.describe("Multi-entry page rendering (dev server)", () => {

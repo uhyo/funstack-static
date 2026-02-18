@@ -138,7 +138,12 @@ export async function serveHTML(request: Request): Promise<Response> {
 
   const url = new URL(request.url);
   const urlPath = stripBasePath(url.pathname);
-  const entry = findEntryForUrlPath(entries, urlPath);
+  let entry = findEntryForUrlPath(entries, urlPath);
+
+  // SPA fallback: if no entry matched, fall back to index.html entry
+  if (!entry) {
+    entry = entries.find((e) => e.path === "index.html");
+  }
 
   if (!entry) {
     return new Response("Not Found", {

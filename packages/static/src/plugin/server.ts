@@ -67,7 +67,17 @@ export const serverPlugin = (): Plugin => {
                   // Try next candidate
                 }
               }
-              // No matching file found — fall through to 404
+              // SPA fallback: try serving index.html for unmatched routes
+              try {
+                const html = await readFile(
+                  path.join(resolvedOutDir, "index.html"),
+                  "utf-8",
+                );
+                res.end(html);
+                return;
+              } catch {
+                // index.html doesn't exist — fall through to 404
+              }
               next();
               return;
             }
