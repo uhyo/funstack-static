@@ -67,3 +67,7 @@ We are not aware of any production deployments yet. Be the first!
 ## License
 
 MIT
+
+## For Developers
+
+Documentation (master branch): funstack-static-dev.uhyo.workers.dev
