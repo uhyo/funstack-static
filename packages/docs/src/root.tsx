@@ -19,7 +19,10 @@ export default function Root({ children }: { children: React.ReactNode }) {
           property="og:description"
           content="FUNSTACK Static - A React framework without servers"
         />
-        <meta property="og:image" content="/FUNSTACK_Static_Hero_small.png" />
+        <meta
+          property="og:image"
+          content="https://static.funstack.work/FUNSTACK_Static_Hero_small.png"
+        />
         {/* Twitter */}
         <meta name="twitter:card" content="summary_large_image" />
         <meta name="twitter:title" content="FUNSTACK Static - docs" />
@@ -27,7 +30,10 @@ export default function Root({ children }: { children: React.ReactNode }) {
           name="twitter:description"
           content="FUNSTACK Static - A React framework without servers"
         />
-        <meta name="twitter:image" content="/FUNSTACK_Static_Hero_small.png" />
+        <meta
+          name="twitter:image"
+          content="https://static.funstack.work/FUNSTACK_Static_Hero_small.png"
+        />
         <link rel="preconnect" href="https://fonts.googleapis.com" />
         <link
           rel="preconnect"
