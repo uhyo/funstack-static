@@ -14,10 +14,10 @@ export const navigation: NavSection[] = [
   {
     title: "Getting Started",
     items: [
-      { label: "Introduction", href: "/funstack-static/getting-started" },
+      { label: "Introduction", href: "/getting-started" },
       {
         label: "Migrating from Vite SPA",
-        href: "/funstack-static/getting-started/migrating-from-vite-spa",
+        href: "/getting-started/migrating-from-vite-spa",
       },
     ],
   },
@@ -26,31 +26,31 @@ export const navigation: NavSection[] = [
     items: [
       {
         label: "React Server Components",
-        href: "/funstack-static/learn/rsc",
+        href: "/learn/rsc",
       },
       {
         label: "How It Works",
-        href: "/funstack-static/learn/how-it-works",
+        href: "/learn/how-it-works",
       },
       {
         label: "Optimizing RSC Payloads",
-        href: "/funstack-static/learn/optimizing-payloads",
+        href: "/learn/optimizing-payloads",
       },
       {
         label: "Using lazy() in Server",
-        href: "/funstack-static/learn/lazy-server-components",
+        href: "/learn/lazy-server-components",
       },
       {
         label: "Prefetching with Activity",
-        href: "/funstack-static/learn/defer-and-activity",
+        href: "/learn/defer-and-activity",
       },
       {
         label: "Multiple Entrypoints",
-        href: "/funstack-static/learn/multiple-entrypoints",
+        href: "/learn/multiple-entrypoints",
       },
       {
         label: "Server-Side Rendering",
-        href: "/funstack-static/learn/ssr",
+        href: "/learn/ssr",
       },
     ],
   },
@@ -59,18 +59,18 @@ export const navigation: NavSection[] = [
     items: [
       {
         label: "funstackStatic()",
-        href: "/funstack-static/api/funstack-static",
+        href: "/api/funstack-static",
       },
-      { label: "defer()", href: "/funstack-static/api/defer" },
+      { label: "defer()", href: "/api/defer" },
       {
         label: "EntryDefinition",
-        href: "/funstack-static/api/entry-definition",
+        href: "/api/entry-definition",
       },
     ],
   },
   {
     title: "Help",
-    items: [{ label: "FAQ", href: "/funstack-static/faq" }],
+    items: [{ label: "FAQ", href: "/faq" }],
   },
 ];
 

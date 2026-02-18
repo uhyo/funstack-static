@@ -46,7 +46,7 @@ export default lazy(() => import("${id}?lazy"));
       },
       react({ include: /\.(jsx|js|mdx|md|tsx|ts)$/ }),
     ],
-    base: "/funstack-static/",
+    base: "/",
   };
   return config;
 });
