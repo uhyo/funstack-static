@@ -3,5 +3,5 @@ dist
 .turbo
 
 # Playwright
-playwright-report/
+playwright-report*/
 test-results/
