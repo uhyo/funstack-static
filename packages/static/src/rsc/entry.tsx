@@ -81,6 +81,7 @@ async function renderEntryToResponse(
       appEntryMarker: marker,
       build: false,
       ssr: true,
+      deferRegistry,
     });
     timings.push(`ssr;dur=${performance.now() - ssrStart}`);
 
@@ -298,6 +299,7 @@ export async function build() {
       appEntryMarker: marker,
       build: true,
       ssr: ssrEnabled,
+      deferRegistry,
     });
 
     results.push({

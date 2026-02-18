@@ -29,6 +29,14 @@ export default defineConfig({
       },
       testMatch: /\/multi-entry\.spec\.ts$/,
     },
+    {
+      name: "ssr-defer-dev",
+      use: {
+        ...devices["Desktop Chrome"],
+        baseURL: "http://localhost:4178",
+      },
+      testMatch: /\/ssr-defer\.spec\.ts$/,
+    },
   ],
 
   webServer: [
@@ -42,6 +50,12 @@ export default defineConfig({
       command:
         "cd fixture-multi-entry && pnpm vite dev --port 4176 --strictPort",
       url: "http://localhost:4176/@vite/client",
+      reuseExistingServer: !process.env.CI,
+      timeout: 120000,
+    },
+    {
+      command: "cd fixture-ssr-defer && pnpm vite dev --port 4178 --strictPort",
+      url: "http://localhost:4178/@vite/client",
       reuseExistingServer: !process.env.CI,
       timeout: 120000,
     },
