@@ -1,6 +1,6 @@
 #:schema node_modules/wrangler/config-schema.json
 name = "funstack-static"
-compatibility_date = "2025-04-01"
+compatibility_date = "2026-02-18"
 
 [assets]
 directory = "./dist/public"
