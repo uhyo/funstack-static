@@ -1,0 +1,57 @@
+name: GitHub Pages Redirector Deploy
+
+on:
+  workflow_dispatch:
+
+permissions:
+  pages: write
+  id-token: write
+
+concurrency:
+  group: "github-pages-redirector"
+  cancel-in-progress: false
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+
+    steps:
+      - name: Generate redirect page
+        run: |
+          mkdir _site
+          cat > _site/404.html << 'HTML'
+          <!DOCTYPE html>
+          <html lang="en">
+          <head>
+            <meta charset="utf-8">
+            <title>Redirecting…</title>
+            <script>
+              var newBase = "https://static.funstack.work/";
+              var oldPrefix = "/funstack-static/";
+              var path = window.location.pathname;
+              if (path.startsWith(oldPrefix)) {
+                path = path.slice(oldPrefix.length);
+              }
+              var hash = window.location.hash;
+              var search = window.location.search;
+              window.location.replace(newBase + path + search + hash);
+            </script>
+            <meta http-equiv="refresh" content="0; url=https://static.funstack.work/">
+          </head>
+          <body>
+            <p>This site has moved. Redirecting to <a href="https://static.funstack.work/">static.funstack.work</a>…</p>
+          </body>
+          </html>
+          HTML
+          cp _site/404.html _site/index.html
+
+      - name: Upload Pages artifact
+        uses: actions/upload-pages-artifact@v3
+
+      - name: Deploy to GitHub Pages
+        id: deployment
+        uses: actions/deploy-pages@v4
