@@ -140,9 +140,11 @@ export async function serveHTML(request: Request): Promise<Response> {
   const urlPath = stripBasePath(url.pathname);
   let entry = findEntryForUrlPath(entries, urlPath);
 
-  // SPA fallback: if no entry matched, fall back to index.html entry
+  // SPA fallback: if no entry matched, fall back to index.html or index.htm entry
   if (!entry) {
-    entry = entries.find((e) => e.path === "index.html");
+    entry = entries.find(
+      (e) => e.path === "index.html" || e.path === "index.htm",
+    );
   }
 
   if (!entry) {

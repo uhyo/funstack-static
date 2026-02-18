@@ -7,11 +7,13 @@ describe("validateEntryPath", () => {
     expect(validateEntryPath("about.html")).toBeUndefined();
     expect(validateEntryPath("blog/post-1.html")).toBeUndefined();
     expect(validateEntryPath("blog/post-1/index.html")).toBeUndefined();
+    expect(validateEntryPath("index.htm")).toBeUndefined();
+    expect(validateEntryPath("about.htm")).toBeUndefined();
+    expect(validateEntryPath("blog/post-1.htm")).toBeUndefined();
   });
 
-  it("rejects paths not ending with .html", () => {
+  it("rejects paths not ending with .html or .htm", () => {
     expect(validateEntryPath("index")).toBeDefined();
-    expect(validateEntryPath("about.htm")).toBeDefined();
     expect(validateEntryPath("page.txt")).toBeDefined();
   });
 

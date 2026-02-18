@@ -11,10 +11,11 @@ export type AppModule = { default: React.ComponentType };
 export interface EntryDefinition {
   /**
    * Output file path relative to the build output directory.
-   * Must end with ".html".
+   * Must end with ".html" or ".htm".
    * Examples:
    *   "index.html"
    *   "about.html"
+   *   "about.htm"
    *   "blog/post-1.html"
    *   "blog/post-1/index.html"
    */
