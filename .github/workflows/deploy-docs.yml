@@ -35,8 +35,7 @@ jobs:
         run: pnpm turbo run build --filter=docs
 
       - name: Deploy to Cloudflare Workers
-        uses: cloudflare/wrangler-action@v3
-        with:
-          apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
-          workingDirectory: packages/docs
-          packageManager: pnpm
+        run: pnpm wrangler deploy
+        working-directory: packages/docs
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
