@@ -37,7 +37,7 @@ export default defineConfig({
 
 ## Documentation
 
-For detailed API documentation and guides, visit the **[Documentation](https://uhyo.github.io/funstack-static/)**.
+For detailed API documentation and guides, visit the **[Documentation](https://static.funstack.work/)**.
 
 ### :robot: FUNSTACK Static Skill
 

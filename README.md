@@ -14,7 +14,7 @@ A maximally minimal React framework.
 
 ### Usage
 
-**[Documentation](https://uhyo.github.io/funstack-static/)**
+**[Documentation](https://static.funstack.work/)**
 
 See [the docs project](./packages/docs/vite.config.ts) for complete usage.
 
