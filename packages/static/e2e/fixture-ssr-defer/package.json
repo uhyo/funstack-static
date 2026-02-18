@@ -1,0 +1,14 @@
+{
+  "name": "e2e-fixture-ssr-defer",
+  "private": true,
+  "type": "module",
+  "devDependencies": {
+    "@funstack/static": "workspace:*",
+    "@types/react": "^19.2.14",
+    "@types/react-dom": "^19.2.3",
+    "@vitejs/plugin-react": "^5.1.4",
+    "react": "catalog:",
+    "react-dom": "catalog:",
+    "vite": "catalog:"
+  }
+}
