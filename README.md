@@ -45,6 +45,8 @@ npx funstack-static-skill-installer
 yarn funstack-static-skill-installer
 # or
 pnpm funstack-static-skill-installer
+# or, if you use skills CLI (https://skills.sh/)
+npx skills add uhyo/funstack-static
 ```
 
 ### See the framework in action
