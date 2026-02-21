@@ -5,6 +5,8 @@ allowed-tools:
   - Read
   - Bash(gh:*)
   - Bash(git:*)
+metadata:
+  internal: true
 ---
 
 # Create Pull Request Skill
