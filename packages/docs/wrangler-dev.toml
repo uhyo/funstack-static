@@ -1,0 +1,8 @@
+#:schema node_modules/wrangler/config-schema.json
+name = "funstack-static-dev"
+account_id = "f23672ae6718270aa102879b0ea559a8"
+compatibility_date = "2026-02-18"
+
+[assets]
+directory = "./dist/public"
+not_found_handling = "single-page-application"
