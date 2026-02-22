@@ -16,7 +16,7 @@ function collectPaths(routes: RouteDefinition[]): string[] {
 
 function pathToEntryPath(path: string): string {
   if (path === "/") return "index.html";
-  return `${path.slice(1)}/index.html`;
+  return `${path.slice(1)}.html`;
 }
 
 export default function getEntries(): EntryDefinition[] {
