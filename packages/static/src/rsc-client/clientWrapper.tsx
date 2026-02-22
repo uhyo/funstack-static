@@ -52,7 +52,7 @@ async function getRSCStreamFromRegistry(
       return createFromReadableStream<React.ReactNode>(entry.state.stream);
     }
     case "ready": {
-      const data = entry.state.data;
+      const data = await entry.drainPromise;
       const stream = new ReadableStream<Uint8Array>({
         start(controller) {
           const encoder = new TextEncoder();

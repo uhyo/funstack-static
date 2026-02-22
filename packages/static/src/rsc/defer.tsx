@@ -38,7 +38,6 @@ type DeferEntryState =
     }
   | {
       state: "ready";
-      data: string;
     }
   | {
       state: "error";
@@ -82,8 +81,8 @@ export class DeferRegistry {
         const drainPromise = drainStream(stream2);
         entry.drainPromise = drainPromise;
         drainPromise.then(
-          (data) => {
-            entry.state = { state: "ready", data };
+          () => {
+            entry.state = { state: "ready" };
           },
           (error) => {
             entry.state = { state: "error", error };

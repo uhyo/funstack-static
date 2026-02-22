@@ -235,7 +235,7 @@ export async function serveRSC(request: Request): Promise<Response> {
       });
     }
     case "ready": {
-      return new Response(state.data, {
+      return new Response(await entry.drainPromise, {
         status: 200,
         headers: {
           "content-type": "text/x-component;charset=utf-8",
