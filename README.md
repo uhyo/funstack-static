@@ -37,14 +37,14 @@ export default defineConfig({
 
 ### :robot: FUNSTACK Static Skill
 
-FUNSTACK Static provides an Agent Skill to feed your AI agents with knowledge about this framework. After installing `@funstack/static`, run the following command to add the skill to the project:
+FUNSTACK Static provides an Agent Skill to feed your AI agents with knowledge about this framework. Run the following command to add the skill to the project:
 
 ```sh
-npx funstack-static-skill-installer
+npx -p @funstack/static funstack-static-skill-installer
 # or
-yarn funstack-static-skill-installer
+yarn dlx -p @funstack/static funstack-static-skill-installer
 # or
-pnpm funstack-static-skill-installer
+pnpm --package @funstack/static dlx funstack-static-skill-installer
 # or, if you use skills CLI (https://skills.sh/)
 npx skills add uhyo/funstack-static
 ```
