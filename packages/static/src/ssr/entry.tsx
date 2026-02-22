@@ -1,6 +1,7 @@
 import { createFromReadableStream } from "@vitejs/plugin-rsc/ssr";
 import { use } from "react";
 import { renderToReadableStream } from "react-dom/server.edge";
+import { prerender } from "react-dom/static";
 import { injectRSCPayload } from "rsc-html-stream/server";
 import type { RscPayload } from "../rsc/entry";
 import { appClientManifestVar } from "../client/globals";
@@ -56,11 +57,22 @@ export async function renderHTML(
   let htmlStream: ReadableStream<Uint8Array>;
   let status: number | undefined;
   try {
-    htmlStream = await renderToReadableStream(<SsrRoot />, {
-      bootstrapScriptContent,
-      nonce: options?.nonce,
-    });
-  } catch {
+    if (options.build) {
+      const { prelude, postponed } = await prerender(<SsrRoot />, {
+        bootstrapScriptContent,
+      });
+      if (postponed !== null) {
+        throw new Error("Unexpected postponed state during prerendering");
+      }
+
+      htmlStream = prelude;
+    } else {
+      htmlStream = await renderToReadableStream(<SsrRoot />, {
+        bootstrapScriptContent,
+        nonce: options?.nonce,
+      });
+    }
+  } catch (e) {
     // In this case, RSC payload is still sent to client and we let client render from scratch anyway.
     // This triggers the error boundary on client side.
     status = 500;
