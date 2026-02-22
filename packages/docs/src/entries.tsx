@@ -1,4 +1,3 @@
-import "urlpattern-polyfill";
 import type { EntryDefinition } from "@funstack/static/entries";
 import type { RouteDefinition } from "@funstack/router/server";
 import App, { routes } from "./App";
