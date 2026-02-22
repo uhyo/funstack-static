@@ -12,8 +12,8 @@ export default defineConfig(async () => {
   const config: UserConfig = {
     plugins: [
       funstackStatic({
-        root: "./src/root.tsx",
-        app: "./src/App.tsx",
+        entries: "./src/entries.tsx",
+        ssr: true,
       }),
       {
         // to make .mdx loading lazy

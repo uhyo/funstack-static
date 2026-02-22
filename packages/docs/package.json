@@ -11,14 +11,15 @@
     "typecheck": "tsc --noEmit"
   },
   "dependencies": {
-    "@funstack/router": "0.0.7",
+    "@funstack/router": "^0.0.9",
     "@funstack/static": "workspace:*",
     "@shikijs/rehype": "^3.22.0",
     "@types/node": "catalog:",
     "react": "catalog:",
     "react-dom": "catalog:",
     "rehype-slug": "^6.0.0",
-    "shiki": "^3.22.0"
+    "shiki": "^3.22.0",
+    "urlpattern-polyfill": "^10.1.0"
   },
   "devDependencies": {
     "@mdx-js/rollup": "^3.1.1",

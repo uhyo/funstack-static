@@ -39,8 +39,8 @@ importers:
   packages/docs:
     dependencies:
       '@funstack/router':
-        specifier: 0.0.7
-        version: 0.0.7(react@19.2.4)
+        specifier: ^0.0.9
+        version: 0.0.9(react@19.2.4)
       '@funstack/static':
         specifier: workspace:*
         version: link:../static
@@ -62,6 +62,9 @@ importers:
       shiki:
         specifier: ^3.22.0
         version: 3.22.0
+      urlpattern-polyfill:
+        specifier: ^10.1.0
+        version: 10.1.0
     devDependencies:
       '@mdx-js/rollup':
         specifier: ^3.1.1
@@ -617,8 +620,8 @@ packages:
       '@noble/hashes':
         optional: true
 
-  '@funstack/router@0.0.7':
-    resolution: {integrity: sha512-iqdNkCUu7PovXMJjPydFCoZSxz9d37dR/zCLnbfp8TZ9MweXNk+105v1gHHzdpOWEr7PFZWb1vrgsO92hXf8vg==}
+  '@funstack/router@0.0.9':
+    resolution: {integrity: sha512-d+tUZEoBQA0/m06ANLQ3/iATLu4F3ZGY7aDeVGZEwAK07SR9AF1nmG8hBCDDJY4tlwk++xWsViXSZ/gEtnbB5Q==}
     hasBin: true
     peerDependencies:
       react: ^18.0.0 || ^19.0.0
@@ -2399,6 +2402,9 @@ packages:
     peerDependencies:
       browserslist: '>= 4.21.0'
 
+  urlpattern-polyfill@10.1.0:
+    resolution: {integrity: sha512-IGjKp/o0NL3Bso1PymYURCJxMPNAf/ILOpendP9f5B6e1rTJgdgiOvgfoT8VxCAdY+Wisb9uhGaJJf3yZ2V9nw==}
+
   vfile-message@4.0.3:
     resolution: {integrity: sha512-QTHzsGd1EhbZs4AsQ20JX1rC3cOlt/IWJruk893DfLRr57lcnOeMaWG4K0JrRta4mIJZKth2Au3mM3u03/JWKw==}
 
@@ -2880,7 +2886,7 @@ snapshots:
 
   '@exodus/bytes@1.14.1': {}
 
-  '@funstack/router@0.0.7(react@19.2.4)':
+  '@funstack/router@0.0.9(react@19.2.4)':
     dependencies:
       '@funstack/skill-installer': 1.0.0
       react: 19.2.4
@@ -4953,6 +4959,8 @@ snapshots:
       browserslist: 4.28.1
       escalade: 3.2.0
       picocolors: 1.1.1
+
+  urlpattern-polyfill@10.1.0: {}
 
   vfile-message@4.0.3:
     dependencies:
