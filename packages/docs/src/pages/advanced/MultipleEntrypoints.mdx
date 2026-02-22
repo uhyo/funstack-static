@@ -4,10 +4,10 @@ By default, FUNSTACK Static produces a single `index.html` from one `root` + `ap
 
 ## When to Use Multiple Entries
 
-Use the `entries` option when you want to build a **multi-page static site** where each page is a self-contained HTML document. This is different from a single-page app with client-side routing:
+Use the `entries` option when you want to build a **multi-page static site** where each page is more like a self-contained HTML document.
 
-- **Single-entry mode** (`root` + `app`): One HTML file, client-side routing between pages. Best for app-like experiences where navigation should not trigger full page reloads.
-- **Multiple entries mode** (`entries`): Multiple HTML files, each independently pre-rendered. Best for content sites (blogs, docs, marketing pages) where each page should be a standalone document.
+- **Single-entry mode** (`root` + `app`): One HTML file, client-side routing between pages. Best for app-like experiences where dynamic data loading and client-side interactivity are heavily used, and SEO is less of a concern (e.g., dashboards, web apps).
+- **Multiple entries mode** (`entries`): Multiple HTML files, each independently pre-rendered. Best for content sites (blogs, docs, marketing pages) where SEO and fast initial load are priorities. Client-side routing is still possible by using a router library with SSR support.
 
 ## Basic Setup
 
@@ -33,7 +33,7 @@ export default defineConfig({
 
 ### 2. Create the Entries Module
 
-The entries module default-exports a function that returns an array of entry definitions:
+The entries module is run in **the server environment at build time**. It must default-export a function that returns an array of entry definitions (async functions are also supported):
 
 ```tsx
 // src/entries.tsx
@@ -110,7 +110,7 @@ import type { EntryDefinition } from "@funstack/static/entries";
 
 **Type:** `string`
 
-The output file path relative to the build output directory. Must end with `.html` and must not start with `/`.
+The output file path relative to the build output directory. Must include file extensions and must not start with `/`.
 
 ```typescript
 {
@@ -133,8 +133,8 @@ The root component module. Accepts either a lazy import or a synchronous module 
 root: () => import("./root"),
 
 // Synchronous module object
-import Root from "./root";
-root: { default: Root },
+import * as Root from "./root";
+root: Root,
 ```
 
 The module must have a `default` export of a component that accepts `children`.
@@ -150,8 +150,8 @@ The app content for this entry. Accepts a module (sync or lazy), or a React node
 app: () => import("./pages/Home"),
 
 // Synchronous module object
-import Home from "./pages/Home";
-app: { default: Home },
+import * as Home from "./pages/Home";
+app: Home,
 
 // React node (server component JSX)
 app: <BlogPost slug="hello-world" />,
@@ -166,14 +166,14 @@ For sites with many pages generated from external data, use an async generator t
 ```tsx
 // src/entries.tsx
 import type { EntryDefinition } from "@funstack/static/entries";
-import Root from "./root";
+import * as Root from "./root";
 import { readdir } from "node:fs/promises";
 
 export default async function* getEntries(): AsyncGenerator<EntryDefinition> {
   // Static pages
   yield {
     path: "index.html",
-    root: { default: Root },
+    root: Root,
     app: () => import("./pages/Home"),
   };
 
@@ -182,7 +182,7 @@ export default async function* getEntries(): AsyncGenerator<EntryDefinition> {
     const content = await loadMarkdown(`./content/blog/${slug}`);
     yield {
       path: `blog/${slug.replace(/\.md$/, ".html")}`,
-      root: { default: Root },
+      root: Root,
       app: <BlogPost content={content} />,
     };
   }
@@ -213,34 +213,6 @@ dist/public/
 
 All pages share the same client JavaScript bundle. Only the HTML and RSC payloads differ per entry.
 
-## Navigation Between Entries
-
-Each entry is a fully independent HTML page. Navigation between entries is a full page reload via standard `<a>` links. Client-side interactivity within each page works as usual.
-
-If you need client-side navigation between pages (SPA-style transitions), use single-entry mode with a client-side router instead.
-
-## Interaction with defer()
-
-The `defer()` function works with multiple entries. Deferred components are shared across entries via content hashing -- if multiple entries defer the same component, it is rendered once and reused.
-
-## Path Validation
-
-The build enforces these rules for entry paths:
-
-- Must end with `.html`
-- Must not start with `/` (paths are relative to the output directory)
-- Duplicate paths cause a build error
-
-## Dev and Preview Server
-
-Both the dev server (`vite dev`) and preview server (`vite preview`) handle URL-to-file mapping automatically:
-
-- `/` serves `index.html`
-- `/about` serves `about.html`, falling back to `about/index.html`
-- `/blog/post-1` serves `blog/post-1.html`, falling back to `blog/post-1/index.html`
-
 ## See Also
 
-- [funstackStatic()](/funstack-static/api/funstack-static) - Configuration reference
-- [Getting Started](/funstack-static/getting-started) - Quick start guide
-- [defer()](/funstack-static/api/defer) - Deferred rendering for streaming
+- [Server-Side Rendering](/advanced/SSR) - Content-heavy sites may also benefit from SSR for faster initial paint
