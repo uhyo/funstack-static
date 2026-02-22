@@ -168,7 +168,11 @@ Only two files are required: `Root.tsx` and `App.tsx`. The paths to these files 
 If you use AI coding assistants like [Claude Code](https://docs.anthropic.com/en/docs/claude-code), you can install the FUNSTACK Static knowledge skill to help your AI assistant better understand the framework:
 
 ```bash
-npx funstack-static-skill-installer
+npx -p @funstack/static funstack-static-skill-installer
+# or
+yarn dlx -p @funstack/static funstack-static-skill-installer
+# or
+pnpm --package @funstack/static dlx funstack-static-skill-installer
 # or, if you use skills CLI (https://skills.sh/)
 npx skills add uhyo/funstack-static
 ```
