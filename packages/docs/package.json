@@ -11,7 +11,7 @@
     "typecheck": "tsc --noEmit"
   },
   "dependencies": {
-    "@funstack/router": "0.0.7",
+    "@funstack/router": "^0.0.9",
     "@funstack/static": "workspace:*",
     "@shikijs/rehype": "^3.22.0",
     "@types/node": "catalog:",
