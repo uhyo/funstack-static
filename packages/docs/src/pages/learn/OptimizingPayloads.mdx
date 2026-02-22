@@ -98,10 +98,10 @@ Each payload file has a **content-based hash** in its filename. This enables agg
 
 **Consider below-the-fold content** - Content hidden in collapsed sections, tabs, or modals is a good candidate for `defer()` since users may never need it.
 
-> **Tip:** You can combine `defer()` with React 19's `<Activity>` component to prefetch content in the background. When a `defer()`ed node is rendered under `<Activity mode="hidden">`, it won't be shown in the UI, but the fetch of the RSC payload will start immediately. This is useful when hidden content (like inactive tabs or collapsed sections) should be fetched ahead of time so it's ready when the user needs it. See [Prefetching with defer() and Activity](/funstack-static/learn/defer-and-activity) for a detailed guide.
+> **Tip:** You can combine `defer()` with React 19's `<Activity>` component to prefetch content in the background. When a `defer()`ed node is rendered under `<Activity mode="hidden">`, it won't be shown in the UI, but the fetch of the RSC payload will start immediately. This is useful when hidden content (like inactive tabs or collapsed sections) should be fetched ahead of time so it's ready when the user needs it. See [Prefetching with defer() and Activity](/learn/defer-and-activity) for a detailed guide.
 
 ## See Also
 
-- [defer()](/funstack-static/api/defer) - API reference with full signature and technical details
-- [How It Works](/funstack-static/learn/how-it-works) - Overall FUNSTACK Static architecture
-- [React Server Components](/funstack-static/learn/rsc) - Understanding RSC fundamentals
+- [defer()](/api/defer) - API reference with full signature and technical details
+- [How It Works](/learn/how-it-works) - Overall FUNSTACK Static architecture
+- [React Server Components](/learn/rsc) - Understanding RSC fundamentals
