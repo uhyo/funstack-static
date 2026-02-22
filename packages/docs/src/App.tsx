@@ -9,8 +9,8 @@ import LazyServerComponents from "./pages/learn/LazyServerComponents.mdx";
 import OptimizingPayloads from "./pages/learn/OptimizingPayloads.mdx";
 import RSCConcept from "./pages/learn/RSC.mdx";
 import DeferAndActivity from "./pages/learn/DeferAndActivity.mdx";
-import MultipleEntrypoints from "./pages/learn/MultipleEntrypoints.mdx";
-import SSR from "./pages/learn/SSR.mdx";
+import MultipleEntrypoints from "./pages/advanced/MultipleEntrypoints.mdx";
+import SSR from "./pages/advanced/SSR.mdx";
 import EntryDefinitionApi from "./pages/api/EntryDefinition.mdx";
 import FAQ from "./pages/FAQ.mdx";
 import GettingStarted from "./pages/GettingStarted.mdx";
@@ -109,7 +109,7 @@ export const routes: RouteDefinition[] = [
         ),
       }),
       route({
-        path: "/learn/multiple-entrypoints",
+        path: "/advanced/multiple-entrypoints",
         component: (
           <Layout>
             {defer(<MultipleEntrypoints />, { name: "MultipleEntrypoints" })}
@@ -117,7 +117,7 @@ export const routes: RouteDefinition[] = [
         ),
       }),
       route({
-        path: "/learn/ssr",
+        path: "/advanced/ssr",
         component: <Layout>{defer(<SSR />, { name: "SSR" })}</Layout>,
       }),
       route({

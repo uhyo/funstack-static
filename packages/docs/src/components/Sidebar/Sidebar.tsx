@@ -44,13 +44,18 @@ export const navigation: NavSection[] = [
         label: "Prefetching with Activity",
         href: "/learn/defer-and-activity",
       },
+    ],
+  },
+  {
+    title: "Advanced",
+    items: [
       {
-        label: "Multiple Entrypoints",
-        href: "/learn/multiple-entrypoints",
+        label: "Multiple Entrypoints (SSG)",
+        href: "/advanced/multiple-entrypoints",
       },
       {
         label: "Server-Side Rendering",
-        href: "/learn/ssr",
+        href: "/advanced/ssr",
       },
     ],
   },
