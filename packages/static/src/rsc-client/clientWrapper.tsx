@@ -52,15 +52,15 @@ async function getRSCStreamFromRegistry(
       return createFromReadableStream<React.ReactNode>(entry.state.stream);
     }
     case "ready": {
-      const { readable, writable } = new TransformStream<
-        Uint8Array,
-        Uint8Array
-      >();
-      const writer = writable.getWriter();
-      const encoder = new TextEncoder();
-      await writer.write(encoder.encode(entry.state.data));
-      await writer.close();
-      return createFromReadableStream<React.ReactNode>(readable);
+      const data = entry.state.data;
+      const stream = new ReadableStream<Uint8Array>({
+        start(controller) {
+          const encoder = new TextEncoder();
+          controller.enqueue(encoder.encode(data));
+          controller.close();
+        },
+      });
+      return createFromReadableStream<React.ReactNode>(stream);
     }
     case "error": {
       return Promise.reject(entry.state.error);
