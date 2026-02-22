@@ -1,6 +1,6 @@
 {
   "name": "@funstack/static",
-  "version": "0.0.9",
+  "version": "0.0.10",
   "description": "FUNSTACK static library",
   "type": "module",
   "repository": {
