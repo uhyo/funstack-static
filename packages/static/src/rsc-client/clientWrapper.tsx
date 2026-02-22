@@ -1,14 +1,18 @@
 import React from "react";
-import {
-  createFromFetch,
-  createFromReadableStream,
-} from "@vitejs/plugin-rsc/browser";
+import { createFromFetch } from "@vitejs/plugin-rsc/browser";
 import { getModulePathFor } from "../rsc/rscModule";
 import { createContext, use } from "react";
 import type { LoadedDeferEntry, DeferRegistry } from "../rsc/defer";
 import { withBasePath } from "../util/basePath";
 
-export const RegistryContext = createContext<DeferRegistry | undefined>(
+interface DeferContextValue {
+  registry: DeferRegistry;
+  createFromReadableStream: <T>(
+    stream: ReadableStream<Uint8Array>,
+  ) => Promise<T>;
+}
+
+export const RegistryContext = createContext<DeferContextValue | undefined>(
   undefined,
 );
 
@@ -19,14 +23,17 @@ interface DeferredComponentProps {
 export const DeferredComponent: React.FC<DeferredComponentProps> = ({
   moduleID,
 }) => {
-  const registry = use(RegistryContext);
+  const deferContext = use(RegistryContext);
   const modulePath = getModulePathFor(moduleID);
-  if (registry) {
-    const entry = registry.load(moduleID);
+  if (deferContext) {
+    const entry = deferContext.registry.load(moduleID);
     if (!entry) {
       throw new Error(`Module entry not found for ID '${moduleID}'`);
     }
-    return getRSCStreamFromRegistry(entry);
+    return getRSCStreamFromRegistry(
+      entry,
+      deferContext.createFromReadableStream,
+    );
   }
   const stream = getClientRSCStream(withBasePath(modulePath));
   return use(stream);
@@ -36,6 +43,9 @@ const moduleToStreamMap = new Map<string, Promise<React.ReactNode>>();
 
 async function getRSCStreamFromRegistry(
   entry: LoadedDeferEntry,
+  createFromReadableStream: <T>(
+    stream: ReadableStream<Uint8Array>,
+  ) => Promise<T>,
 ): Promise<React.ReactNode> {
   switch (entry.state.state) {
     case "streaming": {

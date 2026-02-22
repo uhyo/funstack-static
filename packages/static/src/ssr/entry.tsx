@@ -35,7 +35,16 @@ export async function renderHTML(
       });
     }
     return (
-      <RegistryContext value={options.deferRegistry}>
+      <RegistryContext
+        value={
+          options.deferRegistry
+            ? {
+                registry: options.deferRegistry,
+                createFromReadableStream,
+              }
+            : undefined
+        }
+      >
         {use(payload).root}
       </RegistryContext>
     );
