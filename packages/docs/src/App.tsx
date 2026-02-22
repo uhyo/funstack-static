@@ -19,7 +19,7 @@ import { Home } from "./pages/Home";
 import { NotFound } from "./pages/NotFound";
 import { Router } from "./Router";
 
-const routes: RouteDefinition[] = [
+export const routes: RouteDefinition[] = [
   route({
     path: import.meta.env.BASE_URL.replace(/\/$/, ""),
     component: <Outlet />,
@@ -132,6 +132,6 @@ const routes: RouteDefinition[] = [
   }),
 ];
 
-export default function App() {
-  return <Router routes={routes} fallback="static" />;
+export default function App({ ssrPath }: { ssrPath: string }) {
+  return <Router routes={routes} fallback="static" ssr={{ path: ssrPath }} />;
 }
