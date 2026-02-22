@@ -21,7 +21,11 @@ export const Router: React.FC<RouterProps> = (props) => {
           transition.navigationType === "push" ||
           transition.navigationType === "replace"
         ) {
-          window.scrollTo(0, 0);
+          // Safari is known to ignore scrolling immediately after a push/replace navigation, so we wait a bit
+          // Also, Safari doesn't handle scrolling to 0, so we use the -1 trick
+          setTimeout(() => {
+            window.scrollTo(0, -1);
+          }, 10);
         }
       },
       { signal: controller.signal },
