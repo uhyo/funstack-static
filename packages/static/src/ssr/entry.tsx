@@ -82,7 +82,11 @@ export async function renderHTML(
       });
     }
   } catch (e) {
-    // In this case, RSC payload is still sent to client and we let client render from scratch anyway.
+    if (options.build) {
+      // In build mode, abort the build so the error is not silently swallowed.
+      throw e;
+    }
+    // In dev mode, RSC payload is still sent to client and we let client render from scratch anyway.
     // This triggers the error boundary on client side.
     status = 500;
     htmlStream = await renderToReadableStream(
