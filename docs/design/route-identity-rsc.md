@@ -141,8 +141,8 @@ import { userRoute } from "./route";
 import { useRouteParams, useRouteData } from "@funstack/router";
 
 export function UserActions() {
-  const { userId } = useRouteParams(userRoute);  // { userId: string } ✓
-  const user = useRouteData(userRoute);           // User ✓
+  const { userId } = useRouteParams(userRoute); // { userId: string } ✓
+  const user = useRouteData(userRoute); // User ✓
   // ...
 }
 ```
@@ -265,6 +265,7 @@ function bindRoute<TId, TParams, TState, TData>(
 ```
 
 **Parameters:**
+
 - `partialRoute` — A Phase 1 route object (output of `route()` without
   component)
 - `binding.component` — The React component to render (may be a server
@@ -343,14 +344,14 @@ export const usersRoute = route({ id: "users", path: "/users" });
 // src/pages/users/profile/route.ts
 export const userProfileRoute = route({
   id: "userProfile",
-  path: "/:userId",        // relative to parent
+  path: "/:userId", // relative to parent
   loader: fetchUser,
 });
 
 // src/pages/users/settings/route.ts
 export const userSettingsRoute = route({
   id: "userSettings",
-  path: "/:userId/settings",  // relative to parent
+  path: "/:userId/settings", // relative to parent
 });
 ```
 
@@ -488,19 +489,25 @@ A set of type utilities that work with both partial and full route definitions:
 
 ```typescript
 type ExtractRouteParams<T> =
-  T extends PartialRouteDefinition<any, infer P, any, any> ? P :
-  T extends TypefulOpaqueRouteDefinition<any, infer P, any, any> ? P :
-  never;
+  T extends PartialRouteDefinition<any, infer P, any, any>
+    ? P
+    : T extends TypefulOpaqueRouteDefinition<any, infer P, any, any>
+      ? P
+      : never;
 
 type ExtractRouteState<T> =
-  T extends PartialRouteDefinition<any, any, infer S, any> ? S :
-  T extends TypefulOpaqueRouteDefinition<any, any, infer S, any> ? S :
-  never;
+  T extends PartialRouteDefinition<any, any, infer S, any>
+    ? S
+    : T extends TypefulOpaqueRouteDefinition<any, any, infer S, any>
+      ? S
+      : never;
 
 type ExtractRouteData<T> =
-  T extends PartialRouteDefinition<any, any, any, infer D> ? D :
-  T extends TypefulOpaqueRouteDefinition<any, any, any, infer D> ? D :
-  never;
+  T extends PartialRouteDefinition<any, any, any, infer D>
+    ? D
+    : T extends TypefulOpaqueRouteDefinition<any, any, any, infer D>
+      ? D
+      : never;
 ```
 
 ---
@@ -570,8 +577,8 @@ import { userRoute } from "./route";
 import { useRouteParams, useRouteData } from "@funstack/router";
 
 function UserActions() {
-  const { userId } = useRouteParams(userRoute);  // ✓ type-safe
-  const user = useRouteData(userRoute);           // ✓ type-safe
+  const { userId } = useRouteParams(userRoute); // ✓ type-safe
+  const user = useRouteData(userRoute); // ✓ type-safe
 }
 ```
 
@@ -648,12 +655,12 @@ naturally. Superseded by the simpler approach.
 The two-phase route definition solves the RSC routing dilemma by splitting at the
 only server-specific boundary — the component reference:
 
-| | Phase 1: `route()` | Phase 2: `bindRoute()` |
-|---|---|---|
-| **Module** | Shared (colocated with page) | Server (`App.tsx`) |
-| **Contains** | id, path, loader, action, state | component, children |
-| **Importable by** | Server + Client | Server only |
-| **Type info** | Params, Data, State (all inferred) | Inherited from Phase 1 |
+|                   | Phase 1: `route()`                 | Phase 2: `bindRoute()` |
+| ----------------- | ---------------------------------- | ---------------------- |
+| **Module**        | Shared (colocated with page)       | Server (`App.tsx`)     |
+| **Contains**      | id, path, loader, action, state    | component, children    |
+| **Importable by** | Server + Client                    | Server only            |
+| **Type info**     | Params, Data, State (all inferred) | Inherited from Phase 1 |
 
 All type information flows naturally — params from path pattern, data from loader
 return type, state from `routeState<T>()`. No explicit type annotations needed.
