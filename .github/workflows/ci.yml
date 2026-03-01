@@ -61,7 +61,7 @@ jobs:
         run: pnpm run test:e2e:dev
 
       - name: Upload Playwright report (build)
-        uses: actions/upload-artifact@v6
+        uses: actions/upload-artifact@v7
         if: ${{ !cancelled() }}
         with:
           name: playwright-report-build
@@ -69,7 +69,7 @@ jobs:
           retention-days: 30
 
       - name: Upload Playwright report (dev server)
-        uses: actions/upload-artifact@v6
+        uses: actions/upload-artifact@v7
         if: ${{ !cancelled() }}
         with:
           name: playwright-report-dev
