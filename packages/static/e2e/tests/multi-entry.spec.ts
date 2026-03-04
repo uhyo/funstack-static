@@ -57,6 +57,21 @@ test.describe("Multi-entry build output", () => {
   });
 });
 
+test.describe("Sitemap generation", () => {
+  test("generates sitemap.xml with all entry URLs", async ({ request }) => {
+    const response = await request.get("/sitemap.xml");
+    expect(response.ok()).toBe(true);
+
+    const xml = await response.text();
+    expect(xml).toContain('<?xml version="1.0" encoding="UTF-8"?>');
+    expect(xml).toContain(
+      '<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">',
+    );
+    expect(xml).toContain("<loc>https://example.com/</loc>");
+    expect(xml).toContain("<loc>https://example.com/about</loc>");
+  });
+});
+
 test.describe("Multi-entry page rendering", () => {
   test("home page renders correct content", async ({ page }) => {
     await page.goto("/");

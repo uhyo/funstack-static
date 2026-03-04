@@ -6,6 +6,7 @@ export default defineConfig({
   plugins: [
     funstackStatic({
       entries: "./src/entries.tsx",
+      sitemap: "https://example.com",
     }),
     react(),
   ],

@@ -25,6 +25,12 @@ interface FunstackStaticBaseOptions {
    * The module is imported for its side effects only (no exports needed).
    */
   clientInit?: string;
+  /**
+   * Generate a sitemap.xml during build.
+   * Set to the base URL of your site (e.g. "https://example.com") to enable.
+   * The sitemap will include all entry paths as URLs.
+   */
+  sitemap?: string;
 }
 
 interface SingleEntryOptions {
@@ -58,7 +64,12 @@ export type FunstackStaticOptions = FunstackStaticBaseOptions &
 export default function funstackStatic(
   options: FunstackStaticOptions,
 ): (Plugin | Plugin[])[] {
-  const { publicOutDir = "dist/public", ssr = false, clientInit } = options;
+  const {
+    publicOutDir = "dist/public",
+    ssr = false,
+    clientInit,
+    sitemap,
+  } = options;
 
   let resolvedEntriesModule: string = "__uninitialized__";
   let resolvedClientInitEntry: string | undefined;
@@ -179,7 +190,7 @@ export default function funstackStatic(
     {
       name: "@funstack/static:build",
       async buildApp(builder) {
-        await buildApp(builder, this);
+        await buildApp(builder, this, { sitemapBaseUrl: sitemap });
       },
     },
   ];

@@ -8,11 +8,17 @@ import { processRscComponents } from "./rscProcessor";
 import { computeContentHash } from "./contentHash";
 import { drainStream } from "../util/drainStream";
 import { validateEntryPath, checkDuplicatePaths } from "./validateEntryPath";
+import { generateSitemap } from "./sitemap";
 import type { EntryBuildResult } from "../rsc/entry";
+
+export interface BuildAppOptions {
+  sitemapBaseUrl?: string;
+}
 
 export async function buildApp(
   builder: ViteBuilder,
   context: MinimalPluginContextWithoutEnvironment,
+  options: BuildAppOptions = {},
 ) {
   const { config } = builder;
   // import server entry
@@ -65,6 +71,16 @@ export async function buildApp(
       getModulePathFor(finalId).replace(/^\//, ""),
     );
     await writeFileNormal(filePath, finalContent, context, name);
+  }
+
+  // Generate sitemap.xml if configured
+  if (options.sitemapBaseUrl) {
+    const sitemapContent = generateSitemap(options.sitemapBaseUrl, paths, base);
+    await writeFileNormal(
+      path.join(baseDir, "sitemap.xml"),
+      sitemapContent,
+      context,
+    );
   }
 }
 
