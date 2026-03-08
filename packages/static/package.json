@@ -63,17 +63,17 @@
     "jsdom": "^28.1.0",
     "react": "catalog:",
     "react-dom": "catalog:",
-    "tsdown": "^0.20.3",
+    "tsdown": "^0.21.0",
     "typescript": "catalog:",
     "vite": "catalog:",
     "vitest": "^4.0.18"
   },
   "dependencies": {
     "@funstack/skill-installer": "^1.0.0",
-    "@vitejs/plugin-rsc": "^0.5.19",
+    "@vitejs/plugin-rsc": "^0.5.21",
     "react-error-boundary": "^6.1.1",
     "rsc-html-stream": "^0.0.7",
-    "srvx": "^0.11.4"
+    "srvx": "^0.11.8"
   },
   "peerDependencies": {
     "react": "^19.2.3",
