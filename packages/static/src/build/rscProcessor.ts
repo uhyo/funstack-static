@@ -26,11 +26,13 @@ interface RawComponent {
  *
  * @param deferRegistryIterator - Iterator yielding components with { id, data }
  * @param appRscStream - The main RSC stream
+ * @param rscPayloadDir - Directory name used as a prefix for RSC payload IDs (e.g. "fun:rsc-payload")
  * @param context - Optional context for logging warnings
  */
 export async function processRscComponents(
   deferRegistryIterator: AsyncIterable<RawComponent>,
   appRscStream: ReadableStream,
+  rscPayloadDir: string,
   context?: { warn: (message: string) => void },
 ): Promise<ProcessResult> {
   // Step 1: Collect all components from deferRegistry
@@ -95,7 +97,7 @@ export async function processRscComponents(
 
     // Compute content hash for this component
     const contentHash = await computeContentHash(content);
-    const finalId = getPayloadIDFor(contentHash);
+    const finalId = getPayloadIDFor(contentHash, rscPayloadDir);
 
     // Create mapping
     idMapping.set(tempId, finalId);

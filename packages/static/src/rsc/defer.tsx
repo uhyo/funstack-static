@@ -3,6 +3,7 @@ import { renderToReadableStream } from "@vitejs/plugin-rsc/react/rsc";
 import { DeferredComponent } from "#rsc-client";
 import { drainStream } from "../util/drainStream";
 import { getPayloadIDFor } from "./rscModule";
+import { rscPayloadDir } from "virtual:funstack/config";
 
 export interface DeferEntry {
   state: DeferEntryState;
@@ -184,7 +185,7 @@ export function defer(
   const rawId = sanitizedName
     ? `${sanitizedName}-${crypto.randomUUID()}`
     : crypto.randomUUID();
-  const id = getPayloadIDFor(rawId);
+  const id = getPayloadIDFor(rawId, rscPayloadDir);
   deferRegistry.register(element, id, name);
 
   return <DeferredComponent moduleID={id} />;

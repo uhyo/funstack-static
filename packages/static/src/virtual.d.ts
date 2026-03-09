@@ -5,5 +5,6 @@ declare module "virtual:funstack/entries" {
 }
 declare module "virtual:funstack/config" {
   export const ssr: boolean;
+  export const rscPayloadDir: string;
 }
 declare module "virtual:funstack/client-init" {}
