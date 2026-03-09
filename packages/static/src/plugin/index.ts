@@ -76,6 +76,19 @@ export default function funstackStatic(
     rscPayloadDir = defaultRscPayloadDir,
   } = options;
 
+  // Validate rscPayloadDir to prevent path traversal or invalid segments
+  if (
+    !rscPayloadDir ||
+    rscPayloadDir.includes("/") ||
+    rscPayloadDir.includes("\\") ||
+    rscPayloadDir === ".." ||
+    rscPayloadDir === "."
+  ) {
+    throw new Error(
+      `[funstack] Invalid rscPayloadDir: "${rscPayloadDir}". Must be a non-empty single path segment without slashes.`,
+    );
+  }
+
   let resolvedEntriesModule: string = "__uninitialized__";
   let resolvedClientInitEntry: string | undefined;
 

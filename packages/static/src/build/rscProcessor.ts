@@ -26,6 +26,7 @@ interface RawComponent {
  *
  * @param deferRegistryIterator - Iterator yielding components with { id, data }
  * @param appRscStream - The main RSC stream
+ * @param rscPayloadDir - Directory name used as a prefix for RSC payload IDs (e.g. "fun:rsc-payload")
  * @param context - Optional context for logging warnings
  */
 export async function processRscComponents(

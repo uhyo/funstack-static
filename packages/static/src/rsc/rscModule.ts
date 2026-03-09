@@ -4,8 +4,8 @@
 export const defaultRscPayloadDir = "fun:rsc-payload";
 
 /**
- * Add prefix to raw ID to form payload ID so that the ID is
- * distinguishable from other possible IDs.
+ * Combines the RSC payload directory with a raw ID to form a
+ * namespaced payload ID (e.g. "fun:rsc-payload/abc123").
  */
 export function getPayloadIDFor(
   rawId: string,
