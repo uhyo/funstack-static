@@ -226,6 +226,23 @@ Sentry.init({
 
 **Note:** Errors in the client init module will propagate normally and prevent the app from rendering.
 
+### rscPayloadDir (optional)
+
+**Type:** `string`
+**Default:** `"fun:rsc-payload"`
+
+Directory name used for RSC payload files in the build output. The final file paths follow the pattern `/funstack__/{rscPayloadDir}/{hash}.txt`.
+
+Change this if your hosting platform has issues with the default directory name. For example, Cloudflare Workers redirects URLs containing colons to percent-encoded equivalents, adding an extra round trip.
+
+```typescript
+funstackStatic({
+  root: "./src/root.tsx",
+  app: "./src/App.tsx",
+  rscPayloadDir: "fun-rsc-payload", // Avoid colons for Cloudflare Workers
+});
+```
+
 ## Full Example
 
 ### Single-Entry
