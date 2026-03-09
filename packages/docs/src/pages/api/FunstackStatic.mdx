@@ -235,6 +235,8 @@ Directory name used for RSC payload files in the build output. The final file pa
 
 Change this if your hosting platform has issues with the default directory name. For example, Cloudflare Workers redirects URLs containing colons to percent-encoded equivalents, adding an extra round trip.
 
+**Important:** The value is used as a marker for string replacement during the build process. Choose a value that is unique enough that it does not appear in your application's source code. The default value `"fun:rsc-payload"` is designed to be unlikely to collide with user code.
+
 ```typescript
 funstackStatic({
   root: "./src/root.tsx",
