@@ -13,6 +13,7 @@ import type { EntryBuildResult } from "../rsc/entry";
 export async function buildApp(
   builder: ViteBuilder,
   context: MinimalPluginContextWithoutEnvironment,
+  options: { rscPayloadDir: string },
 ) {
   const { config } = builder;
   // import server entry
@@ -50,12 +51,20 @@ export async function buildApp(
   const { components, idMapping } = await processRscComponents(
     deferRegistry.loadAll(),
     dummyStream,
+    options.rscPayloadDir,
     context,
   );
 
   // Write each entry's HTML and RSC payload
   for (const result of entries) {
-    await buildSingleEntry(result, idMapping, baseDir, base, context);
+    await buildSingleEntry(
+      result,
+      idMapping,
+      baseDir,
+      base,
+      options.rscPayloadDir,
+      context,
+    );
   }
 
   // Write all deferred component payloads
@@ -94,6 +103,7 @@ async function buildSingleEntry(
   idMapping: Map<string, string>,
   baseDir: string,
   base: string,
+  rscPayloadDir: string,
   context: MinimalPluginContextWithoutEnvironment,
 ) {
   const { path: entryPath, html, appRsc } = result;
@@ -109,8 +119,8 @@ async function buildSingleEntry(
   const mainPayloadHash = await computeContentHash(appRscContent);
   const mainPayloadPath =
     base === ""
-      ? getRscPayloadPath(mainPayloadHash)
-      : base + getRscPayloadPath(mainPayloadHash);
+      ? getRscPayloadPath(mainPayloadHash, rscPayloadDir)
+      : base + getRscPayloadPath(mainPayloadHash, rscPayloadDir);
 
   // Replace placeholder with final hashed path
   const finalHtmlContent = htmlContent.replaceAll(
@@ -127,7 +137,10 @@ async function buildSingleEntry(
 
   // Write RSC payload with hashed filename
   await writeFileNormal(
-    path.join(baseDir, getRscPayloadPath(mainPayloadHash).replace(/^\//, "")),
+    path.join(
+      baseDir,
+      getRscPayloadPath(mainPayloadHash, rscPayloadDir).replace(/^\//, ""),
+    ),
     appRscContent,
     context,
   );

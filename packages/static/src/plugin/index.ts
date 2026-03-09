@@ -3,6 +3,7 @@ import type { Plugin } from "vite";
 import rsc from "@vitejs/plugin-rsc";
 import { buildApp } from "../build/buildApp";
 import { serverPlugin } from "./server";
+import { defaultRscPayloadDir } from "../rsc/rscModule";
 
 interface FunstackStaticBaseOptions {
   /**
@@ -25,6 +26,16 @@ interface FunstackStaticBaseOptions {
    * The module is imported for its side effects only (no exports needed).
    */
   clientInit?: string;
+  /**
+   * Directory name used for RSC payload files in the build output.
+   * The final path will be `/funstack__/{rscPayloadDir}/{hash}.txt`.
+   *
+   * Change this if your hosting platform has issues with the default
+   * directory name (e.g. Cloudflare Workers redirects URLs containing colons).
+   *
+   * @default "fun:rsc-payload"
+   */
+  rscPayloadDir?: string;
 }
 
 interface SingleEntryOptions {
@@ -58,7 +69,12 @@ export type FunstackStaticOptions = FunstackStaticBaseOptions &
 export default function funstackStatic(
   options: FunstackStaticOptions,
 ): (Plugin | Plugin[])[] {
-  const { publicOutDir = "dist/public", ssr = false, clientInit } = options;
+  const {
+    publicOutDir = "dist/public",
+    ssr = false,
+    clientInit,
+    rscPayloadDir = defaultRscPayloadDir,
+  } = options;
 
   let resolvedEntriesModule: string = "__uninitialized__";
   let resolvedClientInitEntry: string | undefined;
@@ -166,7 +182,10 @@ export default function funstackStatic(
           ].join("\n");
         }
         if (id === "\0virtual:funstack/config") {
-          return `export const ssr = ${JSON.stringify(ssr)};`;
+          return [
+            `export const ssr = ${JSON.stringify(ssr)};`,
+            `export const rscPayloadDir = ${JSON.stringify(rscPayloadDir)};`,
+          ].join("\n");
         }
         if (id === "\0virtual:funstack/client-init") {
           if (resolvedClientInitEntry) {
@@ -179,7 +198,7 @@ export default function funstackStatic(
     {
       name: "@funstack/static:build",
       async buildApp(builder) {
-        await buildApp(builder, this);
+        await buildApp(builder, this, { rscPayloadDir });
       },
     },
   ];

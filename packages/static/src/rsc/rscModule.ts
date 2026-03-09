@@ -1,14 +1,17 @@
 /**
- * ID is prefixed with this string to form module path.
+ * Default directory name for RSC payload files.
  */
-const rscPayloadIDPrefix = "fun:rsc-payload/";
+export const defaultRscPayloadDir = "fun:rsc-payload";
 
 /**
  * Add prefix to raw ID to form payload ID so that the ID is
  * distinguishable from other possible IDs.
  */
-export function getPayloadIDFor(rawId: string): string {
-  return `${rscPayloadIDPrefix}${rawId}`;
+export function getPayloadIDFor(
+  rawId: string,
+  rscPayloadDir: string = defaultRscPayloadDir,
+): string {
+  return `${rscPayloadDir}/${rawId}`;
 }
 
 const rscModulePathPrefix = "/funstack__/";

@@ -31,6 +31,7 @@ interface RawComponent {
 export async function processRscComponents(
   deferRegistryIterator: AsyncIterable<RawComponent>,
   appRscStream: ReadableStream,
+  rscPayloadDir: string,
   context?: { warn: (message: string) => void },
 ): Promise<ProcessResult> {
   // Step 1: Collect all components from deferRegistry
@@ -95,7 +96,7 @@ export async function processRscComponents(
 
     // Compute content hash for this component
     const contentHash = await computeContentHash(content);
-    const finalId = getPayloadIDFor(contentHash);
+    const finalId = getPayloadIDFor(contentHash, rscPayloadDir);
 
     // Create mapping
     idMapping.set(tempId, finalId);

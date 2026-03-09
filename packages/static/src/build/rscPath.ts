@@ -8,6 +8,9 @@ export const rscPayloadPlaceholder = "__FUNSTACK_RSC_PAYLOAD_PATH__";
 /**
  * Generate final path from content hash (reuses same folder as deferred payloads)
  */
-export function getRscPayloadPath(contentHash: string): string {
-  return getModulePathFor(getPayloadIDFor(contentHash));
+export function getRscPayloadPath(
+  contentHash: string,
+  rscPayloadDir: string,
+): string {
+  return getModulePathFor(getPayloadIDFor(contentHash, rscPayloadDir));
 }
