@@ -2,7 +2,7 @@ import { CodeBlock } from "../components/CodeBlock/CodeBlock";
 import styles from "./Home.module.css";
 
 const heroCode = `// vite.config.ts
-import { funstackStatic } from "@funstack/static";
+import funstackStatic from "@funstack/static";
 
 export default {
   plugins: [
