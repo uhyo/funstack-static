@@ -16,7 +16,7 @@ FUNSTACk Static is served as a Vite plugin. See your app's `vite.config.ts` file
 ```ts
 import { defineConfig } from "vite";
 import react from "@vitejs/plugin-react";
-import { funstackStatic } from "@funstack/static";
+import funstackStatic from "@funstack/static";
 
 export default defineConfig({
   plugins: [
