@@ -42,8 +42,8 @@ importers:
   packages/docs:
     dependencies:
       '@funstack/router':
-        specifier: ^0.0.10
-        version: 0.0.10(react@19.2.4)
+        specifier: ^1.1.0
+        version: 1.1.0(react@19.2.4)
       '@funstack/static':
         specifier: workspace:*
         version: link:../static
@@ -776,11 +776,11 @@ packages:
       '@noble/hashes':
         optional: true
 
-  '@funstack/router@0.0.10':
-    resolution: {integrity: sha512-/6K5AlLBLlds0ovYPLXHnqL6Mz7WSqnR4FQ1wGc6uxQezdaV4xsArSfqWdUpUzm3Vm9T8aJxcn4e+iVDiIZMXQ==}
+  '@funstack/router@1.1.0':
+    resolution: {integrity: sha512-fwFN801vg/wClUZOboiDz8T0LkDAdm2Qvw7IcYpbASQVDc1Mr9rkhe8SH0wwKBONHHH+jlTLEdh6Bq/KltYYpQ==}
     hasBin: true
     peerDependencies:
-      react: ^18.0.0 || ^19.0.0
+      react: ^19.2.0
 
   '@funstack/skill-installer@1.0.0':
     resolution: {integrity: sha512-lEYZQ4tFOLidvxy60tE7/28LUy4bJOlbT8o0ebcolaFV/cluSGtnDpWEUWIQWORtnGhrWnYl7Gr9aHvjHYkoEQ==}
@@ -3173,7 +3173,7 @@ snapshots:
 
   '@exodus/bytes@1.14.1': {}
 
-  '@funstack/router@0.0.10(react@19.2.4)':
+  '@funstack/router@1.1.0(react@19.2.4)':
     dependencies:
       '@funstack/skill-installer': 1.0.0
       react: 19.2.4
