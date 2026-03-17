@@ -1,3 +1,4 @@
+import "urlpattern-polyfill";
 import { mkdir, writeFile } from "node:fs/promises";
 import path from "node:path";
 import { pathToFileURL } from "node:url";

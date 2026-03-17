@@ -73,7 +73,8 @@
     "@vitejs/plugin-rsc": "^0.5.21",
     "react-error-boundary": "^6.1.1",
     "rsc-html-stream": "^0.0.7",
-    "srvx": "^0.11.8"
+    "srvx": "^0.11.8",
+    "urlpattern-polyfill": "^10.1.0"
   },
   "peerDependencies": {
     "react": "^19.2.3",
