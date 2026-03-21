@@ -98,6 +98,8 @@ jobs:
             -e 's|^\(  "@vitejs/plugin-react":\).*|\1 ^5.1.4|' \
             -e 's|^\(  vite:\).*|\1 ^7.3.1|' \
             pnpm-workspace.yaml
+          grep -q '"@vitejs/plugin-react": \^5\.1\.4' pnpm-workspace.yaml
+          grep -q 'vite: \^7\.3\.1' pnpm-workspace.yaml
 
       - name: Install dependencies
         run: pnpm install --no-frozen-lockfile
