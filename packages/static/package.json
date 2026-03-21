@@ -78,6 +78,6 @@
   "peerDependencies": {
     "react": "^19.2.3",
     "react-dom": "^19.2.3",
-    "vite": "catalog:"
+    "vite": "^7.0.0 || ^8.0.0"
   }
 }

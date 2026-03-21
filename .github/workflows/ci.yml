@@ -75,3 +75,70 @@ jobs:
           name: playwright-report-dev
           path: packages/static/playwright-report-dev/
           retention-days: 30
+
+  e2e-vite7:
+    runs-on: ubuntu-latest
+    needs: ci
+
+    steps:
+      - uses: actions/checkout@v6
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v6
+        with:
+          node-version: "24"
+          cache: "pnpm"
+
+      - name: Swap catalog to Vite 7
+        run: |
+          sed -i \
+            -e 's|^\(  "@vitejs/plugin-react":\).*|\1 ^5.1.4|' \
+            -e 's|^\(  vite:\).*|\1 ^7.3.1|' \
+            pnpm-workspace.yaml
+          grep -q '"@vitejs/plugin-react": \^5\.1\.4' pnpm-workspace.yaml
+          grep -q 'vite: \^7\.3\.1' pnpm-workspace.yaml
+
+      - name: Install dependencies
+        run: pnpm install --no-frozen-lockfile
+
+      - name: Build
+        run: pnpm --filter @funstack/static build
+
+      - name: Cache Playwright browsers
+        id: playwright-cache
+        uses: actions/cache@v5
+        with:
+          path: ~/.cache/ms-playwright
+          key: playwright-${{ runner.os }}-${{ hashFiles('pnpm-lock.yaml') }}
+
+      - name: Install Playwright system dependencies
+        if: steps.playwright-cache.outputs.cache-hit != 'true'
+        run: pnpm --filter @funstack/static exec playwright install-deps chromium
+
+      - name: Install Playwright browsers
+        run: pnpm --filter @funstack/static exec playwright install chromium
+
+      - name: Run e2e tests (build)
+        run: pnpm run test:e2e
+
+      - name: Run e2e tests (dev server)
+        run: pnpm run test:e2e:dev
+
+      - name: Upload Playwright report (build, Vite 7)
+        uses: actions/upload-artifact@v7
+        if: ${{ !cancelled() }}
+        with:
+          name: playwright-report-build-vite7
+          path: packages/static/playwright-report/
+          retention-days: 30
+
+      - name: Upload Playwright report (dev server, Vite 7)
+        uses: actions/upload-artifact@v7
+        if: ${{ !cancelled() }}
+        with:
+          name: playwright-report-dev-vite7
+          path: packages/static/playwright-report-dev/
+          retention-days: 30
