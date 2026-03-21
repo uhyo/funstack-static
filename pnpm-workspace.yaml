@@ -12,10 +12,5 @@ catalog:
   typescript: ^5.9.3
   vite: ^8.0.0
 
-catalogs:
-  vite7:
-    "@vitejs/plugin-react": ^5.1.4
-    vite: ^7.3.1
-
 onlyBuiltDependencies:
   - esbuild
