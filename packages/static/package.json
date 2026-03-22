@@ -60,7 +60,7 @@
     "@types/node": "catalog:",
     "@types/react": "^19.2.14",
     "@types/react-dom": "^19.2.3",
-    "jsdom": "^29.0.0",
+    "jsdom": "^29.0.1",
     "react": "catalog:",
     "react-dom": "catalog:",
     "tsdown": "^0.21.4",
