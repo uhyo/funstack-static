@@ -13,7 +13,7 @@
   "dependencies": {
     "@funstack/router": "^1.1.0",
     "@funstack/static": "workspace:*",
-    "@shikijs/rehype": "^3.22.0",
+    "@shikijs/rehype": "^4.0.2",
     "@types/node": "catalog:",
     "react": "catalog:",
     "react-dom": "catalog:",
