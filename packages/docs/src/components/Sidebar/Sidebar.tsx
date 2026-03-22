@@ -44,6 +44,10 @@ export const navigation: NavSection[] = [
         label: "Prefetching with Activity",
         href: "/learn/defer-and-activity",
       },
+      {
+        label: "File-System Routing",
+        href: "/learn/file-system-routing",
+      },
     ],
   },
   {
