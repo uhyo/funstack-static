@@ -9,6 +9,7 @@ import LazyServerComponents from "./pages/learn/LazyServerComponents.mdx";
 import OptimizingPayloads from "./pages/learn/OptimizingPayloads.mdx";
 import RSCConcept from "./pages/learn/RSC.mdx";
 import DeferAndActivity from "./pages/learn/DeferAndActivity.mdx";
+import FileSystemRouting from "./pages/learn/FileSystemRouting.mdx";
 import MultipleEntrypoints from "./pages/advanced/MultipleEntrypoints.mdx";
 import SSR from "./pages/advanced/SSR.mdx";
 import EntryDefinitionApi from "./pages/api/EntryDefinition.mdx";
@@ -105,6 +106,14 @@ export const routes: RouteDefinition[] = [
         component: (
           <Layout>
             {defer(<DeferAndActivity />, { name: "DeferAndActivity" })}
+          </Layout>
+        ),
+      }),
+      route({
+        path: "/learn/file-system-routing",
+        component: (
+          <Layout>
+            {defer(<FileSystemRouting />, { name: "FileSystemRouting" })}
           </Layout>
         ),
       }),
