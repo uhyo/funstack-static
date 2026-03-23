@@ -20,7 +20,7 @@ test.describe("Build output verification", () => {
     expect(html).toContain("__FUNSTACK_APP_ENTRY__");
     // Verify the RSC payload is preloaded
     expect(html).toContain('rel="preload"');
-    expect(html).toContain("funstack__/fun:rsc-payload/");
+    expect(html).toContain("funstack__/fun__rsc-payload/");
   });
 
   test("generates RSC payload files at /funstack__/*.txt", async ({
@@ -32,7 +32,7 @@ test.describe("Build output verification", () => {
 
     // Look for the RSC payload in preload link or FUNSTACK config
     const rscPayloadMatch = html.match(
-      /funstack__\/fun:rsc-payload\/[^"'\s]+\.txt/,
+      /funstack__\/fun__rsc-payload\/[^"'\s]+\.txt/,
     );
     expect(rscPayloadMatch).not.toBeNull();
 

@@ -65,7 +65,7 @@ interface DeferOptions {
 ```
 
 - **name:** An optional identifier to help with debugging. When provided:
-  - In development mode, the name is included in the RSC payload file name (e.g., `/funstack__/fun:rsc-payload/HomePage-b5698be72eea3c37`)
+  - In development mode, the name is included in the RSC payload file name (e.g., `/funstack__/fun__rsc-payload/HomePage-b5698be72eea3c37`)
   - In production mode, the name is logged when the payload file is emitted
 
 ### Returns
@@ -105,6 +105,6 @@ Using the `name` option makes it easier to identify which deferred component cor
 
 By default, FUNSTACK Static puts the entire app (`<App />`) into one RSC payload (`/funstack__/index.txt`). The client fetches this payload to render your SPA.
 
-When you use `defer(<Component />)`, FUNSTACK Static creates **additional RSC payloads** for the rendering result of the element. This results in an additional emit of RSC payload files like `/funstack__/fun:rsc-payload/b5698be72eea3c37`. If you provide a `name` option, the file name will include it (e.g., `/funstack__/fun:rsc-payload/HomePage-b5698be72eea3c37`).
+When you use `defer(<Component />)`, FUNSTACK Static creates **additional RSC payloads** for the rendering result of the element. This results in an additional emit of RSC payload files like `/funstack__/fun__rsc-payload/b5698be72eea3c37`. If you provide a `name` option, the file name will include it (e.g., `/funstack__/fun__rsc-payload/HomePage-b5698be72eea3c37`).
 
-In the main RSC payload, the `defer` call is replaced with a client component `<DeferredComponent moduleId="fun:rsc-payload/b5698be72eea3c37" />`. This component is responsible for fetching the additional RSC payload from client and renders it when it's ready.
+In the main RSC payload, the `defer` call is replaced with a client component `<DeferredComponent moduleId="fun__rsc-payload/b5698be72eea3c37" />`. This component is responsible for fetching the additional RSC payload from client and renders it when it's ready.

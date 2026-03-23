@@ -30,15 +30,15 @@ describe("findReferencedIds", () => {
   });
 
   it("finds IDs with special characters", () => {
-    const content = "Reference to fun:rsc-payload/abc-123 here";
+    const content = "Reference to fun__rsc-payload/abc-123 here";
     const allKnownIds = new Set([
-      "fun:rsc-payload/abc-123",
-      "fun:rsc-payload/def-456",
+      "fun__rsc-payload/abc-123",
+      "fun__rsc-payload/def-456",
     ]);
 
     const result = findReferencedIds(content, allKnownIds);
 
-    expect(result).toEqual(new Set(["fun:rsc-payload/abc-123"]));
+    expect(result).toEqual(new Set(["fun__rsc-payload/abc-123"]));
   });
 });
 

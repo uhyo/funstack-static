@@ -11,7 +11,7 @@ test.describe("Multi-entry build output", () => {
     expect(html).toContain("<!DOCTYPE html>");
     expect(html).toContain("<html");
     expect(html).toContain("__FUNSTACK_APP_ENTRY__");
-    expect(html).toContain("funstack__/fun:rsc-payload/");
+    expect(html).toContain("funstack__/fun__rsc-payload/");
   });
 
   test("generates about.html with expected HTML structure", async ({
@@ -24,7 +24,7 @@ test.describe("Multi-entry build output", () => {
     expect(html).toContain("<!DOCTYPE html>");
     expect(html).toContain("<html");
     expect(html).toContain("__FUNSTACK_APP_ENTRY__");
-    expect(html).toContain("funstack__/fun:rsc-payload/");
+    expect(html).toContain("funstack__/fun__rsc-payload/");
   });
 
   test("each page has its own RSC payload", async ({ request }) => {
@@ -36,10 +36,10 @@ test.describe("Multi-entry build output", () => {
 
     // Both pages should reference RSC payloads
     const homePayloadMatch = homeHtml.match(
-      /funstack__\/fun:rsc-payload\/[^"'\s]+\.txt/,
+      /funstack__\/fun__rsc-payload\/[^"'\s]+\.txt/,
     );
     const aboutPayloadMatch = aboutHtml.match(
-      /funstack__\/fun:rsc-payload\/[^"'\s]+\.txt/,
+      /funstack__\/fun__rsc-payload\/[^"'\s]+\.txt/,
     );
 
     expect(homePayloadMatch).not.toBeNull();
