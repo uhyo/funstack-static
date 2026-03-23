@@ -31,13 +31,13 @@ interface FunstackStaticBaseOptions {
    * The final path will be `/funstack__/{rscPayloadDir}/{hash}.txt`.
    *
    * Change this if your hosting platform has issues with the default
-   * directory name (e.g. Cloudflare Workers redirects URLs containing colons).
+   * directory name.
    *
    * The value is used as a marker for string replacement during the build
    * process, so it should be unique enough that it does not appear in your
    * application's source code.
    *
-   * @default "fun:rsc-payload"
+   * @default "fun__rsc-payload"
    */
   rscPayloadDir?: string;
 }

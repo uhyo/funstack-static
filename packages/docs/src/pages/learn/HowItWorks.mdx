@@ -45,12 +45,12 @@ dist/public
 │   ├── root-DvE5ENz2.css
 │   └── rsc-D0fjt5Ie.js
 ├── funstack__
-│   └── fun:rsc-payload
+│   └── fun__rsc-payload
 │       └── db1923b9b6507ab4.txt
 └── index.html
 ```
 
-The RSC payload files under `funstack__` are loaded by the client-side code to bootstrap the application with server-rendered content. The `fun:rsc-payload` directory name is [configurable](/api/funstack-static#rscpayloaddir-optional) via the `rscPayloadDir` option.
+The RSC payload files under `funstack__` are loaded by the client-side code to bootstrap the application with server-rendered content. The `fun__rsc-payload` directory name is [configurable](/api/funstack-static#rscpayloaddir-optional) via the `rscPayloadDir` option.
 
 This can been seen as an **optimized version of traditional client-only SPAs**, where the entire application is bundled into JavaScript files. By using RSC, some of the rendering work is offloaded to the build time, resulting in smaller JavaScript bundles combined with RSC payloads that require less client-side processing (parsing is easier, no JavaScript execution needed).
 

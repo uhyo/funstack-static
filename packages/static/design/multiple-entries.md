@@ -477,7 +477,7 @@ dist/public/
 ├── blog/
 │   └── post-1.html                               # path: "blog/post-1.html"
 ├── funstack__/
-│   └── fun:rsc-payload/
+│   └── fun__rsc-payload/
 │       ├── a1b2c3d4e5f6g7h8.txt                  # RSC payload for index.html
 │       ├── i9j0k1l2m3n4o5p6.txt                  # RSC payload for about.html
 │       ├── q7r8s9t0u1v2w3x4.txt                  # RSC payload for blog/post-1.html

@@ -62,7 +62,10 @@ test.describe("Client-side hydration", () => {
 
     page.on("request", (request) => {
       const url = request.url();
-      if (url.includes("funstack__/fun:rsc-payload/") && url.endsWith(".txt")) {
+      if (
+        url.includes("funstack__/fun__rsc-payload/") &&
+        url.endsWith(".txt")
+      ) {
         rscRequests.push(url);
       }
     });

@@ -1,11 +1,11 @@
 /**
  * Default directory name for RSC payload files.
  */
-export const defaultRscPayloadDir = "fun:rsc-payload";
+export const defaultRscPayloadDir = "fun__rsc-payload";
 
 /**
  * Combines the RSC payload directory with a raw ID to form a
- * namespaced payload ID (e.g. "fun:rsc-payload/abc123").
+ * namespaced payload ID (e.g. "fun__rsc-payload/abc123").
  */
 export function getPayloadIDFor(
   rawId: string,
