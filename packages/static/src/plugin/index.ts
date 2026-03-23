@@ -1,5 +1,5 @@
 import path from "node:path";
-import type { Plugin } from "vite";
+import { normalizePath, type Plugin } from "vite";
 import rsc from "@vitejs/plugin-rsc";
 import { buildApp } from "../build/buildApp";
 import { serverPlugin } from "./server";
@@ -129,12 +129,18 @@ export default function funstackStatic(
       name: "@funstack/static:config",
       configResolved(config) {
         if (isMultiEntry) {
-          resolvedEntriesModule = path.resolve(config.root, options.entries);
+          resolvedEntriesModule = normalizePath(
+            path.resolve(config.root, options.entries),
+          );
         } else {
           // For single-entry, we store both resolved paths to generate a
           // synthetic entries module in the virtual module loader.
-          const resolvedRoot = path.resolve(config.root, options.root);
-          const resolvedApp = path.resolve(config.root, options.app);
+          const resolvedRoot = normalizePath(
+            path.resolve(config.root, options.root),
+          );
+          const resolvedApp = normalizePath(
+            path.resolve(config.root, options.app),
+          );
           // Encode as JSON for safe embedding in generated code
           resolvedEntriesModule = JSON.stringify({
             root: resolvedRoot,
@@ -142,7 +148,9 @@ export default function funstackStatic(
           });
         }
         if (clientInit) {
-          resolvedClientInitEntry = path.resolve(config.root, clientInit);
+          resolvedClientInitEntry = normalizePath(
+            path.resolve(config.root, clientInit),
+          );
         }
       },
       configEnvironment(_name, config) {
