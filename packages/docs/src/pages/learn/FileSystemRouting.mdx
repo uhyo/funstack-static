@@ -24,10 +24,9 @@ function filePathToUrlPath(filePath: string): string {
 
 export const routes: RouteDefinition[] = Object.entries(pageModules).map(
   ([filePath, module]) => {
-    const Page = module.default;
     return route({
       path: filePathToUrlPath(filePath),
-      component: <Page />,
+      component: module.default,
     });
   },
 );
