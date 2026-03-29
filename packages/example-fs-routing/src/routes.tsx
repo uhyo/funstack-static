@@ -1,9 +1,12 @@
-import { route, type RouteDefinition } from "@funstack/router/server";
+import {
+  route,
+  bindRoute,
+  type RouteDefinition,
+} from "@funstack/router/server";
 
-const pageModules = import.meta.glob<{ default: React.ComponentType }>(
-  "./pages/**/*.tsx",
-  { eager: true },
-);
+const pageModules = import.meta.glob<{
+  default: React.ComponentType<{ route: RouteDefinition }>;
+}>("./pages/**/*.tsx", { eager: true });
 
 function filePathToUrlPath(filePath: string): string {
   let urlPath = filePath.replace(/^\.\/pages/, "").replace(/\.tsx$/, "");
@@ -15,9 +18,12 @@ function filePathToUrlPath(filePath: string): string {
 
 export const routes: RouteDefinition[] = Object.entries(pageModules).map(
   ([filePath, module]) => {
-    return route({
+    const Page = module.default;
+    const partialRoute = route({
       path: filePathToUrlPath(filePath),
-      component: module.default,
+    });
+    return bindRoute(partialRoute, {
+      component: <Page route={partialRoute} />,
     });
   },
 );

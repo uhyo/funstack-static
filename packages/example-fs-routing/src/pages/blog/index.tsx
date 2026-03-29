@@ -1,4 +1,6 @@
-export default function Blog() {
+import type { RouteDefinition } from "@funstack/router/server";
+
+export default function Blog({ route }: { route: RouteDefinition }) {
   return (
     <div>
       <h1>Blog</h1>

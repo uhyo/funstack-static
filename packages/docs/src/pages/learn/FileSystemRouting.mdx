@@ -7,12 +7,15 @@ FUNSTACK Static does not include a built-in file-system router, but you can impl
 The idea is to use `import.meta.glob` to discover page components from a `pages/` directory at compile time, then convert the file paths into route definitions.
 
 ```tsx
-import { route, type RouteDefinition } from "@funstack/router/server";
+import {
+  route,
+  bindRoute,
+  type RouteDefinition,
+} from "@funstack/router/server";
 
-const pageModules = import.meta.glob<{ default: React.ComponentType }>(
-  "./pages/**/*.tsx",
-  { eager: true },
-);
+const pageModules = import.meta.glob<{
+  default: React.ComponentType<{ route: RouteDefinition }>;
+}>("./pages/**/*.tsx", { eager: true });
 
 function filePathToUrlPath(filePath: string): string {
   let urlPath = filePath.replace(/^\.\/pages/, "").replace(/\.tsx$/, "");
@@ -24,13 +27,18 @@ function filePathToUrlPath(filePath: string): string {
 
 export const routes: RouteDefinition[] = Object.entries(pageModules).map(
   ([filePath, module]) => {
-    return route({
+    const Page = module.default;
+    const partialRoute = route({
       path: filePathToUrlPath(filePath),
-      component: module.default,
+    });
+    return bindRoute(partialRoute, {
+      component: <Page route={partialRoute} />,
     });
   },
 );
 ```
+
+Each page component receives its route definition as a prop, which can be passed to client components for use with typed hooks like `useRouteParams` or `useRouteData`.
 
 With this setup, files in the `pages/` directory are automatically mapped to routes:
 
