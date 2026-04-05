@@ -1,0 +1,108 @@
+# BuildEntryFunction
+
+The `BuildEntryFunction` type defines a custom build entry point that lets you hook into the production build process. Use it to run additional work before, after, or in parallel with the default build.
+
+## Import
+
+```typescript
+import type { BuildEntryFunction } from "@funstack/static/server";
+```
+
+## Usage
+
+Create a module that default-exports a `BuildEntryFunction`, then reference it via the [`build`](/api/funstack-static#build-optional) option in your Vite config:
+
+```typescript
+// vite.config.ts
+import funstackStatic from "@funstack/static";
+import { defineConfig } from "vite";
+
+export default defineConfig({
+  plugins: [
+    funstackStatic({
+      entries: "./src/entries.tsx",
+      build: "./src/build.ts",
+    }),
+  ],
+});
+```
+
+```typescript
+// src/build.ts
+import type { BuildEntryFunction } from "@funstack/static/server";
+
+export default (async ({ build, outDir }) => {
+  // Run the default build
+  await build();
+  // ... do additional work after the build
+}) satisfies BuildEntryFunction;
+```
+
+## Type Definition
+
+```typescript
+type BuildEntryFunction = (context: BuildEntryContext) => Promise<void> | void;
+
+interface BuildEntryContext {
+  build: () => Promise<void>;
+  outDir: string;
+}
+```
+
+## Context Properties
+
+### build
+
+**Type:** `() => Promise<void>`
+
+Performs the default build flow (rendering entries and writing output files). You must call this function to produce the standard build output. You can run additional work before, after, or in parallel with it.
+
+### outDir
+
+**Type:** `string`
+
+Absolute path to the output directory where built files are written. Use this to write additional files alongside the build output.
+
+## Examples
+
+### Generate a sitemap alongside the build
+
+```typescript
+import { writeFile } from "node:fs/promises";
+import path from "node:path";
+import type { BuildEntryFunction } from "@funstack/static/server";
+
+export default (async ({ build, outDir }) => {
+  const sitemap = generateSitemap(); // your sitemap logic
+
+  await Promise.all([
+    build(),
+    writeFile(path.join(outDir, "sitemap.xml"), sitemap),
+  ]);
+}) satisfies BuildEntryFunction;
+```
+
+By running `build()` and `writeFile()` in parallel with `Promise.all`, the sitemap is generated without adding to the total build time.
+
+### Run work before or after the build
+
+```typescript
+import type { BuildEntryFunction } from "@funstack/static/server";
+
+export default (async ({ build }) => {
+  console.log("Build starting...");
+  await build();
+  console.log("Build complete!");
+}) satisfies BuildEntryFunction;
+```
+
+## Notes
+
+- The build entry module runs in the **RSC environment**, so you have access to Node.js APIs.
+- The `build` option is only used during **production builds** (`vite build`), not in dev mode.
+- If no `build` option is specified, the default build flow runs automatically.
+
+## See Also
+
+- [funstackStatic()](/api/funstack-static) - Plugin configuration (includes the `build` option)
+- [Multiple Entrypoints](/advanced/multiple-entrypoints) - Multi-page static site generation
