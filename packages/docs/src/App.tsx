@@ -12,6 +12,7 @@ import DeferAndActivity from "./pages/learn/DeferAndActivity.mdx";
 import FileSystemRouting from "./pages/learn/FileSystemRouting.mdx";
 import MultipleEntrypoints from "./pages/advanced/MultipleEntrypoints.mdx";
 import SSR from "./pages/advanced/SSR.mdx";
+import BuildEntryApi from "./pages/api/BuildEntry.mdx";
 import EntryDefinitionApi from "./pages/api/EntryDefinition.mdx";
 import FAQ from "./pages/FAQ.mdx";
 import GettingStarted from "./pages/GettingStarted.mdx";
@@ -64,6 +65,12 @@ export const routes: RouteDefinition[] = [
       route({
         path: "/api/defer",
         component: <Layout>{defer(<DeferApi />, { name: "DeferApi" })}</Layout>,
+      }),
+      route({
+        path: "/api/build-entry",
+        component: (
+          <Layout>{defer(<BuildEntryApi />, { name: "BuildEntryApi" })}</Layout>
+        ),
       }),
       route({
         path: "/api/entry-definition",

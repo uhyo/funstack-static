@@ -226,6 +226,25 @@ Sentry.init({
 
 **Note:** Errors in the client init module will propagate normally and prevent the app from rendering.
 
+### build (optional)
+
+**Type:** `string`
+
+Path to a module that customizes the production build process. The module should `export default` a function that receives a `BuildEntryContext` with a `build` function (which performs the default build flow) and an `outDir` string (the output directory path).
+
+This allows you to run additional work before, after, or in parallel with the build — for example, generating a sitemap or other static assets.
+
+Only called during production builds (`vite build`), not in dev mode. The module runs in the RSC environment.
+
+```typescript
+funstackStatic({
+  entries: "./src/entries.tsx",
+  build: "./src/build.ts",
+});
+```
+
+See [BuildEntryFunction](/api/build-entry) for the full type definition and examples.
+
 ### rscPayloadDir (optional)
 
 **Type:** `string`
@@ -295,5 +314,6 @@ You can use the same Vite commands you would use in a normal Vite project:
 
 - [Getting Started](/getting-started) - Quick start guide
 - [Multiple Entrypoints](/advanced/multiple-entrypoints) - Multi-page static site generation
+- [BuildEntryFunction](/api/build-entry) - Custom build entry point
 - [defer()](/api/defer) - Deferred rendering for streaming
 - [React Server Components](/learn/rsc) - Understanding RSC

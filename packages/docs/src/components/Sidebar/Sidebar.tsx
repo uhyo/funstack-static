@@ -72,6 +72,10 @@ export const navigation: NavSection[] = [
       },
       { label: "defer()", href: "/api/defer" },
       {
+        label: "BuildEntryFunction",
+        href: "/api/build-entry",
+      },
+      {
         label: "EntryDefinition",
         href: "/api/entry-definition",
       },
