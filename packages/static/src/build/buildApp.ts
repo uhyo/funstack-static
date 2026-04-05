@@ -25,55 +25,63 @@ export async function buildApp(
   const baseDir = config.environments.client.build.outDir;
   const base = normalizeBase(config.base);
 
-  const { entries, deferRegistry } = await entry.build();
+  async function doBuild() {
+    const { entries, deferRegistry } = await entry.build();
 
-  // Validate all entry paths
-  const paths: string[] = [];
-  for (const result of entries) {
-    const error = validateEntryPath(result.path);
-    if (error) {
-      throw new Error(error);
+    // Validate all entry paths
+    const paths: string[] = [];
+    for (const result of entries) {
+      const error = validateEntryPath(result.path);
+      if (error) {
+        throw new Error(error);
+      }
+      paths.push(result.path);
     }
-    paths.push(result.path);
-  }
-  const dupError = checkDuplicatePaths(paths);
-  if (dupError) {
-    throw new Error(dupError);
-  }
+    const dupError = checkDuplicatePaths(paths);
+    if (dupError) {
+      throw new Error(dupError);
+    }
 
-  // Process all deferred components once across all entries.
-  // We pass a dummy empty stream since we handle per-entry RSC payloads separately.
-  const dummyStream = new ReadableStream<Uint8Array>({
-    start(controller) {
-      controller.close();
-    },
-  });
-  const { components, idMapping } = await processRscComponents(
-    deferRegistry.loadAll(),
-    dummyStream,
-    options.rscPayloadDir,
-    context,
-  );
-
-  // Write each entry's HTML and RSC payload
-  for (const result of entries) {
-    await buildSingleEntry(
-      result,
-      idMapping,
-      baseDir,
-      base,
+    // Process all deferred components once across all entries.
+    // We pass a dummy empty stream since we handle per-entry RSC payloads separately.
+    const dummyStream = new ReadableStream<Uint8Array>({
+      start(controller) {
+        controller.close();
+      },
+    });
+    const { components, idMapping } = await processRscComponents(
+      deferRegistry.loadAll(),
+      dummyStream,
       options.rscPayloadDir,
       context,
     );
+
+    // Write each entry's HTML and RSC payload
+    for (const result of entries) {
+      await buildSingleEntry(
+        result,
+        idMapping,
+        baseDir,
+        base,
+        options.rscPayloadDir,
+        context,
+      );
+    }
+
+    // Write all deferred component payloads
+    for (const { finalId, finalContent, name } of components) {
+      const filePath = path.join(
+        baseDir,
+        getModulePathFor(finalId).replace(/^\//, ""),
+      );
+      await writeFileNormal(filePath, finalContent, context, name);
+    }
   }
 
-  // Write all deferred component payloads
-  for (const { finalId, finalContent, name } of components) {
-    const filePath = path.join(
-      baseDir,
-      getModulePathFor(finalId).replace(/^\//, ""),
-    );
-    await writeFileNormal(filePath, finalContent, context, name);
+  if (entry.buildEntry) {
+    await entry.buildEntry({ build: doBuild });
+  } else {
+    await doBuild();
   }
 }
 

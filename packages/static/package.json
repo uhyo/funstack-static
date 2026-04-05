@@ -27,6 +27,10 @@
       "types": "./dist/entryDefinition.d.mts",
       "import": "./dist/entryDefinition.mjs"
     },
+    "./build-entry": {
+      "types": "./dist/buildEntryDefinition.d.mts",
+      "import": "./dist/buildEntryDefinition.mjs"
+    },
     "./server": {
       "types": "./dist/entries/server.d.mts",
       "import": "./dist/entries/server.mjs"

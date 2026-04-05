@@ -8,3 +8,8 @@ declare module "virtual:funstack/config" {
   export const rscPayloadDir: string;
 }
 declare module "virtual:funstack/client-init" {}
+declare module "virtual:funstack/build-entry" {
+  import type { BuildEntryFunction } from "./buildEntryDefinition";
+  const buildEntry: BuildEntryFunction | undefined;
+  export default buildEntry;
+}
