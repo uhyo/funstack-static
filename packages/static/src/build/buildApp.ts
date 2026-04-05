@@ -79,7 +79,7 @@ export async function buildApp(
   }
 
   if (entry.buildEntry) {
-    await entry.buildEntry({ build: doBuild });
+    await entry.buildEntry({ build: doBuild, outDir: baseDir });
   } else {
     await doBuild();
   }

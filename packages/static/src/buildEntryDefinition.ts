@@ -8,6 +8,11 @@ export interface BuildEntryContext {
    * You can run additional work before, after, or in parallel with this function.
    */
   build: () => Promise<void>;
+  /**
+   * Absolute path to the output directory where built files are written.
+   * Use this to write additional files (e.g. sitemap.xml) alongside the build output.
+   */
+  outDir: string;
 }
 
 /**
