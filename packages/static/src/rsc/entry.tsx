@@ -316,6 +316,7 @@ export async function build() {
 }
 
 export { defer } from "./defer";
+export { default as buildEntry } from "virtual:funstack/build-entry";
 
 if (import.meta.hot) {
   import.meta.hot.accept();

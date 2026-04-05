@@ -40,6 +40,19 @@ interface FunstackStaticBaseOptions {
    * @default "fun__rsc-payload"
    */
   rscPayloadDir?: string;
+  /**
+   * Path to a module that customizes the build process.
+   * The module should `export default` an async function that receives
+   * `{ build }` where `build` is a function that performs the default
+   * build flow.
+   *
+   * This allows you to run additional work before/after the build,
+   * or to control the build execution (e.g. parallel work).
+   * Only called during production builds, not in dev mode.
+   *
+   * The module runs in the RSC environment.
+   */
+  build?: string;
 }
 
 interface SingleEntryOptions {
@@ -95,6 +108,7 @@ export default function funstackStatic(
 
   let resolvedEntriesModule: string = "__uninitialized__";
   let resolvedClientInitEntry: string | undefined;
+  let resolvedBuildEntry: string | undefined;
 
   // Determine whether user specified entries or root+app
   const isMultiEntry = "entries" in options && options.entries !== undefined;
@@ -152,6 +166,11 @@ export default function funstackStatic(
             path.resolve(config.root, clientInit),
           );
         }
+        if (options.build) {
+          resolvedBuildEntry = normalizePath(
+            path.resolve(config.root, options.build),
+          );
+        }
       },
       configEnvironment(_name, config) {
         if (!config.optimizeDeps) {
@@ -189,6 +208,9 @@ export default function funstackStatic(
         if (id === "virtual:funstack/client-init") {
           return "\0virtual:funstack/client-init";
         }
+        if (id === "virtual:funstack/build-entry") {
+          return "\0virtual:funstack/build-entry";
+        }
       },
       load(id) {
         if (id === "\0virtual:funstack/entries") {
@@ -217,6 +239,12 @@ export default function funstackStatic(
             return `import "${resolvedClientInitEntry}";`;
           }
           return "";
+        }
+        if (id === "\0virtual:funstack/build-entry") {
+          if (resolvedBuildEntry) {
+            return `export { default } from "${resolvedBuildEntry}";`;
+          }
+          return "export default undefined;";
         }
       },
     },

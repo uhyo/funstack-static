@@ -14,6 +14,7 @@ export default defineConfig(async () => {
       funstackStatic({
         entries: "./src/entries.tsx",
         ssr: true,
+        build: "./src/build.ts",
       }),
       {
         // to make .mdx loading lazy
