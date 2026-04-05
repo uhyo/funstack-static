@@ -20,9 +20,16 @@ function pathToEntryPath(path: string): string {
 }
 
 export default function getEntries(): EntryDefinition[] {
-  return collectPaths(routes).map((pathname) => ({
+  const entries = collectPaths(routes).map((pathname) => ({
     path: pathToEntryPath(pathname),
     root: () => import("./root"),
     app: <App ssrPath={pathname} />,
   }));
+  // Generate a 404.html so Cloudflare can serve it with a proper 404 status
+  entries.push({
+    path: "404.html",
+    root: () => import("./root"),
+    app: <App ssrPath="/404" />,
+  });
+  return entries;
 }
