@@ -1,6 +1,6 @@
 import { writeFile } from "node:fs/promises";
 import path from "node:path";
-import type { BuildEntryFunction } from "@funstack/static/build-entry";
+import type { BuildEntryFunction } from "@funstack/static/server";
 import type { RouteDefinition } from "@funstack/router/server";
 import { routes } from "./App";
 

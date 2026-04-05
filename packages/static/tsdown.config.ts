@@ -4,7 +4,6 @@ export default defineConfig({
   entry: [
     "src/index.ts",
     "src/entryDefinition.ts",
-    "src/buildEntryDefinition.ts",
     "src/entries/*.ts",
     "src/bin/*.ts",
   ],
