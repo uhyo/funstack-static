@@ -3,8 +3,7 @@ import path from "node:path";
 import type { BuildEntryFunction } from "@funstack/static/server";
 import type { RouteDefinition } from "@funstack/router/server";
 import { routes } from "./App";
-
-const siteUrl = "https://static.funstack.work";
+import { siteUrl } from "./constants";
 
 function collectPaths(routes: RouteDefinition[]): string[] {
   const paths: string[] = [];
