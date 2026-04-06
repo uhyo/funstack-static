@@ -37,7 +37,7 @@ export const routes: RouteDefinition[] = [
       route({
         path: "/getting-started",
         component: (
-          <Layout>
+          <Layout title="Getting Started">
             {defer(<GettingStarted />, { name: "GettingStarted" })}
           </Layout>
         ),
@@ -45,37 +45,45 @@ export const routes: RouteDefinition[] = [
       route({
         path: "/getting-started/migrating-from-vite-spa",
         component: (
-          <Layout>
+          <Layout title="Migrating from Vite SPA">
             {defer(<MigratingFromViteSPA />, { name: "MigratingFromViteSPA" })}
           </Layout>
         ),
       }),
       route({
         path: "/faq",
-        component: <Layout>{defer(<FAQ />, { name: "FAQ" })}</Layout>,
+        component: (
+          <Layout title="FAQ">{defer(<FAQ />, { name: "FAQ" })}</Layout>
+        ),
       }),
       route({
         path: "/api/funstack-static",
         component: (
-          <Layout>
+          <Layout title="funstackStatic()">
             {defer(<FunstackStaticApi />, { name: "FunstackStaticApi" })}
           </Layout>
         ),
       }),
       route({
         path: "/api/defer",
-        component: <Layout>{defer(<DeferApi />, { name: "DeferApi" })}</Layout>,
+        component: (
+          <Layout title="defer()">
+            {defer(<DeferApi />, { name: "DeferApi" })}
+          </Layout>
+        ),
       }),
       route({
         path: "/api/build-entry",
         component: (
-          <Layout>{defer(<BuildEntryApi />, { name: "BuildEntryApi" })}</Layout>
+          <Layout title="BuildEntryFunction">
+            {defer(<BuildEntryApi />, { name: "BuildEntryApi" })}
+          </Layout>
         ),
       }),
       route({
         path: "/api/entry-definition",
         component: (
-          <Layout>
+          <Layout title="EntryDefinition">
             {defer(<EntryDefinitionApi />, { name: "EntryDefinitionApi" })}
           </Layout>
         ),
@@ -83,19 +91,23 @@ export const routes: RouteDefinition[] = [
       route({
         path: "/learn/how-it-works",
         component: (
-          <Layout>{defer(<HowItWorks />, { name: "HowItWorks" })}</Layout>
+          <Layout title="How It Works">
+            {defer(<HowItWorks />, { name: "HowItWorks" })}
+          </Layout>
         ),
       }),
       route({
         path: "/learn/rsc",
         component: (
-          <Layout>{defer(<RSCConcept />, { name: "RSCConcept" })}</Layout>
+          <Layout title="React Server Components">
+            {defer(<RSCConcept />, { name: "RSCConcept" })}
+          </Layout>
         ),
       }),
       route({
         path: "/learn/optimizing-payloads",
         component: (
-          <Layout>
+          <Layout title="Optimizing RSC Payloads">
             {defer(<OptimizingPayloads />, { name: "OptimizingPayloads" })}
           </Layout>
         ),
@@ -103,7 +115,7 @@ export const routes: RouteDefinition[] = [
       route({
         path: "/learn/lazy-server-components",
         component: (
-          <Layout>
+          <Layout title="Using lazy() in Server Components">
             {defer(<LazyServerComponents />, { name: "LazyServerComponents" })}
           </Layout>
         ),
@@ -111,7 +123,7 @@ export const routes: RouteDefinition[] = [
       route({
         path: "/learn/defer-and-activity",
         component: (
-          <Layout>
+          <Layout title="Prefetching with defer() and Activity">
             {defer(<DeferAndActivity />, { name: "DeferAndActivity" })}
           </Layout>
         ),
@@ -119,7 +131,7 @@ export const routes: RouteDefinition[] = [
       route({
         path: "/learn/file-system-routing",
         component: (
-          <Layout>
+          <Layout title="File-System Routing">
             {defer(<FileSystemRouting />, { name: "FileSystemRouting" })}
           </Layout>
         ),
@@ -127,19 +139,23 @@ export const routes: RouteDefinition[] = [
       route({
         path: "/advanced/multiple-entrypoints",
         component: (
-          <Layout>
+          <Layout title="Multiple Entrypoints (SSG)">
             {defer(<MultipleEntrypoints />, { name: "MultipleEntrypoints" })}
           </Layout>
         ),
       }),
       route({
         path: "/advanced/ssr",
-        component: <Layout>{defer(<SSR />, { name: "SSR" })}</Layout>,
+        component: (
+          <Layout title="Server-Side Rendering">
+            {defer(<SSR />, { name: "SSR" })}
+          </Layout>
+        ),
       }),
       route({
         path: "*",
         component: (
-          <Layout>
+          <Layout title="Not Found">
             <NotFound />
           </Layout>
         ),
