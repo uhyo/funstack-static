@@ -11,17 +11,25 @@ type LayoutVariant = "home" | "docs";
 interface LayoutProps {
   children: React.ReactNode;
   variant?: LayoutVariant;
+  title?: string;
 }
 
 export const Layout: React.FC<LayoutProps> = ({
   children,
   variant = "docs",
+  title,
 }) => {
   const layoutClass =
     variant === "home" ? styles.homeLayout : styles.docsLayout;
+  const fullTitle = title
+    ? `${title} | FUNSTACK Static`
+    : "FUNSTACK Static - docs";
 
   return (
     <div className={`${styles.layout} ${layoutClass}`}>
+      <title>{fullTitle}</title>
+      <meta property="og:title" content={fullTitle} />
+      <meta name="twitter:title" content={fullTitle} />
       <Header menuSlot={<MobileMenu />} />
       <div className={styles.main}>
         {variant === "docs" && <Sidebar />}
