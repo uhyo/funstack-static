@@ -29,7 +29,7 @@ export const routes: RouteDefinition[] = [
       route({
         path: "/",
         component: (
-          <Layout variant="home">
+          <Layout variant="home" path="/">
             <Home />
           </Layout>
         ),
@@ -37,7 +37,7 @@ export const routes: RouteDefinition[] = [
       route({
         path: "/getting-started",
         component: (
-          <Layout title="Getting Started">
+          <Layout title="Getting Started" path="/getting-started">
             {defer(<GettingStarted />, { name: "GettingStarted" })}
           </Layout>
         ),
@@ -45,7 +45,10 @@ export const routes: RouteDefinition[] = [
       route({
         path: "/getting-started/migrating-from-vite-spa",
         component: (
-          <Layout title="Migrating from Vite SPA">
+          <Layout
+            title="Migrating from Vite SPA"
+            path="/getting-started/migrating-from-vite-spa"
+          >
             {defer(<MigratingFromViteSPA />, { name: "MigratingFromViteSPA" })}
           </Layout>
         ),
@@ -53,13 +56,15 @@ export const routes: RouteDefinition[] = [
       route({
         path: "/faq",
         component: (
-          <Layout title="FAQ">{defer(<FAQ />, { name: "FAQ" })}</Layout>
+          <Layout title="FAQ" path="/faq">
+            {defer(<FAQ />, { name: "FAQ" })}
+          </Layout>
         ),
       }),
       route({
         path: "/api/funstack-static",
         component: (
-          <Layout title="funstackStatic()">
+          <Layout title="funstackStatic()" path="/api/funstack-static">
             {defer(<FunstackStaticApi />, { name: "FunstackStaticApi" })}
           </Layout>
         ),
@@ -67,7 +72,7 @@ export const routes: RouteDefinition[] = [
       route({
         path: "/api/defer",
         component: (
-          <Layout title="defer()">
+          <Layout title="defer()" path="/api/defer">
             {defer(<DeferApi />, { name: "DeferApi" })}
           </Layout>
         ),
@@ -75,7 +80,7 @@ export const routes: RouteDefinition[] = [
       route({
         path: "/api/build-entry",
         component: (
-          <Layout title="BuildEntryFunction">
+          <Layout title="BuildEntryFunction" path="/api/build-entry">
             {defer(<BuildEntryApi />, { name: "BuildEntryApi" })}
           </Layout>
         ),
@@ -83,7 +88,7 @@ export const routes: RouteDefinition[] = [
       route({
         path: "/api/entry-definition",
         component: (
-          <Layout title="EntryDefinition">
+          <Layout title="EntryDefinition" path="/api/entry-definition">
             {defer(<EntryDefinitionApi />, { name: "EntryDefinitionApi" })}
           </Layout>
         ),
@@ -91,7 +96,7 @@ export const routes: RouteDefinition[] = [
       route({
         path: "/learn/how-it-works",
         component: (
-          <Layout title="How It Works">
+          <Layout title="How It Works" path="/learn/how-it-works">
             {defer(<HowItWorks />, { name: "HowItWorks" })}
           </Layout>
         ),
@@ -99,7 +104,7 @@ export const routes: RouteDefinition[] = [
       route({
         path: "/learn/rsc",
         component: (
-          <Layout title="React Server Components">
+          <Layout title="React Server Components" path="/learn/rsc">
             {defer(<RSCConcept />, { name: "RSCConcept" })}
           </Layout>
         ),
@@ -107,7 +112,10 @@ export const routes: RouteDefinition[] = [
       route({
         path: "/learn/optimizing-payloads",
         component: (
-          <Layout title="Optimizing RSC Payloads">
+          <Layout
+            title="Optimizing RSC Payloads"
+            path="/learn/optimizing-payloads"
+          >
             {defer(<OptimizingPayloads />, { name: "OptimizingPayloads" })}
           </Layout>
         ),
@@ -115,7 +123,10 @@ export const routes: RouteDefinition[] = [
       route({
         path: "/learn/lazy-server-components",
         component: (
-          <Layout title="Using lazy() in Server Components">
+          <Layout
+            title="Using lazy() in Server Components"
+            path="/learn/lazy-server-components"
+          >
             {defer(<LazyServerComponents />, { name: "LazyServerComponents" })}
           </Layout>
         ),
@@ -123,7 +134,10 @@ export const routes: RouteDefinition[] = [
       route({
         path: "/learn/defer-and-activity",
         component: (
-          <Layout title="Prefetching with defer() and Activity">
+          <Layout
+            title="Prefetching with defer() and Activity"
+            path="/learn/defer-and-activity"
+          >
             {defer(<DeferAndActivity />, { name: "DeferAndActivity" })}
           </Layout>
         ),
@@ -131,7 +145,7 @@ export const routes: RouteDefinition[] = [
       route({
         path: "/learn/file-system-routing",
         component: (
-          <Layout title="File-System Routing">
+          <Layout title="File-System Routing" path="/learn/file-system-routing">
             {defer(<FileSystemRouting />, { name: "FileSystemRouting" })}
           </Layout>
         ),
@@ -139,7 +153,10 @@ export const routes: RouteDefinition[] = [
       route({
         path: "/advanced/multiple-entrypoints",
         component: (
-          <Layout title="Multiple Entrypoints (SSG)">
+          <Layout
+            title="Multiple Entrypoints (SSG)"
+            path="/advanced/multiple-entrypoints"
+          >
             {defer(<MultipleEntrypoints />, { name: "MultipleEntrypoints" })}
           </Layout>
         ),
@@ -147,7 +164,7 @@ export const routes: RouteDefinition[] = [
       route({
         path: "/advanced/ssr",
         component: (
-          <Layout title="Server-Side Rendering">
+          <Layout title="Server-Side Rendering" path="/advanced/ssr">
             {defer(<SSR />, { name: "SSR" })}
           </Layout>
         ),
@@ -155,7 +172,7 @@ export const routes: RouteDefinition[] = [
       route({
         path: "*",
         component: (
-          <Layout title="Not Found">
+          <Layout title="Not Found" path="/404">
             <NotFound />
           </Layout>
         ),
