@@ -29,6 +29,6 @@
     "rsc-html-stream": "^0.0.7",
     "typescript": "catalog:",
     "vite": "catalog:",
-    "wrangler": "^4.83.0"
+    "wrangler": "^4.85.0"
   }
 }
