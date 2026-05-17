@@ -56,7 +56,7 @@
   "author": "uhyo <uhyo@uhy.ooo>",
   "license": "MIT",
   "devDependencies": {
-    "@playwright/test": "^1.59.1",
+    "@playwright/test": "^1.60.0",
     "@types/node": "catalog:",
     "@types/react": "^19.2.14",
     "@types/react-dom": "^19.2.3",
@@ -65,7 +65,7 @@
     "tsdown": "^0.22.0",
     "typescript": "catalog:",
     "vite": "catalog:",
-    "vitest": "^4.1.5"
+    "vitest": "^4.1.6"
   },
   "dependencies": {
     "@funstack/skill-installer": "^1.0.0",
