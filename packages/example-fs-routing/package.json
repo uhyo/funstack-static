@@ -10,14 +10,14 @@
     "preview": "vite preview"
   },
   "dependencies": {
-    "@funstack/router": "^1.1.0",
+    "@funstack/router": "^1.1.1",
     "@funstack/static": "workspace:*",
     "@types/node": "catalog:",
     "react": "catalog:",
     "react-dom": "catalog:"
   },
   "devDependencies": {
-    "@types/react": "^19.2.14",
+    "@types/react": "^19.2.15",
     "@types/react-dom": "^19.2.3",
     "@vitejs/plugin-react": "catalog:",
     "vite": "catalog:"
