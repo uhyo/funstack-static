@@ -4,7 +4,7 @@
   "type": "module",
   "devDependencies": {
     "@funstack/static": "workspace:*",
-    "@types/react": "^19.2.15",
+    "@types/react": "^19.2.17",
     "@types/react-dom": "^19.2.3",
     "@vitejs/plugin-react": "catalog:",
     "react": "catalog:",
