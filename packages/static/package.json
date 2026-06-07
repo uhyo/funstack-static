@@ -58,18 +58,18 @@
   "devDependencies": {
     "@playwright/test": "^1.60.0",
     "@types/node": "catalog:",
-    "@types/react": "^19.2.15",
+    "@types/react": "^19.2.17",
     "@types/react-dom": "^19.2.3",
     "react": "catalog:",
     "react-dom": "catalog:",
-    "tsdown": "^0.22.1",
+    "tsdown": "^0.22.2",
     "typescript": "catalog:",
     "vite": "catalog:",
-    "vitest": "^4.1.7"
+    "vitest": "^4.1.8"
   },
   "dependencies": {
     "@funstack/skill-installer": "^1.1.0",
-    "@vitejs/plugin-rsc": "^0.5.26",
+    "@vitejs/plugin-rsc": "^0.5.27",
     "react-error-boundary": "^6.1.2",
     "rsc-html-stream": "^0.0.7",
     "srvx": "^0.11.16"
