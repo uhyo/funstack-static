@@ -68,6 +68,7 @@ interface SingleEntryOptions {
    */
   app: string;
   entries?: never;
+  fsRoutes?: never;
 }
 
 interface MultipleEntriesOptions {
@@ -78,10 +79,57 @@ interface MultipleEntriesOptions {
    * Mutually exclusive with `root`+`app`.
    */
   entries: string;
+  fsRoutes?: never;
+}
+
+/**
+ * Options for built-in file-system based routing.
+ *
+ * Pages discovered in `dir` are mapped to routes via an adapter (which defines
+ * the directory / file-name convention) and rendered through FUNSTACK Router.
+ * Using this feature requires `@funstack/router` to be installed.
+ *
+ * @experimental File-system routing is experimental and not yet subject to
+ * semantic versioning.
+ */
+export interface FsRoutesConfig {
+  /**
+   * Directory containing route files, relative to the Vite root.
+   *
+   * @default "./src/pages"
+   */
+  dir?: string;
+  /**
+   * Path to the root (HTML shell) component module.
+   * The file should `export default` a React component that renders the whole
+   * page (`<html>...</html>`) and places `children` inside `<body>`.
+   */
+  root: string;
+  /**
+   * Path to a module that `export default`s an `FsRoutesAdapter`, which defines
+   * the directory / file-name convention.
+   *
+   * Defaults to the built-in Next.js-like adapter (`nextRoutes()` from
+   * `@funstack/static/fs-routes`).
+   */
+  adapter?: string;
+}
+
+interface FsRoutesOptions {
+  root?: never;
+  app?: never;
+  entries?: never;
+  /**
+   * Enable built-in file-system based routing.
+   * Mutually exclusive with `root`+`app` and `entries`.
+   *
+   * @experimental
+   */
+  fsRoutes: FsRoutesConfig;
 }
 
 export type FunstackStaticOptions = FunstackStaticBaseOptions &
-  (SingleEntryOptions | MultipleEntriesOptions);
+  (SingleEntryOptions | MultipleEntriesOptions | FsRoutesOptions);
 
 export default function funstackStatic(
   options: FunstackStaticOptions,
@@ -109,9 +157,15 @@ export default function funstackStatic(
   let resolvedEntriesModule: string = "__uninitialized__";
   let resolvedClientInitEntry: string | undefined;
   let resolvedBuildEntry: string | undefined;
+  // Resolved configuration for file-system routing (fsRoutes mode).
+  let resolvedFsRoutes:
+    | { root: string; adapter: string | undefined; globBase: string }
+    | undefined;
 
-  // Determine whether user specified entries or root+app
-  const isMultiEntry = "entries" in options && options.entries !== undefined;
+  // Determine which entry mode the user selected.
+  const isFsRoutes = "fsRoutes" in options && options.fsRoutes !== undefined;
+  const isMultiEntry =
+    !isFsRoutes && "entries" in options && options.entries !== undefined;
 
   return [
     {
@@ -142,7 +196,24 @@ export default function funstackStatic(
     {
       name: "@funstack/static:config",
       configResolved(config) {
-        if (isMultiEntry) {
+        if (isFsRoutes) {
+          const fsRoutes = options.fsRoutes;
+          const dir = fsRoutes.dir ?? "./src/pages";
+          const resolvedRoot = normalizePath(
+            path.resolve(config.root, fsRoutes.root),
+          );
+          const resolvedDir = normalizePath(path.resolve(config.root, dir));
+          // Glob patterns in generated virtual modules must be root-relative
+          // (a virtual module has no real path to resolve "./" against).
+          const relativeDir = normalizePath(
+            path.relative(config.root, resolvedDir),
+          );
+          const globBase = `/${relativeDir.replace(/^\.?\/?/, "").replace(/\/$/, "")}`;
+          const adapter = fsRoutes.adapter
+            ? normalizePath(path.resolve(config.root, fsRoutes.adapter))
+            : undefined;
+          resolvedFsRoutes = { root: resolvedRoot, adapter, globBase };
+        } else if (isMultiEntry) {
           resolvedEntriesModule = normalizePath(
             path.resolve(config.root, options.entries),
           );
@@ -214,6 +285,30 @@ export default function funstackStatic(
       },
       load(id) {
         if (id === "\0virtual:funstack/entries") {
+          if (isFsRoutes && resolvedFsRoutes) {
+            // Synthesize a getEntries module from file-system routing config.
+            // The import.meta.glob call is emitted here so users don't have to
+            // wire it up themselves; Vite transforms the glob in this virtual
+            // module just like in user code.
+            const { root, adapter, globBase } = resolvedFsRoutes;
+            const globPattern = `${globBase}/**/*.{tsx,jsx}`;
+            const lines = [
+              `import Root from "${root}";`,
+              `import { createFsRoutesEntries } from "@funstack/static/fs-routes";`,
+            ];
+            if (adapter) {
+              lines.push(`import adapter from "${adapter}";`);
+            }
+            lines.push(
+              `const modules = import.meta.glob(${JSON.stringify(globPattern)}, { eager: true });`,
+              `export default createFsRoutesEntries({`,
+              `  modules,`,
+              `  root: Root,`,
+              ...(adapter ? [`  adapter,`] : []),
+              `});`,
+            );
+            return lines.join("\n");
+          }
           if (isMultiEntry) {
             // Re-export the user's entries module
             return `export { default } from "${resolvedEntriesModule}";`;
