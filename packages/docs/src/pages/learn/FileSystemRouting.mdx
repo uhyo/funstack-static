@@ -27,6 +27,7 @@ import { defineConfig } from "vite";
 export default defineConfig({
   plugins: [
     funstackStatic({
+      ssr: true,
       fsRoutes: {
         dir: "./src/pages",
         root: "./src/root.tsx",
@@ -42,6 +43,8 @@ export default defineConfig({
 - `adapter` — optional path to a custom adapter module (defaults to the built-in Next.js-like adapter).
 
 `fsRoutes` is mutually exclusive with the `root` + `app` (single-entry) and `entries` (multiple entries) modes.
+
+> **Enable [`ssr`](/api/funstack-static).** Pages are server components rendered through FUNSTACK Router. `ssr: true` is **required for the dev server** (`vite dev`) to render your pages — without it, the dev server can only render the app shell — and it is recommended in general for SEO and faster initial load. Production builds work with `ssr` either way.
 
 ## The Next.js-like Convention
 

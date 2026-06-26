@@ -68,6 +68,7 @@ import { defineConfig } from "vite";
 export default defineConfig({
   plugins: [
     funstackStatic({
+      ssr: true,
       fsRoutes: {
         dir: "./src/pages",
         root: "./src/root.tsx",
@@ -78,7 +79,7 @@ export default defineConfig({
 });
 ```
 
-See [File-System Routing](/learn/file-system-routing) for a full guide.
+`ssr: true` is required for the dev server to render pages. See [File-System Routing](/learn/file-system-routing) for a full guide.
 
 ## Options
 
@@ -212,6 +213,8 @@ funstackStatic({
 - **`dir`** (optional, default `"./src/pages"`) — directory scanned for route files, relative to the Vite root.
 - **`root`** (required) — path to the root (HTML shell) component module.
 - **`adapter`** (optional) — path to a module that `export default`s an `FsRoutesAdapter`. Defaults to the built-in Next.js-like adapter (`nextRoutes()` from `@funstack/static/fs-routes`).
+
+Enable [`ssr`](#ssr-optional) alongside `fsRoutes` — it is required for the dev server to render pages and recommended in general.
 
 See [File-System Routing](/learn/file-system-routing) for the conventions, dynamic routes, and writing custom adapters.
 
