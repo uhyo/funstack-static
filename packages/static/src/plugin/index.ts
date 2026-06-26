@@ -106,11 +106,14 @@ export interface FsRoutesConfig {
    */
   root: string;
   /**
-   * Path to a module that `export default`s an `FsRoutesAdapter`, which defines
-   * the directory / file-name convention.
+   * Module that `export default`s an `FsRoutesAdapter`, which defines the
+   * directory / file-name convention. Either a bare module specifier (a package
+   * import) or a path to a local module, relative to the Vite root.
    *
-   * To use the built-in Next.js-like convention, point this at a module that
-   * `export default`s `nextRoutes()` from `@funstack/static/fs-routes`.
+   * To use the built-in Next.js-like convention with default options, point
+   * this at the bundled convenience module `@funstack/static/fs-routes/next`.
+   * For custom options, `export default nextRoutes(options)` (from
+   * `@funstack/static/fs-routes`) in your own module and point this at it.
    */
   adapter: string;
 }
@@ -130,6 +133,15 @@ interface FsRoutesOptions {
 
 export type FunstackStaticOptions = FunstackStaticBaseOptions &
   (SingleEntryOptions | MultipleEntriesOptions | FsRoutesOptions);
+
+/**
+ * Whether `id` is a bare module specifier (a package import) rather than a
+ * relative or absolute file path. Bare specifiers are passed through to the
+ * generated import as-is; paths are resolved against the Vite root.
+ */
+function isBareSpecifier(id: string): boolean {
+  return !id.startsWith(".") && !path.isAbsolute(id);
+}
 
 export default function funstackStatic(
   options: FunstackStaticOptions,
@@ -210,9 +222,12 @@ export default function funstackStatic(
             path.relative(config.root, resolvedDir),
           );
           const globBase = `/${relativeDir.replace(/^\.?\/?/, "").replace(/\/$/, "")}`;
-          const adapter = normalizePath(
-            path.resolve(config.root, fsRoutes.adapter),
-          );
+          // The adapter may be a bare module specifier (e.g. the built-in
+          // `@funstack/static/fs-routes/next`) or a path to a local module.
+          // Resolve only the latter against the Vite root.
+          const adapter = isBareSpecifier(fsRoutes.adapter)
+            ? fsRoutes.adapter
+            : normalizePath(path.resolve(config.root, fsRoutes.adapter));
           resolvedFsRoutes = { root: resolvedRoot, adapter, globBase };
         } else if (isMultiEntry) {
           resolvedEntriesModule = normalizePath(

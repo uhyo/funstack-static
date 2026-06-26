@@ -14,7 +14,7 @@ export default defineConfig({
       fsRoutes: {
         dir: "./src/pages",
         root: "./src/root.tsx",
-        adapter: "./src/adapter.ts",
+        adapter: "@funstack/static/fs-routes/next",
       },
     }),
     react(),
