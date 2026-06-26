@@ -73,6 +73,9 @@ export interface FsRouteTreeNode {
  *
  * Implement this interface to support a custom directory / file-name
  * convention. A Next.js-like adapter is provided built-in via `nextRoutes()`.
+ *
+ * @experimental File-system routing is experimental and not yet subject to
+ * semantic versioning.
  */
 export interface FsRoutesAdapter {
   /** Adapter name, used in diagnostics. */

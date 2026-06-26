@@ -1,3 +1,11 @@
+/**
+ * Built-in file-system routing for `@funstack/static`.
+ *
+ * @experimental This module is experimental and not yet subject to semantic
+ * versioning. Its API may change in a minor release.
+ *
+ * @packageDocumentation
+ */
 export { nextRoutes, type NextRoutesOptions } from "./nextAdapter";
 export type {
   FsRoutesAdapter,

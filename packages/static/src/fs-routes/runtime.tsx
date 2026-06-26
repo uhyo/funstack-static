@@ -3,66 +3,71 @@ import { Router } from "@funstack/router";
 import type { RouteDefinition } from "@funstack/router/server";
 import type {
   FsRootComponent,
-  FsRouteFile,
   FsRouteModule,
   FsRoutesAdapter,
   FsRouteTreeNode,
 } from "./types";
 import type { EntryDefinition, GetEntriesResult } from "../entryDefinition";
-import { collectStaticPaths, urlPathToFilePath } from "./tree";
+import { nextRoutes } from "./nextAdapter";
+import {
+  collectStaticPaths,
+  modulesToRouteFiles,
+  urlPathToFilePath,
+} from "./tree";
 
 /**
  * Options for {@link createFsRoutesEntries}.
+ *
+ * @experimental File-system routing is experimental and not yet subject to
+ * semantic versioning.
  */
 export interface CreateFsRoutesOptions {
   /**
-   * The result of `import.meta.glob` (eager) over the routes directory,
-   * keyed by file path.
+   * The result of `import.meta.glob` (eager) over the routes directory, keyed
+   * by file path. Glob your pages directory from your entries module, e.g.
+   * `import.meta.glob("./pages/**\/*.{tsx,jsx}", { eager: true })`.
    */
   modules: Record<string, FsRouteModule>;
   /**
-   * The glob base (root-relative directory, e.g. `"/src/pages"`) to strip from
-   * the module keys when computing each file's path relative to the routes
-   * directory.
+   * The root (HTML shell) component. Renders the whole page
+   * (`<html>…<body>{children}</body></html>`).
    */
-  base: string;
-  /** The convention adapter mapping files to a route tree. */
-  adapter: FsRoutesAdapter;
-  /** The root (HTML shell) component. */
-  Root: FsRootComponent;
+  root: FsRootComponent;
+  /**
+   * The convention adapter mapping files to a route tree.
+   *
+   * @default nextRoutes()
+   */
+  adapter?: FsRoutesAdapter;
 }
 
 /**
- * Converts the eager-glob result into the list of files relative to the routes
- * directory.
- */
-function modulesToFiles(
-  modules: Record<string, FsRouteModule>,
-  base: string,
-): FsRouteFile[] {
-  const prefix = base.endsWith("/") ? base : `${base}/`;
-  const files: FsRouteFile[] = [];
-  for (const [key, module] of Object.entries(modules)) {
-    const filePath = key.startsWith(prefix) ? key.slice(prefix.length) : key;
-    files.push({ filePath, module });
-  }
-  return files;
-}
-
-/**
- * Builds the FUNSTACK Router state for file-system routing and returns a
- * `getEntries` function that yields one entry per statically-generated page.
+ * Builds FUNSTACK Router state for file-system routing and returns a
+ * `getEntries` function (the default export expected by the `entries` plugin
+ * option). One entry is produced per statically-generated page.
  *
  * The route tree is built once via the adapter; the router route definitions
  * are rebuilt per page so that concrete dynamic `params` can be passed to the
  * route components.
+ *
+ * @experimental File-system routing is experimental and not yet subject to
+ * semantic versioning. Its API may change in a minor release.
+ *
+ * @example
+ * ```tsx
+ * // src/entries.tsx
+ * import { createFsRoutesEntries } from "@funstack/static/fs-routes";
+ * import Root from "./root";
+ *
+ * const modules = import.meta.glob("./pages/**\/*.{tsx,jsx}", { eager: true });
+ *
+ * export default createFsRoutesEntries({ modules, root: Root });
+ * ```
  */
 export function createFsRoutesEntries(
   options: CreateFsRoutesOptions,
 ): () => GetEntriesResult {
-  const { modules, base, adapter, Root } = options;
-  const files = modulesToFiles(modules, base);
-  const tree = adapter.buildRoutes(files);
+  const { modules, root: Root, adapter = nextRoutes() } = options;
 
   function buildRouteDefinitions(
     nodes: FsRouteTreeNode[],
@@ -92,9 +97,11 @@ export function createFsRoutesEntries(
   }
 
   function FsRoutesApp({
+    tree,
     path,
     params,
   }: {
+    tree: FsRouteTreeNode[];
     path: string;
     params: Record<string, string>;
   }): React.ReactNode {
@@ -103,14 +110,17 @@ export function createFsRoutesEntries(
   }
 
   return async function* getEntries(): AsyncGenerator<EntryDefinition> {
-    const pages = await collectStaticPaths(tree, (message) => {
+    const warn = (message: string) => {
       console.warn(`[funstack] ${message}`);
-    });
+    };
+    const files = modulesToRouteFiles(modules, warn);
+    const tree = adapter.buildRoutes(files);
+    const pages = await collectStaticPaths(tree, warn);
     for (const { urlPath, params } of pages) {
       yield {
         path: urlPathToFilePath(urlPath),
         root: { default: Root },
-        app: createElement(FsRoutesApp, { path: urlPath, params }),
+        app: createElement(FsRoutesApp, { tree, path: urlPath, params }),
       };
     }
   };

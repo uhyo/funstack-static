@@ -142,6 +142,9 @@ function emit(node: TrieNode, prefix: string[]): FsRouteTreeNode[] {
  *
  * Other files in the routes directory are ignored, so helpers and components
  * may be co-located with routes.
+ *
+ * @experimental File-system routing is experimental and not yet subject to
+ * semantic versioning.
  */
 export function nextRoutes(options: NextRoutesOptions = {}): FsRoutesAdapter {
   const pageFileName = options.pageFileName ?? "page";

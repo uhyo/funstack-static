@@ -5,12 +5,9 @@ import { defineConfig } from "vite";
 export default defineConfig({
   plugins: [
     funstackStatic({
-      // Built-in file-system routing. Pages under `src/pages` are mapped to
-      // routes via the Next.js-like adapter and rendered with FUNSTACK Router.
-      fsRoutes: {
-        dir: "./src/pages",
-        root: "./src/root.tsx",
-      },
+      // File-system routing is set up in the entries module using
+      // `@funstack/static/fs-routes`.
+      entries: "./src/entries.tsx",
     }),
     react(),
   ],

@@ -1,5 +1,9 @@
 import { describe, expect, it, vi } from "vitest";
-import { collectStaticPaths, urlPathToFilePath } from "./tree";
+import {
+  collectStaticPaths,
+  modulesToRouteFiles,
+  urlPathToFilePath,
+} from "./tree";
 import type { FsRouteModule, FsRouteTreeNode } from "./types";
 
 const component: FsRouteModule = { default: () => null };
@@ -110,6 +114,45 @@ describe("collectStaticPaths", () => {
       },
     ];
     await expect(collectStaticPaths(tree)).rejects.toThrow(/slug/);
+  });
+});
+
+describe("modulesToRouteFiles", () => {
+  const m: FsRouteModule = { default: () => null };
+
+  it("strips a common ./pages/ prefix", () => {
+    const files = modulesToRouteFiles({
+      "./pages/page.tsx": m,
+      "./pages/about/page.tsx": m,
+      "./pages/blog/[slug]/page.tsx": m,
+    });
+    expect(files.map((f) => f.filePath)).toEqual([
+      "page.tsx",
+      "about/page.tsx",
+      "blog/[slug]/page.tsx",
+    ]);
+  });
+
+  it("strips an absolute root-relative prefix", () => {
+    const files = modulesToRouteFiles({
+      "/src/pages/page.tsx": m,
+      "/src/pages/about/page.tsx": m,
+    });
+    expect(files.map((f) => f.filePath)).toEqual([
+      "page.tsx",
+      "about/page.tsx",
+    ]);
+  });
+
+  it("handles a single file at the routes root", () => {
+    const files = modulesToRouteFiles({ "./pages/page.tsx": m });
+    expect(files.map((f) => f.filePath)).toEqual(["page.tsx"]);
+  });
+
+  it("warns when no modules are provided", () => {
+    const warn = vi.fn();
+    expect(modulesToRouteFiles({}, warn)).toEqual([]);
+    expect(warn).toHaveBeenCalledTimes(1);
   });
 });
 

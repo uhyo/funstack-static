@@ -5,10 +5,7 @@ import { defineConfig } from "vite";
 export default defineConfig({
   plugins: [
     funstackStatic({
-      fsRoutes: {
-        dir: "./src/pages",
-        root: "./src/root.tsx",
-      },
+      entries: "./src/entries.tsx",
     }),
     react(),
   ],

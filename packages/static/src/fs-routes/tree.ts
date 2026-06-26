@@ -1,4 +1,42 @@
-import type { FsRouteModule, FsRouteTreeNode } from "./types";
+import type { FsRouteFile, FsRouteModule, FsRouteTreeNode } from "./types";
+
+/**
+ * Converts the result of an eager `import.meta.glob` into route files.
+ *
+ * The longest common leading directory prefix across all keys is stripped so
+ * that each file's path is relative to the routes directory, regardless of how
+ * the glob was written (`"./pages/…"`, `"/src/pages/…"`, etc.).
+ */
+export function modulesToRouteFiles(
+  modules: Record<string, FsRouteModule>,
+  onWarn?: (message: string) => void,
+): FsRouteFile[] {
+  const keys = Object.keys(modules);
+  if (keys.length === 0) {
+    onWarn?.(
+      "createFsRoutesEntries received no modules. Did your import.meta.glob pattern match any files?",
+    );
+    return [];
+  }
+
+  // Directory segments of each key (excluding the file name).
+  const dirSegments = keys.map((key) => key.split("/").slice(0, -1));
+  let commonLength = Math.min(
+    ...dirSegments.map((segments) => segments.length),
+  );
+  for (let i = 0; i < commonLength; i++) {
+    const segment = dirSegments[0]![i];
+    if (!dirSegments.every((segments) => segments[i] === segment)) {
+      commonLength = i;
+      break;
+    }
+  }
+
+  return keys.map((key) => ({
+    filePath: key.split("/").slice(commonLength).join("/"),
+    module: modules[key]!,
+  }));
+}
 
 /**
  * A single page to statically generate.

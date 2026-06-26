@@ -1,12 +1,14 @@
 # File-System Routing
 
-FUNSTACK Static includes **built-in file-system routing**. Pages discovered in a directory are automatically mapped to routes and rendered with [FUNSTACK Router](https://github.com/uhyo/funstack-router), with one static HTML file generated per route.
+> **Experimental.** File-system routing is experimental. Its API may change in a minor release and is **not** yet covered by semantic versioning.
 
-The directory / file-name convention is pluggable through an **adapter**, and a Next.js-like adapter is provided out of the box.
+FUNSTACK Static ships a built-in file-system router. Pages discovered in a directory are mapped to routes and rendered with [FUNSTACK Router](https://github.com/uhyo/funstack-router), generating one static HTML file per route.
+
+It is built on top of the [`entries`](/api/funstack-static) option: you write a small entries module that globs your pages and hands them to `@funstack/static/fs-routes`. The directory / file-name convention is pluggable through an **adapter**, and a Next.js-like adapter is provided out of the box.
 
 ## Requirements
 
-File-system routing renders pages with FUNSTACK Router, so `@funstack/router` must be installed as a peer dependency:
+File-system routing renders pages with FUNSTACK Router, so `@funstack/router` must be installed:
 
 ```sh
 npm install @funstack/router
@@ -14,7 +16,33 @@ npm install @funstack/router
 
 ## Setup
 
-Enable file-system routing with the `fsRoutes` option:
+### 1. Create an entries module
+
+The entries module globs your pages with `import.meta.glob` and passes them to `createFsRoutesEntries` along with your root (HTML shell) component:
+
+```tsx
+// src/entries.tsx
+import { createFsRoutesEntries } from "@funstack/static/fs-routes";
+import Root from "./root";
+
+// Discover all page/layout files under `pages/` at build time.
+const modules = import.meta.glob<{ default: React.ComponentType }>(
+  "./pages/**/*.{tsx,jsx}",
+  { eager: true },
+);
+
+export default createFsRoutesEntries({ modules, root: Root });
+```
+
+`createFsRoutesEntries` accepts:
+
+- `modules` — the eager `import.meta.glob` result for your pages directory.
+- `root` — the root (HTML shell) component.
+- `adapter` — optional; defaults to the built-in Next.js-like adapter (`nextRoutes()`).
+
+Because you own the glob, the pattern lives in your code (resolved relative to the entries module) — there is no extra plugin configuration.
+
+### 2. Point the plugin at the entries module
 
 ```typescript
 // vite.config.ts
@@ -25,21 +53,12 @@ import { defineConfig } from "vite";
 export default defineConfig({
   plugins: [
     funstackStatic({
-      fsRoutes: {
-        dir: "./src/pages",
-        root: "./src/root.tsx",
-      },
+      entries: "./src/entries.tsx",
     }),
     react(),
   ],
 });
 ```
-
-- `dir` — the directory scanned for route files (default `./src/pages`).
-- `root` — the HTML shell component (`<html>…<body>{children}</body></html>`).
-- `adapter` — optional path to a custom adapter module (defaults to the built-in Next.js-like adapter).
-
-`fsRoutes` is mutually exclusive with the `root` + `app` (single-entry) and `entries` (multiple entries) modes.
 
 ## The Next.js-like Convention
 
@@ -103,24 +122,17 @@ A dynamic route without `generateStaticParams` is **not** pre-rendered (a warnin
 
 ## Custom Conventions (Adapters)
 
-The convention is defined by an **adapter** implementing `FsRoutesAdapter`. Provide a module that `export default`s an adapter to use a different convention:
-
-```typescript
-// vite.config.ts
-funstackStatic({
-  fsRoutes: {
-    dir: "./src/pages",
-    root: "./src/root.tsx",
-    adapter: "./src/my-adapter.ts",
-  },
-});
-```
+The convention is defined by an **adapter** implementing `FsRoutesAdapter`. Pass an `adapter` to use a different convention:
 
 ```tsx
-// src/my-adapter.ts
-import type { FsRoutesAdapter } from "@funstack/static/fs-routes";
+// src/entries.tsx
+import {
+  createFsRoutesEntries,
+  type FsRoutesAdapter,
+} from "@funstack/static/fs-routes";
+import Root from "./root";
 
-const adapter: FsRoutesAdapter = {
+const myAdapter: FsRoutesAdapter = {
   name: "my-convention",
   buildRoutes(files) {
     // Map discovered files to a route tree.
@@ -129,30 +141,41 @@ const adapter: FsRoutesAdapter = {
   },
 };
 
-export default adapter;
+const modules = import.meta.glob<{ default: React.ComponentType }>(
+  "./pages/**/*.{tsx,jsx}",
+  { eager: true },
+);
+
+export default createFsRoutesEntries({
+  modules,
+  root: Root,
+  adapter: myAdapter,
+});
 ```
 
-The built-in Next.js-like adapter is also exported, so you can wrap or configure it:
+The built-in Next.js-like adapter can also be configured:
 
 ```tsx
-// src/my-adapter.ts
 import { nextRoutes } from "@funstack/static/fs-routes";
 
 // e.g. use `index.tsx` instead of `page.tsx`
-export default nextRoutes({ pageFileName: "index", layoutFileName: "_layout" });
+const adapter = nextRoutes({
+  pageFileName: "index",
+  layoutFileName: "_layout",
+});
 ```
 
 ## Full Example
 
 For a complete working example, see the [`example-fs-routing`](https://github.com/uhyo/funstack-static/tree/master/packages/example-fs-routing) package in the FUNSTACK Static repository.
 
-## Userland File-System Routing
+## Fully Custom Routing
 
-If you prefer full control, you can still implement routing in userland with Vite's `import.meta.glob` and the [`entries`](/api/funstack-static) option — deriving [entry definitions](/api/entry-definition) from a glob of page files. The built-in feature is a maintained implementation of this same idea.
+`createFsRoutesEntries` is a convenience built on the [`entries`](/api/funstack-static) option. If you need full control, you can write the entries module by hand — globbing pages and deriving [entry definitions](/api/entry-definition) yourself.
 
 ## See Also
 
-- [funstackStatic()](/api/funstack-static) - The `fsRoutes` plugin option
+- [funstackStatic()](/api/funstack-static) - The `entries` plugin option
 - [Multiple Entrypoints](/advanced/multiple-entrypoints) - Generating multiple HTML pages from a single project
 - [EntryDefinition](/api/entry-definition) - API reference for entry definitions
 - [How It Works](/learn/how-it-works) - Overall FUNSTACK Static architecture
