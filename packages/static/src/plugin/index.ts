@@ -111,7 +111,7 @@ export interface FsRoutesConfig {
    * import) or a path to a local module, relative to the Vite root.
    *
    * To use the built-in Next.js-like convention with default options, point
-   * this at the bundled convenience module `@funstack/static/fs-routes/next`.
+   * this at the bundled module `@funstack/static/fs-routes/next-adapter`.
    * For custom options, `export default nextRoutes(options)` (from
    * `@funstack/static/fs-routes`) in your own module and point this at it.
    */
@@ -223,7 +223,7 @@ export default function funstackStatic(
           );
           const globBase = `/${relativeDir.replace(/^\.?\/?/, "").replace(/\/$/, "")}`;
           // The adapter may be a bare module specifier (e.g. the built-in
-          // `@funstack/static/fs-routes/next`) or a path to a local module.
+          // `@funstack/static/fs-routes/next-adapter`) or a path to a local module.
           // Resolve only the latter against the Vite root.
           const adapter = isBareSpecifier(fsRoutes.adapter)
             ? fsRoutes.adapter

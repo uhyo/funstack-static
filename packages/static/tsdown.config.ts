@@ -7,7 +7,7 @@ export default defineConfig({
     "src/entries/*.ts",
     "src/bin/*.ts",
     "src/fs-routes/index.ts",
-    "src/fs-routes/next.ts",
+    "src/fs-routes/next-adapter.ts",
   ],
   // Vite virtual modules & subpath imports
   external: [/^virtual:/, /^#/],

@@ -35,9 +35,9 @@
       "types": "./dist/fs-routes/index.d.mts",
       "import": "./dist/fs-routes/index.mjs"
     },
-    "./fs-routes/next": {
-      "types": "./dist/fs-routes/next.d.mts",
-      "import": "./dist/fs-routes/next.mjs"
+    "./fs-routes/next-adapter": {
+      "types": "./dist/fs-routes/next-adapter.d.mts",
+      "import": "./dist/fs-routes/next-adapter.mjs"
     },
     "./entries/*": "./dist/entries/*.mjs"
   },

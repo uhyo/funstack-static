@@ -31,7 +31,7 @@ export default defineConfig({
       fsRoutes: {
         dir: "./src/pages",
         root: "./src/root.tsx",
-        adapter: "@funstack/static/fs-routes/next",
+        adapter: "@funstack/static/fs-routes/next-adapter",
       },
     }),
     react(),
@@ -43,7 +43,7 @@ All `fsRoutes` fields are required, so each choice is explicit in your config:
 
 - `dir` — the directory scanned for route files (commonly `./src/pages`).
 - `root` — the HTML shell component (`<html>…<body>{children}</body></html>`).
-- `adapter` — a module that `export default`s the adapter defining the directory / file-name convention. The bundled `@funstack/static/fs-routes/next` provides the built-in Next.js-like convention with default options; see [Custom Conventions](#custom-conventions-adapters) to configure it or write your own.
+- `adapter` — a module that `export default`s the adapter defining the directory / file-name convention. The bundled `@funstack/static/fs-routes/next-adapter` provides the built-in Next.js-like convention with default options; see [Custom Conventions](#custom-conventions-adapters) to configure it or write your own.
 
 `fsRoutes` is mutually exclusive with the `root` + `app` (single-entry) and `entries` (multiple entries) modes.
 
@@ -111,7 +111,7 @@ A dynamic route without `generateStaticParams` is **not** pre-rendered (a warnin
 
 ## Custom Conventions (Adapters)
 
-The convention is defined by an **adapter** implementing `FsRoutesAdapter`. The built-in `@funstack/static/fs-routes/next` is the Next.js-like adapter with default options; to use a different convention, point `adapter` at your own module that `export default`s an adapter:
+The convention is defined by an **adapter** implementing `FsRoutesAdapter`. The built-in `@funstack/static/fs-routes/next-adapter` is the Next.js-like adapter with default options; to use a different convention, point `adapter` at your own module that `export default`s an adapter:
 
 ```typescript
 // vite.config.ts
