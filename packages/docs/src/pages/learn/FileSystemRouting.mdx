@@ -31,6 +31,7 @@ export default defineConfig({
       fsRoutes: {
         dir: "./src/pages",
         root: "./src/root.tsx",
+        adapter: "./src/adapter.ts",
       },
     }),
     react(),
@@ -38,9 +39,18 @@ export default defineConfig({
 });
 ```
 
-- `dir` — the directory scanned for route files (default `./src/pages`).
+All `fsRoutes` fields are required, so each choice is explicit in your config:
+
+- `dir` — the directory scanned for route files (commonly `./src/pages`).
 - `root` — the HTML shell component (`<html>…<body>{children}</body></html>`).
-- `adapter` — optional path to a custom adapter module (defaults to the built-in Next.js-like adapter).
+- `adapter` — path to a module that `export default`s the adapter defining the directory / file-name convention. To use the built-in Next.js-like convention, re-export `nextRoutes()`:
+
+```tsx
+// src/adapter.ts
+import { nextRoutes } from "@funstack/static/fs-routes";
+
+export default nextRoutes();
+```
 
 `fsRoutes` is mutually exclusive with the `root` + `app` (single-entry) and `entries` (multiple entries) modes.
 

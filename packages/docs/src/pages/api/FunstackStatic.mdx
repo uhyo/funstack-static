@@ -72,6 +72,7 @@ export default defineConfig({
       fsRoutes: {
         dir: "./src/pages",
         root: "./src/root.tsx",
+        adapter: "./src/adapter.ts",
       },
     }),
     react(),
@@ -203,16 +204,16 @@ funstackStatic({
   fsRoutes: {
     dir: "./src/pages",
     root: "./src/root.tsx",
-    adapter: "./src/my-adapter.ts", // optional
+    adapter: "./src/adapter.ts",
   },
 });
 ```
 
-`FsRoutesConfig` fields:
+`FsRoutesConfig` fields (all required — you must be explicit about each):
 
-- **`dir`** (optional, default `"./src/pages"`) — directory scanned for route files, relative to the Vite root.
+- **`dir`** (required) — directory scanned for route files, relative to the Vite root. Commonly `"./src/pages"`.
 - **`root`** (required) — path to the root (HTML shell) component module.
-- **`adapter`** (optional) — path to a module that `export default`s an `FsRoutesAdapter`. Defaults to the built-in Next.js-like adapter (`nextRoutes()` from `@funstack/static/fs-routes`).
+- **`adapter`** (required) — path to a module that `export default`s an `FsRoutesAdapter`. To use the built-in Next.js-like convention, point this at a module that re-exports `nextRoutes()` from `@funstack/static/fs-routes`.
 
 Enable [`ssr`](#ssr-optional) alongside `fsRoutes` — it is required for the dev server to render pages and recommended in general.
 
