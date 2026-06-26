@@ -29,4 +29,20 @@ test.describe("File-system routing (dev server)", () => {
     await page.getByRole("link", { name: "About" }).click();
     await expect(page.getByTestId("page-id")).toHaveText("about");
   });
+
+  test("renders page content without ssr (no client errors)", async ({
+    page,
+  }) => {
+    // Regression test for #124: with `ssr: false`, the dev server must still
+    // render page content rather than shipping server components to the client
+    // as eval'd dev-JSX references (which previously crashed client rendering).
+    const errors: string[] = [];
+    page.on("pageerror", (error) => {
+      errors.push(error.message);
+    });
+    await page.goto("/about");
+    await expect(page.getByTestId("page-id")).toHaveText("about");
+    await page.waitForLoadState("networkidle");
+    expect(errors).toEqual([]);
+  });
 });

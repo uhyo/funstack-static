@@ -14,7 +14,7 @@ import { devMainRscPath } from "../rsc/request";
 import { appClientManifestVar, type AppClientManifest } from "./globals";
 import { withBasePath } from "../util/basePath";
 
-import { ssr as ssrEnabled } from "virtual:funstack/config";
+import { ssr as ssrEnabled, devSsr } from "virtual:funstack/config";
 
 async function devMain() {
   let setPayload: (v: RscPayload) => void;
@@ -53,7 +53,9 @@ async function devMain() {
   ) {
     // This happens when SSR failed on server
     createRoot(document).render(browserRoot);
-  } else if (ssrEnabled) {
+  } else if (devSsr) {
+    // The dev server rendered the full tree (always the case for file-system
+    // routing; see issue #124), so the client hydrates the existing document.
     hydrateRoot(document, browserRoot);
   } else {
     // SSR off: Root shell is static HTML, mount App client-side

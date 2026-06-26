@@ -68,7 +68,6 @@ import { defineConfig } from "vite";
 export default defineConfig({
   plugins: [
     funstackStatic({
-      ssr: true,
       fsRoutes: {
         dir: "./src/pages",
         root: "./src/root.tsx",
@@ -79,7 +78,7 @@ export default defineConfig({
 });
 ```
 
-`ssr: true` is required for the dev server to render pages. See [File-System Routing](/learn/file-system-routing) for a full guide.
+`ssr` is optional with `fsRoutes` (the dev server always server-renders file-system routes either way). See [File-System Routing](/learn/file-system-routing) for a full guide.
 
 ## Options
 
@@ -214,7 +213,7 @@ funstackStatic({
 - **`root`** (required) — path to the root (HTML shell) component module.
 - **`adapter`** (optional) — path to a module that `export default`s an `FsRoutesAdapter`. Defaults to the built-in Next.js-like adapter (`nextRoutes()` from `@funstack/static/fs-routes`).
 
-Enable [`ssr`](#ssr-optional) alongside `fsRoutes` — it is required for the dev server to render pages and recommended in general.
+[`ssr`](#ssr-optional) is optional alongside `fsRoutes` and recommended in general (the dev server always server-renders file-system routes regardless of the setting).
 
 See [File-System Routing](/learn/file-system-routing) for the conventions, dynamic routes, and writing custom adapters.
 
@@ -253,6 +252,8 @@ funstackStatic({
 ```
 
 **Note:** In both modes, React Server Components are used - the `ssr` option only controls whether the App's HTML is pre-rendered or rendered client-side.
+
+**Note:** When using [`fsRoutes`](#fsroutes-optional), the dev server always server-renders pages regardless of this setting, so file-system routes render correctly in `vite dev` even with `ssr: false`. The `ssr` option still controls production HTML pre-rendering as described above.
 
 ### clientInit (optional)
 

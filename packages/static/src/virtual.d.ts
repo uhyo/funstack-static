@@ -5,6 +5,12 @@ declare module "virtual:funstack/entries" {
 }
 declare module "virtual:funstack/config" {
   export const ssr: boolean;
+  /**
+   * Effective SSR setting for the dev server. Equals `ssr` except for
+   * file-system routing, which always server-renders in dev to avoid shipping
+   * server components as eval'd dev-JSX references to the client (issue #124).
+   */
+  export const devSsr: boolean;
   export const rscPayloadDir: string;
 }
 declare module "virtual:funstack/client-init" {}

@@ -19,7 +19,7 @@ export type EntryBuildResult = {
   appRsc: ReadableStream<Uint8Array>;
 };
 
-import { ssr as ssrEnabled } from "virtual:funstack/config";
+import { ssr as ssrEnabled, devSsr } from "virtual:funstack/config";
 
 async function loadEntriesList(): Promise<EntryDefinition[]> {
   const getEntries = (await import("virtual:funstack/entries")).default;
@@ -68,7 +68,7 @@ async function renderEntryToResponse(
   >("ssr");
   timings.push(`ssr-module;dur=${performance.now() - ssrModuleStart}`);
 
-  if (ssrEnabled) {
+  if (devSsr) {
     // SSR on: single RSC stream with full tree
     const rscStart = performance.now();
     const rootRscStream = renderToReadableStream<RscPayload>({

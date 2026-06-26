@@ -324,8 +324,18 @@ export default function funstackStatic(
           ].join("\n");
         }
         if (id === "\0virtual:funstack/config") {
+          // File-system routing renders pages through server components passed
+          // as route data to FUNSTACK Router (a client component). With
+          // `ssr: false`, the dev server would ship those server components to
+          // the client as eval'd dev-JSX references that the browser cannot
+          // evaluate (see issue #124). To avoid this, file-system routing
+          // always renders on the server in dev (server render + hydrate),
+          // mirroring the production pre-render path. Production builds are
+          // unaffected and continue to honor `ssr` as configured.
+          const devSsr = ssr || isFsRoutes;
           return [
             `export const ssr = ${JSON.stringify(ssr)};`,
+            `export const devSsr = ${JSON.stringify(devSsr)};`,
             `export const rscPayloadDir = ${JSON.stringify(rscPayloadDir)};`,
           ].join("\n");
         }
