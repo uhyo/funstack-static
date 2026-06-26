@@ -3,6 +3,7 @@ packages:
   - packages/static/e2e/fixture
   - packages/static/e2e/fixture-multi-entry
   - packages/static/e2e/fixture-ssr-defer
+  - packages/static/e2e/fixture-fs-routing
 
 catalog:
   "@types/node": ^26.0.0

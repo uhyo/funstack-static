@@ -1,95 +1,158 @@
 # File-System Routing
 
-FUNSTACK Static does not include a built-in file-system router, but you can implement one in userland using Vite's `import.meta.glob` and a router library like [FUNSTACK Router](https://github.com/uhyo/funstack-router).
+FUNSTACK Static includes **built-in file-system routing**. Pages discovered in a directory are automatically mapped to routes and rendered with [FUNSTACK Router](https://github.com/uhyo/funstack-router), with one static HTML file generated per route.
 
-## How It Works
+The directory / file-name convention is pluggable through an **adapter**, and a Next.js-like adapter is provided out of the box.
 
-The idea is to use `import.meta.glob` to discover page components from a `pages/` directory at compile time, then convert the file paths into route definitions.
+## Requirements
+
+File-system routing renders pages with FUNSTACK Router, so `@funstack/router` must be installed as a peer dependency:
+
+```sh
+npm install @funstack/router
+```
+
+## Setup
+
+Enable file-system routing with the `fsRoutes` option:
+
+```typescript
+// vite.config.ts
+import funstackStatic from "@funstack/static";
+import react from "@vitejs/plugin-react";
+import { defineConfig } from "vite";
+
+export default defineConfig({
+  plugins: [
+    funstackStatic({
+      fsRoutes: {
+        dir: "./src/pages",
+        root: "./src/root.tsx",
+      },
+    }),
+    react(),
+  ],
+});
+```
+
+- `dir` — the directory scanned for route files (default `./src/pages`).
+- `root` — the HTML shell component (`<html>…<body>{children}</body></html>`).
+- `adapter` — optional path to a custom adapter module (defaults to the built-in Next.js-like adapter).
+
+`fsRoutes` is mutually exclusive with the `root` + `app` (single-entry) and `entries` (multiple entries) modes.
+
+## The Next.js-like Convention
+
+The built-in adapter follows Next.js App-Router conventions:
+
+| File                                 | Route          | Notes                         |
+| ------------------------------------ | -------------- | ----------------------------- |
+| `pages/page.tsx`                     | `/`            | A page for its directory      |
+| `pages/about/page.tsx`               | `/about`       |                               |
+| `pages/blog/page.tsx`                | `/blog`        |                               |
+| `pages/blog/[slug]/page.tsx`         | `/blog/:slug`  | Dynamic segment               |
+| `pages/docs/[...slug]/page.tsx`      | `/docs/:slug*` | Catch-all segment             |
+| `pages/(marketing)/contact/page.tsx` | `/contact`     | `(group)` does not affect URL |
+
+- **`page.tsx`** — `export default` a React component for the route.
+- **`layout.tsx`** — `export default` a layout that wraps its directory and descendants. A layout must render `<Outlet />` (from `@funstack/router`) where child routes should appear.
+
+Files that are not named `page` or `layout` are ignored, so helpers and components can be co-located with routes.
 
 ```tsx
-import { route, type RouteDefinition } from "@funstack/router/server";
+// src/pages/page.tsx
+export default function Home() {
+  return <h1>Home</h1>;
+}
+```
 
-const pageModules = import.meta.glob<{ default: React.ComponentType }>(
-  "./pages/**/*.tsx",
-  { eager: true },
-);
+```tsx
+// src/pages/dashboard/layout.tsx
+import { Outlet } from "@funstack/router";
 
-function filePathToUrlPath(filePath: string): string {
-  let urlPath = filePath.replace(/^\.\/pages/, "").replace(/\.tsx$/, "");
-  if (urlPath.endsWith("/index")) {
-    urlPath = urlPath.slice(0, -"/index".length);
-  }
-  return urlPath || "/";
+export default function DashboardLayout() {
+  return (
+    <section>
+      <nav>{/* persistent dashboard navigation */}</nav>
+      <Outlet />
+    </section>
+  );
+}
+```
+
+## Dynamic Routes and Static Generation
+
+Because FUNSTACK Static generates a static site, every page must be enumerated at build time. Dynamic routes are pre-rendered by exporting `generateStaticParams` from the page module, similar to Next.js:
+
+```tsx
+// src/pages/blog/[slug]/page.tsx
+export function generateStaticParams() {
+  return [{ slug: "hello" }, { slug: "world" }];
 }
 
-export const routes: RouteDefinition[] = Object.entries(pageModules).map(
-  ([filePath, module]) => {
-    const Page = module.default;
-    return route({
-      path: filePathToUrlPath(filePath),
-      component: <Page />,
-    });
+export default function BlogPost({ params }: { params: { slug: string } }) {
+  return <article>Post: {params.slug}</article>;
+}
+```
+
+This generates `blog/hello.html` and `blog/world.html`. Each page component receives the resolved `params` as a prop.
+
+A dynamic route without `generateStaticParams` is **not** pre-rendered (a warning is logged); it still resolves on the client via the SPA fallback.
+
+> **Note:** Because static hosting serves one pre-rendered RSC payload per page, soft client-side navigation between different values of the _same_ dynamic route reflects the params of the initially-loaded page. Loading a dynamic URL directly (or via the SPA fallback) always renders the correct params. Static routes and layouts navigate fully on the client.
+
+## Custom Conventions (Adapters)
+
+The convention is defined by an **adapter** implementing `FsRoutesAdapter`. Provide a module that `export default`s an adapter to use a different convention:
+
+```typescript
+// vite.config.ts
+funstackStatic({
+  fsRoutes: {
+    dir: "./src/pages",
+    root: "./src/root.tsx",
+    adapter: "./src/my-adapter.ts",
   },
-);
+});
 ```
-
-With this setup, files in the `pages/` directory are automatically mapped to routes:
-
-| File                   | Route    |
-| ---------------------- | -------- |
-| `pages/index.tsx`      | `/`      |
-| `pages/about.tsx`      | `/about` |
-| `pages/blog/index.tsx` | `/blog`  |
-
-## Why import.meta.glob?
-
-Using `import.meta.glob` has two key advantages:
-
-- **Automatic discovery** — you don't need to manually register each page. Just add a new `.tsx` file and it becomes a route.
-- **Hot module replacement** — Vite tracks the glob pattern, so adding or removing page files in development triggers an automatic update without a server restart.
-
-## Static Generation
-
-To generate static HTML for each route, derive [entry definitions](/api/entry-definition) from the route list:
 
 ```tsx
-import type { EntryDefinition } from "@funstack/static/entries";
-import type { RouteDefinition } from "@funstack/router/server";
+// src/my-adapter.ts
+import type { FsRoutesAdapter } from "@funstack/static/fs-routes";
 
-function collectPaths(routes: RouteDefinition[]): string[] {
-  const paths: string[] = [];
-  for (const route of routes) {
-    if (route.children) {
-      paths.push(...collectPaths(route.children));
-    } else if (route.path !== undefined && route.path !== "*") {
-      paths.push(route.path);
-    }
-  }
-  return paths;
-}
+const adapter: FsRoutesAdapter = {
+  name: "my-convention",
+  buildRoutes(files) {
+    // Map discovered files to a route tree.
+    // See the FsRouteTreeNode type for the expected shape.
+    return [];
+  },
+};
 
-function pathToEntryPath(path: string): string {
-  if (path === "/") return "index.html";
-  return `${path.slice(1)}.html`;
-}
-
-export default function getEntries(): EntryDefinition[] {
-  return collectPaths(routes).map((pathname) => ({
-    path: pathToEntryPath(pathname),
-    root: () => import("./root"),
-    app: <App ssrPath={pathname} />,
-  }));
-}
+export default adapter;
 ```
 
-This produces one HTML file per route at build time.
+The built-in Next.js-like adapter is also exported, so you can wrap or configure it:
+
+```tsx
+// src/my-adapter.ts
+import { nextRoutes } from "@funstack/static/fs-routes";
+
+// e.g. use `index.tsx` instead of `page.tsx`
+export default nextRoutes({ pageFileName: "index", layoutFileName: "_layout" });
+```
 
 ## Full Example
 
 For a complete working example, see the [`example-fs-routing`](https://github.com/uhyo/funstack-static/tree/master/packages/example-fs-routing) package in the FUNSTACK Static repository.
 
+## Userland File-System Routing
+
+If you prefer full control, you can still implement routing in userland with Vite's `import.meta.glob` and the [`entries`](/api/funstack-static) option — deriving [entry definitions](/api/entry-definition) from a glob of page files. The built-in feature is a maintained implementation of this same idea.
+
 ## See Also
 
+- [funstackStatic()](/api/funstack-static) - The `fsRoutes` plugin option
 - [Multiple Entrypoints](/advanced/multiple-entrypoints) - Generating multiple HTML pages from a single project
 - [EntryDefinition](/api/entry-definition) - API reference for entry definitions
 - [How It Works](/learn/how-it-works) - Overall FUNSTACK Static architecture

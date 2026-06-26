@@ -10,7 +10,7 @@ import funstackStatic from "@funstack/static";
 
 ## Usage
 
-There are two configuration modes: **single-entry** (one HTML page) and **multiple entries** (multiple HTML pages).
+There are three configuration modes: **single-entry** (one HTML page), **multiple entries** (multiple HTML pages), and **file-system routing** (pages mapped from the file system).
 
 ### Single-Entry Mode
 
@@ -53,9 +53,34 @@ export default defineConfig({
 
 See [Multiple Entrypoints](/advanced/multiple-entrypoints) for a full guide.
 
+### File-System Routing Mode
+
+Use `fsRoutes` to map pages from the file system to routes, rendered with FUNSTACK Router:
+
+```typescript
+// vite.config.ts
+import funstackStatic from "@funstack/static";
+import react from "@vitejs/plugin-react";
+import { defineConfig } from "vite";
+
+export default defineConfig({
+  plugins: [
+    funstackStatic({
+      fsRoutes: {
+        dir: "./src/pages",
+        root: "./src/root.tsx",
+      },
+    }),
+    react(),
+  ],
+});
+```
+
+See [File-System Routing](/learn/file-system-routing) for a full guide.
+
 ## Options
 
-The plugin accepts either `root` + `app` (single-entry) or `entries` (multiple entries). These two modes are mutually exclusive.
+The plugin accepts exactly one of `root` + `app` (single-entry), `entries` (multiple entries), or `fsRoutes` (file-system routing). These modes are mutually exclusive.
 
 ### root
 
@@ -159,6 +184,33 @@ export default function getEntries(): EntryDefinition[] {
 ```
 
 See [Multiple Entrypoints](/advanced/multiple-entrypoints) for details on the `EntryDefinition` type and advanced usage patterns like async generators.
+
+### fsRoutes
+
+**Type:** `FsRoutesConfig`
+**Required in:** file-system routing mode
+
+Enables built-in file-system routing. Pages discovered under `fsRoutes.dir` are mapped to routes via an adapter and rendered with FUNSTACK Router. Requires `@funstack/router` to be installed.
+
+Cannot be used together with `root`, `app`, or `entries`.
+
+```typescript
+funstackStatic({
+  fsRoutes: {
+    dir: "./src/pages",
+    root: "./src/root.tsx",
+    adapter: "./src/my-adapter.ts", // optional
+  },
+});
+```
+
+`FsRoutesConfig` fields:
+
+- **`dir`** (optional, default `"./src/pages"`) — directory scanned for route files, relative to the Vite root.
+- **`root`** (required) — path to the root (HTML shell) component module.
+- **`adapter`** (optional) — path to a module that `export default`s an `FsRoutesAdapter`. Defaults to the built-in Next.js-like adapter (`nextRoutes()` from `@funstack/static/fs-routes`).
+
+See [File-System Routing](/learn/file-system-routing) for the conventions, dynamic routes, and writing custom adapters.
 
 ### publicOutDir (optional)
 
