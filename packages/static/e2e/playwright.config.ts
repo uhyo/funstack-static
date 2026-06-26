@@ -37,6 +37,14 @@ export default defineConfig({
       },
       testMatch: /\/ssr-defer\.spec\.ts$/,
     },
+    {
+      name: "fs-routing",
+      use: {
+        ...devices["Desktop Chrome"],
+        baseURL: "http://localhost:4179",
+      },
+      testMatch: /\/fs-routing\.spec\.ts$/,
+    },
   ],
 
   webServer: [
@@ -58,6 +66,13 @@ export default defineConfig({
       command:
         "cd fixture-ssr-defer && pnpm vite build && pnpm dlx serve -p 4177 dist/public",
       url: "http://localhost:4177",
+      reuseExistingServer: !process.env.CI,
+      timeout: 120000,
+    },
+    {
+      command:
+        "cd fixture-fs-routing && pnpm vite build && pnpm dlx serve -p 4179 dist/public",
+      url: "http://localhost:4179",
       reuseExistingServer: !process.env.CI,
       timeout: 120000,
     },

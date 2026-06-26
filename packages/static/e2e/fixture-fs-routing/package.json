@@ -1,0 +1,15 @@
+{
+  "name": "e2e-fixture-fs-routing",
+  "private": true,
+  "type": "module",
+  "devDependencies": {
+    "@funstack/router": "^1.1.1",
+    "@funstack/static": "workspace:*",
+    "@types/react": "^19.2.17",
+    "@types/react-dom": "^19.2.3",
+    "@vitejs/plugin-react": "catalog:",
+    "react": "catalog:",
+    "react-dom": "catalog:",
+    "vite": "catalog:"
+  }
+}

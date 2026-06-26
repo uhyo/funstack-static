@@ -9,6 +9,8 @@ Use the `entries` option when you want to build a **multi-page static site** whe
 - **Single-entry mode** (`root` + `app`): One HTML file, client-side routing between pages. Best for app-like experiences where dynamic data loading and client-side interactivity are heavily used, and SEO is less of a concern (e.g., dashboards, web apps).
 - **Multiple entries mode** (`entries`): Multiple HTML files, each independently pre-rendered. Best for content sites (blogs, docs, marketing pages) where SEO and fast initial load are priorities. Client-side routing is still possible by using a router library with SSR support.
 
+> If you want a `pages/` directory mapped to routes automatically instead of writing entries by hand, use built-in [File-System Routing](/learn/file-system-routing), which generates entries for you.
+
 ## Basic Setup
 
 ### 1. Configure Vite
