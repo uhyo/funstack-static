@@ -3,6 +3,7 @@ import { normalizePath, type Plugin } from "vite";
 import rsc from "@vitejs/plugin-rsc";
 import { buildApp } from "../build/buildApp";
 import { serverPlugin } from "./server";
+import { findClientPackages } from "./clientPackages";
 import { defaultRscPayloadDir } from "../rsc/rscModule";
 
 interface FunstackStaticBaseOptions {
@@ -259,7 +260,7 @@ export default function funstackStatic(
           );
         }
       },
-      configEnvironment(_name, config) {
+      configEnvironment(name, config) {
         if (!config.optimizeDeps) {
           config.optimizeDeps = {};
         }
@@ -284,6 +285,18 @@ export default function funstackStatic(
           "@funstack/static > react",
           "@funstack/static > react-dom",
         );
+        // Pre-bundle the project's client packages in the browser environment
+        // so React stays deduplicated on a cold-started dev server. See
+        // findClientPackages for the full explanation (#128).
+        if (name === "client") {
+          // process.cwd() matches the root @vitejs/plugin-rsc uses to detect
+          // these same framework packages, so the two stay consistent.
+          for (const pkg of findClientPackages(process.cwd())) {
+            if (!config.optimizeDeps.include.includes(pkg)) {
+              config.optimizeDeps.include.push(pkg);
+            }
+          }
+        }
       },
     },
     {
