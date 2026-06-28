@@ -281,6 +281,23 @@ export default function funstackStatic(
         // Since code includes imports to virtual modules, we need to exclude
         // us from Optimize Deps.
         config.optimizeDeps.exclude.push("@funstack/static");
+        // In fsRoutes mode the app is rendered through @funstack/router, a
+        // client component delivered via the RSC stream. With `ssr: false` the
+        // router is first encountered while the browser evaluates that stream,
+        // so Vite discovers it *after* the initial optimize pass and
+        // re-optimizes mid-render. That second pass can emit chunks whose
+        // CommonJS interop names disagree with already-loaded ones, surfacing as
+        //   "react_jsx-runtime.js ... does not provide an export named 't'"
+        // and leaving the page stuck on the error shell. Pre-including the
+        // router folds it into the initial optimize pass, so a single
+        // consistent set of chunks is produced and no mid-render
+        // re-optimization happens. See issue #124.
+        if (isFsRoutes) {
+          if (!config.optimizeDeps.include) {
+            config.optimizeDeps.include = [];
+          }
+          config.optimizeDeps.include.push("@funstack/router");
+        }
       },
     },
     {

@@ -5,8 +5,9 @@ import { defineConfig } from "vite";
 export default defineConfig({
   plugins: [
     funstackStatic({
-      // Required for file-system routing to render in the dev server.
-      ssr: true,
+      // Intentionally `ssr: false` to guard the dev-server fix for issue #124:
+      // file-system routing must render in `vite dev` without SSR.
+      ssr: false,
       fsRoutes: {
         dir: "./src/pages",
         root: "./src/root.tsx",
