@@ -3,6 +3,7 @@ import { normalizePath, type Plugin } from "vite";
 import rsc from "@vitejs/plugin-rsc";
 import { buildApp } from "../build/buildApp";
 import { serverPlugin } from "./server";
+import { findClientPackages } from "./clientPackages";
 import { defaultRscPayloadDir } from "../rsc/rscModule";
 
 interface FunstackStaticBaseOptions {
@@ -259,7 +260,7 @@ export default function funstackStatic(
           );
         }
       },
-      configEnvironment(_name, config) {
+      configEnvironment(name, config) {
         if (!config.optimizeDeps) {
           config.optimizeDeps = {};
         }
@@ -278,12 +279,32 @@ export default function funstackStatic(
         // Since code includes imports to virtual modules, we need to exclude
         // us from Optimize Deps.
         config.optimizeDeps.exclude.push("@funstack/static");
-        // However, since Vite prohibits excluding a CommonJS package,
-        // we need to include React and ReactDOM so they are bundled properly.
-        config.optimizeDeps.include.push(
-          "@funstack/static > react",
-          "@funstack/static > react-dom",
-        );
+        // Vite prohibits excluding a CommonJS package, so include React and
+        // ReactDOM as plain entries. Using the bare specifiers (rather than the
+        // nested `@funstack/static > react` form) merges them with the copy the
+        // optimizer's scanner already discovers, so React is bundled into a
+        // SINGLE optimized chunk. The nested form produced a second, redundant
+        // React chunk from the same source file; whenever a re-optimization
+        // changed which chunk was canonical, two live React instances ended up
+        // loaded on a cold start (#128). One chunk makes that impossible.
+        config.optimizeDeps.include.push("react", "react-dom");
+        // Pre-bundle the project's client packages in the browser environment
+        // so they are discovered in the optimizer's INITIAL pass. Otherwise
+        // @vitejs/plugin-rsc reaches them at request time through a
+        // `client-package-proxy` virtual module that the scanner cannot follow,
+        // forcing a re-optimization on the first render. That mid-flight
+        // re-optimization corrupts CJS-interop module references — duplicate
+        // React (#128) and broken dev-JSX (`react/jsx-runtime` "export named
+        // 't'", #124). See findClientPackages for the full explanation.
+        if (name === "client") {
+          // process.cwd() matches the root @vitejs/plugin-rsc uses to detect
+          // these same framework packages, so the two stay consistent.
+          for (const pkg of findClientPackages(process.cwd())) {
+            if (!config.optimizeDeps.include.includes(pkg)) {
+              config.optimizeDeps.include.push(pkg);
+            }
+          }
+        }
       },
     },
     {
