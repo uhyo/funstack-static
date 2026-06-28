@@ -47,7 +47,7 @@ All `fsRoutes` fields are required, so each choice is explicit in your config:
 
 `fsRoutes` is mutually exclusive with the `root` + `app` (single-entry) and `entries` (multiple entries) modes.
 
-> **Enable [`ssr`](/api/funstack-static).** Pages are server components rendered through FUNSTACK Router. `ssr: true` is **required for the dev server** (`vite dev`) to render your pages — without it, the dev server can only render the app shell — and it is recommended in general for SEO and faster initial load. Production builds work with `ssr` either way. Lifting this dev-server requirement is tracked in [#124](https://github.com/uhyo/funstack-static/issues/124).
+> **Consider enabling [`ssr`](/api/funstack-static).** Pages are server components rendered through FUNSTACK Router. `ssr` is optional and works the same in dev (`vite dev`), production builds, and preview either way, but enabling it (`ssr: true`) is recommended for SEO and faster initial load.
 
 ## The Next.js-like Convention
 

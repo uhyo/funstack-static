@@ -80,7 +80,7 @@ export default defineConfig({
 });
 ```
 
-`ssr: true` is required for the dev server to render pages. See [File-System Routing](/learn/file-system-routing) for a full guide.
+`ssr` is optional here, but enabling it (`ssr: true`) is recommended for SEO and faster initial load. See [File-System Routing](/learn/file-system-routing) for a full guide.
 
 ## Options
 
@@ -215,7 +215,7 @@ funstackStatic({
 - **`root`** (required) — path to the root (HTML shell) component module.
 - **`adapter`** (required) — a module that `export default`s an `FsRoutesAdapter`, given as a bare module specifier or a path relative to the Vite root. Use the bundled `@funstack/static/fs-routes/next-adapter` for the built-in Next.js-like convention, or point it at your own module for a custom one.
 
-Enable [`ssr`](#ssr-optional) alongside `fsRoutes` — it is required for the dev server to render pages and recommended in general.
+Enabling [`ssr`](#ssr-optional) alongside `fsRoutes` is optional but recommended for SEO and faster initial load.
 
 See [File-System Routing](/learn/file-system-routing) for the conventions, dynamic routes, and writing custom adapters.
 
