@@ -263,24 +263,27 @@ export default function funstackStatic(
         if (!config.optimizeDeps) {
           config.optimizeDeps = {};
         }
+        config.optimizeDeps.include ??= [];
         // Needed for properly bundling @vitejs/plugin-rsc for browser.
         // See: https://github.com/vitejs/vite-plugin-react/tree/79bf57cc8b9c77e33970ec2e876bd6d2f1568d5d/packages/plugin-rsc#using-vitejsplugin-rsc-as-a-framework-packages-dependencies
-        if (config.optimizeDeps.include) {
-          config.optimizeDeps.include = config.optimizeDeps.include.map(
-            (entry) => {
-              if (entry.startsWith("@vitejs/plugin-rsc")) {
-                entry = `@funstack/static > ${entry}`;
-              }
-              return entry;
-            },
-          );
-        }
-        if (!config.optimizeDeps.exclude) {
-          config.optimizeDeps.exclude = [];
-        }
+        config.optimizeDeps.include = config.optimizeDeps.include.map(
+          (entry) => {
+            if (entry.startsWith("@vitejs/plugin-rsc")) {
+              entry = `@funstack/static > ${entry}`;
+            }
+            return entry;
+          },
+        );
+        config.optimizeDeps.exclude ??= [];
         // Since code includes imports to virtual modules, we need to exclude
         // us from Optimize Deps.
         config.optimizeDeps.exclude.push("@funstack/static");
+        // However, since Vite prohibits excluding a CommonJS package,
+        // we need to include React and ReactDOM so they are bundled properly.
+        config.optimizeDeps.include.push(
+          "@funstack/static > react",
+          "@funstack/static > react-dom",
+        );
       },
     },
     {
