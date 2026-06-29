@@ -115,8 +115,7 @@ The entries function can return either a synchronous iterable or an async iterab
 
 ```typescript
 type GetEntriesResult =
-  | Iterable<EntryDefinition>
-  | AsyncIterable<EntryDefinition>;
+  Iterable<EntryDefinition> | AsyncIterable<EntryDefinition>;
 ```
 
 This allows returning arrays, generators, or async generators:

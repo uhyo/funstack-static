@@ -6,12 +6,12 @@ packages:
   - packages/static/e2e/fixture-fs-routing
 
 catalog:
-  "@types/node": ^26.0.0
-  "@vitejs/plugin-react": ^6.0.2
+  "@types/node": ^26.0.1
+  "@vitejs/plugin-react": ^6.0.3
   react: ^19.2.7
   react-dom: ^19.2.7
   typescript: ^6.0.3
-  vite: ^8.0.16
+  vite: ^8.1.0
 
 onlyBuiltDependencies:
   - esbuild

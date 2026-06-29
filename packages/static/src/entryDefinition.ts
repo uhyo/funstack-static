@@ -39,5 +39,4 @@ export interface EntryDefinition {
  * Return type of the getEntries function.
  */
 export type GetEntriesResult =
-  | Iterable<EntryDefinition>
-  | AsyncIterable<EntryDefinition>;
+  Iterable<EntryDefinition> | AsyncIterable<EntryDefinition>;
