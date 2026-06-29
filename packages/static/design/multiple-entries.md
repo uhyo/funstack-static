@@ -128,17 +128,14 @@ export interface EntryDefinition {
    * - A React node (JSX of a server component) for direct rendering.
    */
   app:
-    | React.ReactNode
-    | MaybePromise<AppModule>
-    | (() => MaybePromise<AppModule>);
+    React.ReactNode | MaybePromise<AppModule> | (() => MaybePromise<AppModule>);
 }
 
 /**
  * Return type of the getEntries function.
  */
 type GetEntriesResult =
-  | Iterable<EntryDefinition>
-  | AsyncIterable<EntryDefinition>;
+  Iterable<EntryDefinition> | AsyncIterable<EntryDefinition>;
 ```
 
 **Design rationale:**

@@ -171,8 +171,7 @@ export default function funstackStatic(
   let resolvedBuildEntry: string | undefined;
   // Resolved configuration for file-system routing (fsRoutes mode).
   let resolvedFsRoutes:
-    | { root: string; adapter: string; globBase: string }
-    | undefined;
+    { root: string; adapter: string; globBase: string } | undefined;
 
   // Determine which entry mode the user selected.
   const isFsRoutes = "fsRoutes" in options && options.fsRoutes !== undefined;
