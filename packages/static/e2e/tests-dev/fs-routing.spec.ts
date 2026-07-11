@@ -16,6 +16,13 @@ test.describe("File-system routing (dev server)", () => {
     await expect(page.getByTestId("slug")).toHaveText("hello");
   });
 
+  test("renders a static page instead of a dynamic sibling route", async ({
+    page,
+  }) => {
+    await page.goto("/blog/featured");
+    await expect(page.getByTestId("page-id")).toHaveText("blog-featured");
+  });
+
   test("wraps nested pages in their layout", async ({ page }) => {
     await page.goto("/dashboard/settings");
     await expect(page.getByTestId("dashboard-layout")).toHaveText(
