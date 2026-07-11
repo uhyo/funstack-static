@@ -120,9 +120,9 @@ export default function BlogPost({ params }: { params: { slug: string } }) {
 
 This generates `blog/hello.html` and `blog/world.html`. Each page component receives the resolved `params` as a prop.
 
-A dynamic route without `generateStaticParams` is **not** pre-rendered (a warning is logged); it still resolves on the client via the SPA fallback.
+A dynamic route **must** export `generateStaticParams`; the build fails otherwise. A static site can only serve pages that were enumerated at build time, so a dynamic route without it would produce no output.
 
-> **Note:** Because static hosting serves one pre-rendered RSC payload per page, soft client-side navigation between different values of the _same_ dynamic route reflects the params of the initially-loaded page. Loading a dynamic URL directly (or via the SPA fallback) always renders the correct params. Static routes and layouts navigate fully on the client.
+> **Note:** Because static hosting serves one pre-rendered RSC payload per page, soft client-side navigation between different values of the _same_ dynamic route reflects the params of the initially-loaded page. Loading a dynamic URL directly always renders the correct params. Static routes and layouts navigate fully on the client.
 
 ## Custom Conventions (Adapters)
 

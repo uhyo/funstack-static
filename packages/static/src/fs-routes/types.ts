@@ -13,14 +13,13 @@ export interface FsRouteModule {
   /** The component for this page or layout. */
   default?: ComponentType<{ params: Record<string, string> }> | ComponentType;
   /**
-   * Optional function used to statically generate a dynamic route.
+   * Function used to statically generate a dynamic route. Required for pages
+   * whose route contains a dynamic segment; the build fails without it, since
+   * a static site cannot serve pages that were not enumerated at build time.
    *
    * Returns the list of concrete params to pre-render. Each entry maps every
    * dynamic param name in the route's path to a concrete string value. For a
    * catch-all segment, the value may contain slashes.
-   *
-   * Without this export, a dynamic route is not pre-rendered to HTML (it still
-   * works on the client via the SPA fallback).
    */
   generateStaticParams?: () => MaybePromise<Array<Record<string, string>>>;
   [key: string]: unknown;

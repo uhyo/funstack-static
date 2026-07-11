@@ -94,15 +94,13 @@ describe("collectStaticPaths", () => {
     ]);
   });
 
-  it("warns and skips a dynamic route without generateStaticParams", async () => {
+  it("throws for a dynamic route without generateStaticParams", async () => {
     const tree: FsRouteTreeNode[] = [
       { path: "/blog/:slug", page: true, module: component },
     ];
-    const warn = vi.fn();
-    const pages = await collectStaticPaths(tree, warn);
-    expect(pages).toEqual([]);
-    expect(warn).toHaveBeenCalledTimes(1);
-    expect(warn.mock.calls[0]?.[0]).toContain("/blog/:slug");
+    await expect(collectStaticPaths(tree)).rejects.toThrow(
+      /"\/blog\/:slug".*generateStaticParams/,
+    );
   });
 
   it("throws when generateStaticParams is missing a param value", async () => {

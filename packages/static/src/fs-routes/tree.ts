@@ -87,7 +87,6 @@ async function addPagesForLeaf(
   segments: string[],
   module: FsRouteModule,
   pages: StaticPage[],
-  onWarn?: (message: string) => void,
 ): Promise<void> {
   const dynamicSegments = segments.filter(isDynamicSegment);
 
@@ -98,11 +97,11 @@ async function addPagesForLeaf(
 
   const generate = module.generateStaticParams;
   if (typeof generate !== "function") {
-    onWarn?.(
-      `Dynamic route "${segmentsToUrl(segments)}" has no generateStaticParams() export; skipping static generation. ` +
-        `It will still work on the client via the SPA fallback.`,
+    throw new Error(
+      `Dynamic route "${segmentsToUrl(segments)}" has no generateStaticParams() export. ` +
+        `Every page of a static site must be enumerated at build time; ` +
+        `export generateStaticParams() from the page module to list the params to pre-render.`,
     );
-    return;
   }
 
   const paramSets = await generate();
@@ -126,17 +125,16 @@ async function walk(
   nodes: FsRouteTreeNode[],
   prefixSegments: string[],
   pages: StaticPage[],
-  onWarn?: (message: string) => void,
 ): Promise<void> {
   for (const node of nodes) {
     const ownSegments =
       node.path !== undefined ? splitRoutePath(node.path) : [];
     const segments = [...prefixSegments, ...ownSegments];
     if (node.page) {
-      await addPagesForLeaf(segments, node.module, pages, onWarn);
+      await addPagesForLeaf(segments, node.module, pages);
     }
     if (node.children) {
-      await walk(node.children, segments, pages, onWarn);
+      await walk(node.children, segments, pages);
     }
   }
 }
@@ -146,15 +144,15 @@ async function walk(
  *
  * Static routes are emitted directly. Dynamic routes (with `:param` or
  * catch-all segments) are expanded using each page module's
- * `generateStaticParams()`; if absent, the route is skipped and `onWarn` is
- * invoked.
+ * `generateStaticParams()`; a dynamic route without that export fails the
+ * build, since a static site cannot serve pages that were not enumerated at
+ * build time.
  */
 export async function collectStaticPaths(
   tree: FsRouteTreeNode[],
-  onWarn?: (message: string) => void,
 ): Promise<StaticPage[]> {
   const pages: StaticPage[] = [];
-  await walk(tree, [], pages, onWarn);
+  await walk(tree, [], pages);
   return pages;
 }
 
