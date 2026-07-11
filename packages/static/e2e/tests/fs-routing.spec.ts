@@ -6,6 +6,7 @@ test.describe("File-system routing build output", () => {
       "/",
       "/about",
       "/blog",
+      "/blog/featured",
       "/blog/hello",
       "/blog/world",
       "/dashboard",
@@ -34,6 +35,13 @@ test.describe("File-system routing rendering", () => {
   test("renders the directory index page", async ({ page }) => {
     await page.goto("/blog");
     await expect(page.getByTestId("page-id")).toHaveText("blog-index");
+  });
+
+  test("renders a static page instead of a dynamic sibling route", async ({
+    page,
+  }) => {
+    await page.goto("/blog/featured");
+    await expect(page.getByTestId("page-id")).toHaveText("blog-featured");
   });
 
   test("statically generates dynamic routes with params", async ({ page }) => {

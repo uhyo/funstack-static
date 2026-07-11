@@ -110,6 +110,158 @@ describe("nextRoutes adapter", () => {
     ]);
   });
 
+  it("orders static routes before dynamic siblings", () => {
+    const adapter = nextRoutes();
+    const tree = adapter.buildRoutes(
+      makeFiles(["blog/[slug]/page.tsx", "blog/about/page.tsx"]),
+    );
+    expect(simplify(tree)).toEqual([
+      { path: "/blog/about", page: true, id: "blog/about/page.tsx" },
+      { path: "/blog/:slug", page: true, id: "blog/[slug]/page.tsx" },
+    ]);
+  });
+
+  it("orders static and dynamic routes before catch-all siblings", () => {
+    const adapter = nextRoutes();
+    const tree = adapter.buildRoutes(
+      makeFiles([
+        "docs/[...slug]/page.tsx",
+        "docs/[version]/page.tsx",
+        "docs/intro/page.tsx",
+      ]),
+    );
+    expect(simplify(tree)).toEqual([
+      { path: "/docs/intro", page: true, id: "docs/intro/page.tsx" },
+      { path: "/docs/:version", page: true, id: "docs/[version]/page.tsx" },
+      { path: "/docs/:slug*", page: true, id: "docs/[...slug]/page.tsx" },
+    ]);
+  });
+
+  it("orders routes by specificity inside a layout", () => {
+    const adapter = nextRoutes();
+    const tree = adapter.buildRoutes(
+      makeFiles([
+        "blog/layout.tsx",
+        "blog/[slug]/page.tsx",
+        "blog/archive/page.tsx",
+        "blog/page.tsx",
+      ]),
+    );
+    expect(simplify(tree)).toEqual([
+      {
+        path: "/blog",
+        page: false,
+        id: "blog/layout.tsx",
+        children: [
+          { path: "/", page: true, id: "blog/page.tsx" },
+          { path: "/archive", page: true, id: "blog/archive/page.tsx" },
+          { path: "/:slug", page: true, id: "blog/[slug]/page.tsx" },
+        ],
+      },
+    ]);
+  });
+
+  it("orders a grouped layout with dynamic children after static siblings", () => {
+    const adapter = nextRoutes();
+    const tree = adapter.buildRoutes(
+      makeFiles([
+        "(app)/layout.tsx",
+        "(app)/[slug]/page.tsx",
+        "about/page.tsx",
+      ]),
+    );
+    expect(simplify(tree)).toEqual([
+      { path: "/about", page: true, id: "about/page.tsx" },
+      {
+        path: undefined,
+        page: false,
+        id: "(app)/layout.tsx",
+        children: [{ path: "/:slug", page: true, id: "(app)/[slug]/page.tsx" }],
+      },
+    ]);
+  });
+
+  it("rejects optional catch-all segments", () => {
+    const adapter = nextRoutes();
+    expect(() =>
+      adapter.buildRoutes(makeFiles(["docs/[[...slug]]/page.tsx"])),
+    ).toThrow(/Optional catch-all segments/);
+  });
+
+  it("rejects parallel route slots", () => {
+    const adapter = nextRoutes();
+    expect(() => adapter.buildRoutes(makeFiles(["@modal/page.tsx"]))).toThrow(
+      /Parallel route slots/,
+    );
+  });
+
+  it("rejects intercepting routes", () => {
+    const adapter = nextRoutes();
+    expect(() =>
+      adapter.buildRoutes(makeFiles(["feed/(..)photo/page.tsx"])),
+    ).toThrow(/Intercepting routes/);
+  });
+
+  it("rejects two pages resolving to the same route via route groups", () => {
+    const adapter = nextRoutes();
+    expect(() =>
+      adapter.buildRoutes(makeFiles(["(a)/foo/page.tsx", "(b)/foo/page.tsx"])),
+    ).toThrow(/resolve to the same route/);
+  });
+
+  it("rejects sibling dynamic pages with different param names", () => {
+    const adapter = nextRoutes();
+    expect(() =>
+      adapter.buildRoutes(
+        makeFiles(["blog/[a]/page.tsx", "blog/[b]/page.tsx"]),
+      ),
+    ).toThrow(/resolve to the same route/);
+  });
+
+  it("rejects duplicate page files in one directory", () => {
+    const adapter = nextRoutes();
+    expect(() =>
+      adapter.buildRoutes(makeFiles(["about/page.tsx", "about/page.jsx"])),
+    ).toThrow(/Duplicate page files/);
+  });
+
+  it("allows multiple root layouts via route groups", () => {
+    const adapter = nextRoutes();
+    const tree = adapter.buildRoutes(
+      makeFiles([
+        "(marketing)/layout.tsx",
+        "(marketing)/page.tsx",
+        "(shop)/layout.tsx",
+        "(shop)/cart/page.tsx",
+      ]),
+    );
+    expect(simplify(tree)).toEqual([
+      {
+        path: undefined,
+        page: false,
+        id: "(marketing)/layout.tsx",
+        children: [{ path: "/", page: true, id: "(marketing)/page.tsx" }],
+      },
+      {
+        path: undefined,
+        page: false,
+        id: "(shop)/layout.tsx",
+        children: [{ path: "/cart", page: true, id: "(shop)/cart/page.tsx" }],
+      },
+    ]);
+  });
+
+  it("allows a dynamic page next to a catch-all sibling", () => {
+    const adapter = nextRoutes();
+    const tree = adapter.buildRoutes(
+      makeFiles(["docs/[page]/page.tsx", "docs/[...rest]/page.tsx"]),
+    );
+    expect(simplify(tree)).toEqual([
+      { path: "/docs/:page", page: true, id: "docs/[page]/page.tsx" },
+      { path: "/docs/:rest*", page: true, id: "docs/[...rest]/page.tsx" },
+    ]);
+  });
+
   it("honours custom page/layout file names", () => {
     const adapter = nextRoutes({
       pageFileName: "index",

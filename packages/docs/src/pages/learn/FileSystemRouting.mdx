@@ -67,6 +67,21 @@ The built-in adapter follows Next.js App-Router conventions:
 
 Files that are not named `page` or `layout` are ignored, so helpers and components can be co-located with routes.
 
+### Route Precedence
+
+Sibling routes are matched by specificity: **static segments match before dynamic segments, which match before catch-alls**. For example, with both `blog/featured/page.tsx` and `blog/[slug]/page.tsx`, the URL `/blog/featured` renders the static page, and any other `/blog/…` URL falls through to the dynamic one.
+
+### Unsupported Syntaxes and Conflicts
+
+The adapter fails the build with a clear error instead of producing broken routes when it encounters:
+
+- **Optional catch-all segments** (`[[...param]]`) — use a catch-all (`[...param]`) plus a separate `page.tsx` for the parent route instead.
+- **Parallel route slots** (`@slot`) and **intercepting routes** (`(.)segment`) — these Next.js features are not supported.
+- **Conflicting pages** — two pages resolving to the same route, such as `(a)/foo/page.tsx` + `(b)/foo/page.tsx`, or sibling dynamic pages with different param names (`[a]` + `[b]`).
+- **Duplicate files** — two page (or layout) files in the same directory, such as `page.tsx` next to `page.jsx`.
+
+Multiple root layouts via route groups (e.g. `(marketing)/layout.tsx` and `(shop)/layout.tsx`) are supported.
+
 ```tsx
 // src/pages/page.tsx
 export default function Home() {
