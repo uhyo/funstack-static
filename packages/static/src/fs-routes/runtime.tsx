@@ -115,7 +115,7 @@ export function createFsRoutesEntries(
     };
     const files = modulesToRouteFiles(modules, warn);
     const tree = adapter.buildRoutes(files);
-    const pages = await collectStaticPaths(tree, warn);
+    const pages = await collectStaticPaths(tree);
     for (const { urlPath, params } of pages) {
       yield {
         path: urlPathToFilePath(urlPath),
