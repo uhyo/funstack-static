@@ -49,6 +49,20 @@ function findEntryForUrlPath(
 }
 
 /**
+ * Resolves the entry for a URL path, falling back to the index entry
+ * (SPA fallback) when no entry matches.
+ */
+function resolveEntryForUrlPath(
+  entries: EntryDefinition[],
+  urlPath: string,
+): EntryDefinition | undefined {
+  return (
+    findEntryForUrlPath(entries, urlPath) ??
+    entries.find((e) => e.path === "index.html" || e.path === "index.htm")
+  );
+}
+
+/**
  * Renders a single entry to an HTML response.
  */
 async function renderEntryToResponse(
@@ -139,14 +153,7 @@ export async function serveHTML(request: Request): Promise<Response> {
 
   const url = new URL(request.url);
   const urlPath = stripBasePath(url.pathname);
-  let entry = findEntryForUrlPath(entries, urlPath);
-
-  // SPA fallback: if no entry matched, fall back to index.html or index.htm entry
-  if (!entry) {
-    entry = entries.find(
-      (e) => e.path === "index.html" || e.path === "index.htm",
-    );
-  }
+  const entry = resolveEntryForUrlPath(entries, urlPath);
 
   if (!entry) {
     return new Response("Not Found", {
@@ -180,15 +187,20 @@ export async function serveRSC(request: Request): Promise<Response> {
   const pathname = stripBasePath(url.pathname);
   if (pathname === devMainRscPath) {
     // root RSC stream is requested (HMR re-fetch always sends full tree)
-    // For HMR, re-render the first entry (single-entry mode) or index.html entry
     const entriesStart = performance.now();
     const entries = await loadEntriesList();
     timings.push(`entries;dur=${performance.now() - entriesStart}`);
 
-    // Use the first entry for HMR re-fetch
-    const entry = entries[0];
+    // Re-render the entry for the page the client is currently viewing,
+    // passed as the `path` query parameter (with the same SPA fallback as
+    // serveHTML). Fall back to the first entry if no path was provided.
+    const pagePath = url.searchParams.get("path");
+    const entry =
+      pagePath !== null
+        ? resolveEntryForUrlPath(entries, stripBasePath(pagePath))
+        : entries[0];
     if (!entry) {
-      throw new ServeRSCError("No entries defined", 404);
+      throw new ServeRSCError("No entry found for HMR re-fetch", 404);
     }
 
     const resolveStart = performance.now();

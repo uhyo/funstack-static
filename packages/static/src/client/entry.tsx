@@ -33,9 +33,12 @@ async function devMain() {
 
   // re-fetch RSC and trigger re-rendering
   async function fetchRscPayload() {
-    const payload = await createFromFetch<RscPayload>(
-      fetch(withBasePath(devMainRscPath)),
-    );
+    // Pass the current page path so the server re-renders the entry
+    // being viewed rather than the first entry
+    const rscUrl = `${withBasePath(devMainRscPath)}?path=${encodeURIComponent(
+      location.pathname,
+    )}`;
+    const payload = await createFromFetch<RscPayload>(fetch(rscUrl));
     setPayload(payload);
   }
 
