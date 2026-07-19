@@ -54,26 +54,22 @@ export const serverPlugin = (): Plugin => {
             if (req.headers.accept?.includes("text/html")) {
               const urlPath = new URL(req.url!, `http://${req.headers.host}`)
                 .pathname;
-              const candidates = urlPathToFileCandidates(urlPath);
+              // Entry files matching the URL path, followed by the SPA
+              // fallback (index.html / index.htm) for unmatched routes.
+              const candidates = [
+                ...new Set([
+                  ...urlPathToFileCandidates(urlPath),
+                  "index.html",
+                  "index.htm",
+                ]),
+              ];
               for (const candidate of candidates) {
                 try {
                   const html = await readFile(
                     path.join(resolvedOutDir, candidate),
                     "utf-8",
                   );
-                  res.end(html);
-                  return;
-                } catch {
-                  // Try next candidate
-                }
-              }
-              // SPA fallback: try serving index.html or index.htm for unmatched routes
-              for (const indexFile of ["index.html", "index.htm"]) {
-                try {
-                  const html = await readFile(
-                    path.join(resolvedOutDir, indexFile),
-                    "utf-8",
-                  );
+                  res.setHeader("Content-Type", "text/html; charset=utf-8");
                   res.end(html);
                   return;
                 } catch {
