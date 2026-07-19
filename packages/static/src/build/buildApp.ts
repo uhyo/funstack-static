@@ -17,12 +17,20 @@ export async function buildApp(
 ) {
   const { config } = builder;
   // import server entry
-  const entryPath = path.join(config.environments.rsc.build.outDir, "index.js");
+  // outDir may be relative, in which case it is relative to the Vite root
+  // (not process.cwd())
+  const entryPath = path.join(
+    path.resolve(config.root, config.environments.rsc.build.outDir),
+    "index.js",
+  );
   const entry: typeof import("../rsc/entry") = await import(
     pathToFileURL(entryPath).href
   );
 
-  const baseDir = config.environments.client.build.outDir;
+  const baseDir = path.resolve(
+    config.root,
+    config.environments.client.build.outDir,
+  );
   const base = normalizeBase(config.base);
 
   async function doBuild() {
