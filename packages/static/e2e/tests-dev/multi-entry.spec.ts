@@ -1,4 +1,6 @@
 import { expect, test } from "@playwright/test";
+import { readFile, writeFile } from "node:fs/promises";
+import { fileURLToPath } from "node:url";
 
 const htmlHeaders = { Accept: "text/html" };
 
@@ -74,5 +76,40 @@ test.describe("Multi-entry page rendering (dev server)", () => {
     await page.goto("/about");
     await page.waitForLoadState("networkidle");
     expect(errors).toEqual([]);
+  });
+});
+
+test.describe("Multi-entry HMR (dev server)", () => {
+  const hmrPagePath = fileURLToPath(
+    new URL("../fixture-multi-entry/src/pages/HmrTest.tsx", import.meta.url),
+  );
+
+  test("server code change re-renders the current non-first entry", async ({
+    page,
+  }) => {
+    const originalSource = await readFile(hmrPagePath, "utf-8");
+    try {
+      await page.goto("/hmr-test");
+      await expect(page.locator("h1")).toHaveText("HMR Test Page");
+      await expect(page.getByTestId("hmr-content")).toHaveText(
+        "initial content",
+      );
+
+      await writeFile(
+        hmrPagePath,
+        originalSource.replace("initial content", "updated content"),
+      );
+
+      // The edited content should appear via HMR without a page reload
+      await expect(page.getByTestId("hmr-content")).toHaveText(
+        "updated content",
+        { timeout: 15000 },
+      );
+      // The page must still show this entry's tree, not the first entry's
+      await expect(page.locator("h1")).toHaveText("HMR Test Page");
+      await expect(page.getByTestId("page-id")).toHaveText("hmr-test");
+    } finally {
+      await writeFile(hmrPagePath, originalSource);
+    }
   });
 });

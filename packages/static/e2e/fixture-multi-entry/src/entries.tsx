@@ -12,5 +12,10 @@ export default function getEntries(): EntryDefinition[] {
       root: () => import("./root"),
       app: () => import("./pages/About"),
     },
+    {
+      path: "hmr-test.html",
+      root: () => import("./root"),
+      app: () => import("./pages/HmrTest"),
+    },
   ];
 }
