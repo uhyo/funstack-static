@@ -29,6 +29,16 @@ export interface CreateFsRoutesOptions {
    */
   modules: Record<string, FsRouteModule>;
   /**
+   * The routes directory that the `modules` keys are relative to — the
+   * directory your `import.meta.glob` pattern starts with, e.g. `"./pages"`
+   * or `"/src/pages"`.
+   *
+   * This prefix is stripped from every module key to make route paths
+   * relative to the routes directory. The build fails if it does not prefix
+   * every key.
+   */
+  base: string;
+  /**
    * The root (HTML shell) component. Renders the whole page
    * (`<html>…<body>{children}</body></html>`).
    */
@@ -61,13 +71,13 @@ export interface CreateFsRoutesOptions {
  *
  * const modules = import.meta.glob("./pages/**\/*.{tsx,jsx}", { eager: true });
  *
- * export default createFsRoutesEntries({ modules, root: Root });
+ * export default createFsRoutesEntries({ modules, base: "./pages", root: Root });
  * ```
  */
 export function createFsRoutesEntries(
   options: CreateFsRoutesOptions,
 ): () => GetEntriesResult {
-  const { modules, root: Root, adapter = nextRoutes() } = options;
+  const { modules, base, root: Root, adapter = nextRoutes() } = options;
 
   function buildRouteDefinitions(
     nodes: FsRouteTreeNode[],
@@ -113,7 +123,7 @@ export function createFsRoutesEntries(
     const warn = (message: string) => {
       console.warn(`[funstack] ${message}`);
     };
-    const files = modulesToRouteFiles(modules, warn);
+    const files = modulesToRouteFiles(modules, base, warn);
     const tree = adapter.buildRoutes(files);
     const pages = await collectStaticPaths(tree);
     for (const { urlPath, params } of pages) {

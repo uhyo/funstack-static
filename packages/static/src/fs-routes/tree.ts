@@ -1,14 +1,28 @@
 import type { FsRouteFile, FsRouteModule, FsRouteTreeNode } from "./types";
 
 /**
+ * Returns the candidate `"<dir>/"` prefixes to strip for a user-provided
+ * base. A base written without a leading `"./"` also matches the `"./"`-style
+ * keys Vite produces for relative glob patterns.
+ */
+function basePrefixes(base: string): string[] {
+  const prefix = `${base.replace(/\/+$/, "")}/`;
+  if (!prefix.startsWith("/") && !prefix.startsWith("./")) {
+    return [prefix, `./${prefix}`];
+  }
+  return [prefix];
+}
+
+/**
  * Converts the result of an eager `import.meta.glob` into route files.
  *
- * The longest common leading directory prefix across all keys is stripped so
- * that each file's path is relative to the routes directory, regardless of how
- * the glob was written (`"./pages/…"`, `"/src/pages/…"`, etc.).
+ * The routes directory `base` is stripped from every key so that each file's
+ * path is relative to the routes directory. Throws if `base` does not prefix
+ * every key, since route paths cannot be derived from a wrong base.
  */
 export function modulesToRouteFiles(
   modules: Record<string, FsRouteModule>,
+  base: string,
   onWarn?: (message: string) => void,
 ): FsRouteFile[] {
   const keys = Object.keys(modules);
@@ -19,21 +33,18 @@ export function modulesToRouteFiles(
     return [];
   }
 
-  // Directory segments of each key (excluding the file name).
-  const dirSegments = keys.map((key) => key.split("/").slice(0, -1));
-  let commonLength = Math.min(
-    ...dirSegments.map((segments) => segments.length),
+  const prefix = basePrefixes(base).find((candidate) =>
+    keys.every((key) => key.startsWith(candidate)),
   );
-  for (let i = 0; i < commonLength; i++) {
-    const segment = dirSegments[0]![i];
-    if (!dirSegments.every((segments) => segments[i] === segment)) {
-      commonLength = i;
-      break;
-    }
+  if (prefix === undefined) {
+    throw new Error(
+      `base "${base}" is not a prefix of every globbed module key (e.g. "${keys[0]}"). ` +
+        `Pass the directory your import.meta.glob pattern starts with.`,
+    );
   }
 
   return keys.map((key) => ({
-    filePath: key.split("/").slice(commonLength).join("/"),
+    filePath: key.slice(prefix.length),
     module: modules[key]!,
   }));
 }

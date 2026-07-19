@@ -118,12 +118,15 @@ describe("collectStaticPaths", () => {
 describe("modulesToRouteFiles", () => {
   const m: FsRouteModule = { default: () => null };
 
-  it("strips a common ./pages/ prefix", () => {
-    const files = modulesToRouteFiles({
-      "./pages/page.tsx": m,
-      "./pages/about/page.tsx": m,
-      "./pages/blog/[slug]/page.tsx": m,
-    });
+  it("strips the base from every key", () => {
+    const files = modulesToRouteFiles(
+      {
+        "./pages/page.tsx": m,
+        "./pages/about/page.tsx": m,
+        "./pages/blog/[slug]/page.tsx": m,
+      },
+      "./pages",
+    );
     expect(files.map((f) => f.filePath)).toEqual([
       "page.tsx",
       "about/page.tsx",
@@ -131,26 +134,71 @@ describe("modulesToRouteFiles", () => {
     ]);
   });
 
-  it("strips an absolute root-relative prefix", () => {
-    const files = modulesToRouteFiles({
-      "/src/pages/page.tsx": m,
-      "/src/pages/about/page.tsx": m,
-    });
+  it("keeps a subdirectory shared by every page", () => {
+    const files = modulesToRouteFiles(
+      {
+        "./pages/blog/page.tsx": m,
+        "./pages/blog/post/page.tsx": m,
+      },
+      "./pages",
+    );
     expect(files.map((f) => f.filePath)).toEqual([
-      "page.tsx",
-      "about/page.tsx",
+      "blog/page.tsx",
+      "blog/post/page.tsx",
     ]);
   });
 
-  it("handles a single file at the routes root", () => {
-    const files = modulesToRouteFiles({ "./pages/page.tsx": m });
-    expect(files.map((f) => f.filePath)).toEqual(["page.tsx"]);
+  it("keeps the directory of a single nested page", () => {
+    const files = modulesToRouteFiles(
+      { "./pages/docs/page.tsx": m },
+      "./pages",
+    );
+    expect(files.map((f) => f.filePath)).toEqual(["docs/page.tsx"]);
+  });
+
+  it("strips a root-relative base as emitted by the plugin", () => {
+    const files = modulesToRouteFiles(
+      {
+        "/src/pages/blog/page.tsx": m,
+        "/src/pages/blog/post/page.tsx": m,
+      },
+      "/src/pages",
+    );
+    expect(files.map((f) => f.filePath)).toEqual([
+      "blog/page.tsx",
+      "blog/post/page.tsx",
+    ]);
+  });
+
+  it("matches a base written without the leading ./ of the keys", () => {
+    const files = modulesToRouteFiles({ "./pages/docs/page.tsx": m }, "pages");
+    expect(files.map((f) => f.filePath)).toEqual(["docs/page.tsx"]);
+  });
+
+  it("ignores a trailing slash in base", () => {
+    const files = modulesToRouteFiles(
+      { "./pages/docs/page.tsx": m },
+      "./pages/",
+    );
+    expect(files.map((f) => f.filePath)).toEqual(["docs/page.tsx"]);
   });
 
   it("warns when no modules are provided", () => {
     const warn = vi.fn();
-    expect(modulesToRouteFiles({}, warn)).toEqual([]);
+    expect(modulesToRouteFiles({}, "./pages", warn)).toEqual([]);
     expect(warn).toHaveBeenCalledTimes(1);
+  });
+
+  it("throws when base does not prefix every key", () => {
+    expect(() =>
+      modulesToRouteFiles(
+        {
+          "./pages/page.tsx": m,
+          "./pages/about/page.tsx": m,
+        },
+        "./routes",
+      ),
+    ).toThrow(/"\.\/routes".*import\.meta\.glob/);
   });
 });
 
