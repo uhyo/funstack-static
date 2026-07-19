@@ -33,13 +33,11 @@ export interface CreateFsRoutesOptions {
    * directory your `import.meta.glob` pattern starts with, e.g. `"./pages"`
    * or `"/src/pages"`.
    *
-   * When provided, this prefix is stripped from every module key
-   * deterministically. When omitted, the longest common directory prefix
-   * across all keys is stripped instead; that heuristic misdetects the routes
-   * root when every page happens to live under one shared subdirectory, so
-   * passing `base` is recommended.
+   * This prefix is stripped from every module key to make route paths
+   * relative to the routes directory. The build fails if it does not prefix
+   * every key.
    */
-  base?: string;
+  base: string;
   /**
    * The root (HTML shell) component. Renders the whole page
    * (`<html>…<body>{children}</body></html>`).
@@ -125,7 +123,7 @@ export function createFsRoutesEntries(
     const warn = (message: string) => {
       console.warn(`[funstack] ${message}`);
     };
-    const files = modulesToRouteFiles(modules, { onWarn: warn, base });
+    const files = modulesToRouteFiles(modules, base, warn);
     const tree = adapter.buildRoutes(files);
     const pages = await collectStaticPaths(tree);
     for (const { urlPath, params } of pages) {
