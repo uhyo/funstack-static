@@ -9,13 +9,23 @@ test.describe("SSR with defer()", () => {
 
     // The deferred component's content should be present in SSR HTML
     expect(html).toContain("Hello from deferred component");
+    // Nested deferred content is server-rendered too
+    expect(html).toContain("Hello from nested deferred component");
   });
 
   test("page renders without errors", async ({ page }) => {
     const errors: string[] = [];
+    const failedPayloadRequests: string[] = [];
 
     page.on("pageerror", (error) => {
       errors.push(error.message);
+    });
+    // A deferred payload referencing a payload that was not emitted under
+    // the referenced name would surface as a failed /funstack__/ request.
+    page.on("response", (response) => {
+      if (response.url().includes("/funstack__/") && !response.ok()) {
+        failedPayloadRequests.push(`${response.status()} ${response.url()}`);
+      }
     });
 
     await page.goto("/");
@@ -27,7 +37,11 @@ test.describe("SSR with defer()", () => {
     await expect(page.getByTestId("deferred-content")).toHaveText(
       "Hello from deferred component",
     );
+    await expect(page.getByTestId("nested-deferred-content")).toHaveText(
+      "Hello from nested deferred component",
+    );
 
     expect(errors).toEqual([]);
+    expect(failedPayloadRequests).toEqual([]);
   });
 });

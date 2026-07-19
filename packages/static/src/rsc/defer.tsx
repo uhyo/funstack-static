@@ -105,43 +105,50 @@ export class DeferRegistry {
   /**
    * Iterates over all entries in parallel.
    * Yields results as each stream completes.
+   *
+   * Rendering a deferred element may itself call `defer()` (nested defer),
+   * registering new entries while earlier ones are still draining. Entries
+   * registered mid-iteration are picked up too, until none are left.
    */
   async *loadAll() {
     const errors: unknown[] = [];
-
-    // Phase 1: Start all entries loading and collect drain promises.
-    // We use drain promises (which drain stream2 from tee) instead of
-    // draining stream1 directly, because stream1 may have been locked
-    // by createFromReadableStream during SSR.
-    const loadedEntries = Array.from(this.#registry, ([id, entry]) => {
-      const loaded = this.#loadEntry(entry);
-      return [id, loaded.drainPromise, entry.name] as const;
-    });
-
-    if (loadedEntries.length === 0) return;
 
     type Result = { id: string; data: string; name?: string };
 
     // Completion queue
     const completed: Array<Result | { error: unknown }> = [];
     let waiting: (() => void) | undefined;
-    let remainingCount = loadedEntries.length;
+    let remainingCount = 0;
+    const started = new Set<string>();
 
-    const onComplete = (result: Result | { error: unknown }) => {
-      completed.push(result);
-      remainingCount--;
-      waiting?.();
+    // Start loading every entry not started yet and track its drain promise.
+    // We use drain promises (which drain stream2 from tee) instead of
+    // draining stream1 directly, because stream1 may have been locked
+    // by createFromReadableStream during SSR.
+    const startPending = () => {
+      for (const [id, entry] of this.#registry) {
+        if (started.has(id)) continue;
+        started.add(id);
+        const loaded = this.#loadEntry(entry);
+        remainingCount++;
+        loaded.drainPromise.then(
+          (data) => {
+            completed.push({ id, data, name: entry.name });
+            remainingCount--;
+            waiting?.();
+          },
+          (error) => {
+            completed.push({ error });
+            remainingCount--;
+            waiting?.();
+          },
+        );
+      }
     };
 
-    // Phase 2: Await drain promises
-    for (const [id, drainPromise, name] of loadedEntries) {
-      drainPromise.then(
-        (data) => onComplete({ id, data, name }),
-        (error) => onComplete({ error }),
-      );
-    }
+    startPending();
 
-    // Phase 3: Yield from queue as results arrive
+    // Yield from queue as results arrive
     while (remainingCount > 0 || completed.length > 0) {
       if (completed.length === 0) {
         await new Promise<void>((r) => {
@@ -156,6 +163,10 @@ export class DeferRegistry {
           yield result;
         }
       }
+      // A drained entry may have registered nested entries during its
+      // render; any registration happens before its parent's drain promise
+      // resolves, so once remainingCount hits 0 no new entries can appear.
+      startPending();
     }
 
     if (errors.length > 0) {

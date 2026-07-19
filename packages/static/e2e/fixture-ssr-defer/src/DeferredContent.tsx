@@ -1,3 +1,14 @@
+import { defer } from "@funstack/static/entries/rsc";
+import NestedDeferredContent from "./NestedDeferredContent";
+
 export default function DeferredContent() {
-  return <p data-testid="deferred-content">Hello from deferred component</p>;
+  const nested = defer(<NestedDeferredContent />, {
+    name: "NestedDeferredContent",
+  });
+  return (
+    <>
+      <p data-testid="deferred-content">Hello from deferred component</p>
+      {nested}
+    </>
+  );
 }

@@ -28,6 +28,12 @@ export function findReferencedIds(
  * Performs topological sort using Kahn's algorithm.
  * Returns both the sorted nodes and any nodes that are part of cycles.
  *
+ * The sorted nodes are in dependency order: every node appears after all of
+ * the nodes it references. This lets callers process a node knowing that
+ * everything it references has already been processed (used by the build to
+ * finalize content-hashed IDs of referenced payloads before hashing the
+ * referencing payload).
+ *
  * @param dependencies - Map of node ID to the set of IDs it depends on (references)
  */
 export function topologicalSort(
@@ -85,6 +91,10 @@ export function topologicalSort(
       inCycle.push(node);
     }
   }
+
+  // Kahn's traversal above visits dependents before their dependencies
+  // (it starts from unreferenced nodes); reverse to get dependency order.
+  sorted.reverse();
 
   return { sorted, inCycle };
 }
