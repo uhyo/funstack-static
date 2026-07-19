@@ -173,6 +173,8 @@ For a complete working example, see the [`example-fs-routing`](https://github.co
 
 `fsRoutes` is a convenience built on the [`entries`](/api/funstack-static) option. If you need full control, you can write the entries module by hand — globbing pages with `import.meta.glob` and deriving [entry definitions](/api/entry-definition) yourself. The `@funstack/static/fs-routes` building blocks (`createFsRoutesEntries`, `nextRoutes`) are exported for this purpose.
 
+When calling `createFsRoutesEntries` directly, also pass the routes directory as `base` — the directory your glob pattern starts with (e.g. `base: "./pages"` for `import.meta.glob("./pages/**/*.tsx")`). Without it, the routes root is inferred as the longest common directory prefix of the globbed files, which is ambiguous when every page happens to live under one shared subdirectory.
+
 ## See Also
 
 - [funstackStatic()](/api/funstack-static) - The `fsRoutes` plugin option
