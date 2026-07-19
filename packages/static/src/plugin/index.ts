@@ -338,6 +338,7 @@ export default function funstackStatic(
               `const modules = import.meta.glob(${JSON.stringify(globPattern)}, { eager: true });`,
               `export default createFsRoutesEntries({`,
               `  modules,`,
+              `  base: ${JSON.stringify(globBase)},`,
               `  root: Root,`,
               `  adapter,`,
               `});`,

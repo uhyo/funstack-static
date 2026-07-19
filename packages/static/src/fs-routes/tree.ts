@@ -1,22 +1,70 @@
 import type { FsRouteFile, FsRouteModule, FsRouteTreeNode } from "./types";
 
 /**
+ * Options for {@link modulesToRouteFiles}.
+ */
+export interface ModulesToRouteFilesOptions {
+  /** Called with a human-readable message when something looks wrong. */
+  onWarn?: (message: string) => void;
+  /**
+   * The routes directory that glob keys are relative to, e.g. `"./pages"` or
+   * `"/src/pages"`. When provided, it is stripped from every key
+   * deterministically. When omitted (or when it does not prefix every key),
+   * the longest common directory prefix across all keys is stripped instead —
+   * a heuristic that misdetects the root when every page happens to live
+   * under one shared subdirectory.
+   */
+  base?: string;
+}
+
+/**
+ * Returns the candidate `"<dir>/"` prefixes to strip for a user-provided
+ * base. A base written without a leading `"./"` also matches the `"./"`-style
+ * keys Vite produces for relative glob patterns.
+ */
+function basePrefixes(base: string): string[] {
+  const prefix = `${base.replace(/\/+$/, "")}/`;
+  if (!prefix.startsWith("/") && !prefix.startsWith("./")) {
+    return [prefix, `./${prefix}`];
+  }
+  return [prefix];
+}
+
+/**
  * Converts the result of an eager `import.meta.glob` into route files.
  *
- * The longest common leading directory prefix across all keys is stripped so
- * that each file's path is relative to the routes directory, regardless of how
- * the glob was written (`"./pages/…"`, `"/src/pages/…"`, etc.).
+ * Each file's path is made relative to the routes directory: the `base`
+ * option is stripped when provided, otherwise the longest common leading
+ * directory prefix across all keys is stripped as a fallback heuristic.
  */
 export function modulesToRouteFiles(
   modules: Record<string, FsRouteModule>,
-  onWarn?: (message: string) => void,
+  options: ModulesToRouteFilesOptions = {},
 ): FsRouteFile[] {
+  const { onWarn, base } = options;
   const keys = Object.keys(modules);
   if (keys.length === 0) {
     onWarn?.(
       "createFsRoutesEntries received no modules. Did your import.meta.glob pattern match any files?",
     );
     return [];
+  }
+
+  if (base !== undefined) {
+    const prefix = basePrefixes(base).find((candidate) =>
+      keys.every((key) => key.startsWith(candidate)),
+    );
+    if (prefix !== undefined) {
+      return keys.map((key) => ({
+        filePath: key.slice(prefix.length),
+        module: modules[key]!,
+      }));
+    }
+    onWarn?.(
+      `base "${base}" is not a prefix of every module key; ` +
+        `falling back to common-prefix detection. ` +
+        `Pass the same directory your import.meta.glob pattern starts with.`,
+    );
   }
 
   // Directory segments of each key (excluding the file name).

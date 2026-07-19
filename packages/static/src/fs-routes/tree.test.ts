@@ -149,8 +149,77 @@ describe("modulesToRouteFiles", () => {
 
   it("warns when no modules are provided", () => {
     const warn = vi.fn();
-    expect(modulesToRouteFiles({}, warn)).toEqual([]);
+    expect(modulesToRouteFiles({}, { onWarn: warn })).toEqual([]);
     expect(warn).toHaveBeenCalledTimes(1);
+  });
+
+  it("with base, keeps a subdirectory shared by every page", () => {
+    const files = modulesToRouteFiles(
+      {
+        "./pages/blog/page.tsx": m,
+        "./pages/blog/post/page.tsx": m,
+      },
+      { base: "./pages" },
+    );
+    expect(files.map((f) => f.filePath)).toEqual([
+      "blog/page.tsx",
+      "blog/post/page.tsx",
+    ]);
+  });
+
+  it("with base, keeps the directory of a single nested page", () => {
+    const files = modulesToRouteFiles(
+      { "./pages/docs/page.tsx": m },
+      { base: "./pages" },
+    );
+    expect(files.map((f) => f.filePath)).toEqual(["docs/page.tsx"]);
+  });
+
+  it("strips a root-relative base as emitted by the plugin", () => {
+    const files = modulesToRouteFiles(
+      {
+        "/src/pages/blog/page.tsx": m,
+        "/src/pages/blog/post/page.tsx": m,
+      },
+      { base: "/src/pages" },
+    );
+    expect(files.map((f) => f.filePath)).toEqual([
+      "blog/page.tsx",
+      "blog/post/page.tsx",
+    ]);
+  });
+
+  it("matches a base written without the leading ./ of the keys", () => {
+    const files = modulesToRouteFiles(
+      { "./pages/docs/page.tsx": m },
+      { base: "pages" },
+    );
+    expect(files.map((f) => f.filePath)).toEqual(["docs/page.tsx"]);
+  });
+
+  it("ignores a trailing slash in base", () => {
+    const files = modulesToRouteFiles(
+      { "./pages/docs/page.tsx": m },
+      { base: "./pages/" },
+    );
+    expect(files.map((f) => f.filePath)).toEqual(["docs/page.tsx"]);
+  });
+
+  it("warns and falls back to the heuristic when base does not match", () => {
+    const warn = vi.fn();
+    const files = modulesToRouteFiles(
+      {
+        "./pages/page.tsx": m,
+        "./pages/about/page.tsx": m,
+      },
+      { base: "./routes", onWarn: warn },
+    );
+    expect(files.map((f) => f.filePath)).toEqual([
+      "page.tsx",
+      "about/page.tsx",
+    ]);
+    expect(warn).toHaveBeenCalledTimes(1);
+    expect(warn.mock.calls[0]![0]).toMatch(/\.\/routes/);
   });
 });
 
