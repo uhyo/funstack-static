@@ -45,6 +45,37 @@ test.describe("Build output verification", () => {
     expect(rscPayload.length).toBeGreaterThan(0);
   });
 
+  test("nested deferred payloads resolve without failed requests", async ({
+    page,
+  }) => {
+    const errors: string[] = [];
+    const failedPayloadRequests: string[] = [];
+
+    page.on("pageerror", (error) => {
+      errors.push(error.message);
+    });
+    // In the non-SSR build, deferred content is fetched from separate
+    // payload files; a payload referencing a payload that was not emitted
+    // under the referenced name would surface as a failed request here.
+    page.on("response", (response) => {
+      if (response.url().includes("/funstack__/") && !response.ok()) {
+        failedPayloadRequests.push(`${response.status()} ${response.url()}`);
+      }
+    });
+
+    await page.goto("/");
+
+    await expect(page.getByTestId("deferred-section")).toHaveText(
+      "Deferred section content",
+    );
+    await expect(page.getByTestId("nested-deferred-section")).toHaveText(
+      "Nested deferred section content",
+    );
+
+    expect(errors).toEqual([]);
+    expect(failedPayloadRequests).toEqual([]);
+  });
+
   test("generates JavaScript bundles in /assets/", async ({ request }) => {
     const indexResponse = await request.get("/");
     const html = await indexResponse.text();

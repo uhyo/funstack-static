@@ -72,12 +72,12 @@ describe("topologicalSort", () => {
     expect(result.inCycle).toEqual([]);
     expect(result.sorted).toHaveLength(3);
 
-    // a should come before b, b should come before c
+    // Dependencies come first: c before b, b before a
     const indexA = result.sorted.indexOf("a");
     const indexB = result.sorted.indexOf("b");
     const indexC = result.sorted.indexOf("c");
-    expect(indexA).toBeLessThan(indexB);
-    expect(indexB).toBeLessThan(indexC);
+    expect(indexC).toBeLessThan(indexB);
+    expect(indexB).toBeLessThan(indexA);
   });
 
   it("handles diamond dependency pattern", () => {
@@ -103,12 +103,12 @@ describe("topologicalSort", () => {
     const indexC = result.sorted.indexOf("c");
     const indexD = result.sorted.indexOf("d");
 
-    // a should come before b and c
-    expect(indexA).toBeLessThan(indexB);
-    expect(indexA).toBeLessThan(indexC);
-    // b and c should come before d
-    expect(indexB).toBeLessThan(indexD);
-    expect(indexC).toBeLessThan(indexD);
+    // Dependencies come first: d before b and c
+    expect(indexD).toBeLessThan(indexB);
+    expect(indexD).toBeLessThan(indexC);
+    // b and c come before a
+    expect(indexB).toBeLessThan(indexA);
+    expect(indexC).toBeLessThan(indexA);
   });
 
   it("detects simple cycle", () => {

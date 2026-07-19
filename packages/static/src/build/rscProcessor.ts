@@ -82,7 +82,9 @@ export async function processRscComponents(
     }
   }
 
-  // Step 6: Process sorted components in order
+  // Step 6: Process components in dependency order (dependencies before
+  // dependents), so that every referenced component's final ID is known
+  // before the referencing content is hashed and frozen.
   const processedComponents: ProcessedComponent[] = [];
 
   for (const tempId of sorted) {
