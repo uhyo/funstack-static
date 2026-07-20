@@ -2,7 +2,7 @@ import "./defer";
 import { renderToReadableStream } from "@vitejs/plugin-rsc/rsc";
 import { devMainRscPath } from "./request";
 import { generateAppMarker } from "./marker";
-import { deferRegistry } from "./defer";
+import { deferRegistry, devDeferEntryTTL } from "./defer";
 import { extractIDFromModulePath } from "./rscModule";
 import { stripBasePath } from "../util/basePath";
 import { urlPathToFileCandidates } from "../util/urlPath";
@@ -145,6 +145,10 @@ async function renderEntryToResponse(
  * Accepts a Request to determine which entry to render based on URL path.
  */
 export async function serveHTML(request: Request): Promise<Response> {
+  // Each dev render registers fresh defer entries; drop stale ones so the
+  // registry does not grow unboundedly over a long dev session (#144).
+  deferRegistry.evictStale(devDeferEntryTTL);
+
   const timings: string[] = [];
 
   const entriesStart = performance.now();
@@ -182,6 +186,8 @@ export function isServeRSCError(error: unknown): error is ServeRSCError {
  * Serves an RSC stream response
  */
 export async function serveRSC(request: Request): Promise<Response> {
+  deferRegistry.evictStale(devDeferEntryTTL);
+
   const timings: string[] = [];
   const url = new URL(request.url);
   const pathname = stripBasePath(url.pathname);
