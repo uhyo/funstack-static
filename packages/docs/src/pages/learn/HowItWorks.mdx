@@ -85,6 +85,44 @@ The Root component is special in two ways:
 
 The Root entrypoint is a FUNSTACK Static counterpart to the `index.html` file in traditional SPAs. It allows you to still leverage some of the benefits of server components for defining the HTML shell of your application.
 
+### Keep `{children}` Alone in Its Parent Element
+
+With `ssr: false` (the default), the App is mounted on the client into the parent element of `{children}`. React clears all existing content of that element when mounting, so any other content the Root component renders **in the same element** is removed from the page the moment the App mounts:
+
+```tsx
+// ❌ BAD: <header> and <footer> are removed when the App mounts
+export default function Root({ children }: { children: React.ReactNode }) {
+  return (
+    <html lang="en">
+      <body>
+        <header>My Site</header>
+        {children}
+        <footer>All rights reserved.</footer>
+      </body>
+    </html>
+  );
+}
+```
+
+To avoid this, make `{children}` the only content of its parent element. Static content is safe anywhere else:
+
+```tsx
+// ✅ GOOD: {children} is the only content of its parent <div>
+export default function Root({ children }: { children: React.ReactNode }) {
+  return (
+    <html lang="en">
+      <body>
+        <header>My Site</header>
+        <div>{children}</div>
+        <footer>All rights reserved.</footer>
+      </body>
+    </html>
+  );
+}
+```
+
+FUNSTACK Static reports a console error, both in development and in production builds, when it detects content that would be removed by the mount. If you want such content to survive, you can also move it into the App component, or enable [`ssr: true`](/advanced/ssr) — with SSR the whole document is hydrated and this constraint does not apply.
+
 ## Server-Side Rendering
 
 By default, FUNSTACK Static only renders the Root shell to HTML. The App component is rendered client-side from its RSC payload. This behavior keeps the initial HTML small and fast to deliver.

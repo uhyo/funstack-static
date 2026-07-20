@@ -79,6 +79,48 @@ test.describe("Multi-entry page rendering (dev server)", () => {
   });
 });
 
+test.describe("Destructive mount detection (dev server)", () => {
+  test("warns about Root content that a production mount would destroy", async ({
+    page,
+  }) => {
+    const consoleErrors: string[] = [];
+    page.on("console", (msg) => {
+      if (msg.type() === "error") {
+        consoleErrors.push(msg.text());
+      }
+    });
+
+    await page.goto("/destructive");
+    await expect(page.locator("h1")).toHaveText("Destructive Page");
+
+    // In dev the full tree (including Root) is rendered by React, so the
+    // content survives — the console error is the only signal of the problem
+    await expect(page.getByTestId("doomed-header")).toBeVisible();
+
+    const warning = consoleErrors.find((m) => m.includes("[@funstack/static]"));
+    expect(warning).toBeDefined();
+    expect(warning).toContain("<header>");
+  });
+
+  test("does not warn when {children} is alone in its parent", async ({
+    page,
+  }) => {
+    const consoleErrors: string[] = [];
+    page.on("console", (msg) => {
+      if (msg.type() === "error") {
+        consoleErrors.push(msg.text());
+      }
+    });
+
+    await page.goto("/");
+    await expect(page.locator("h1")).toHaveText("Home Page");
+
+    expect(
+      consoleErrors.filter((m) => m.includes("[@funstack/static]")),
+    ).toEqual([]);
+  });
+});
+
 test.describe("Multi-entry HMR (dev server)", () => {
   const hmrPagePath = fileURLToPath(
     new URL("../fixture-multi-entry/src/pages/HmrTest.tsx", import.meta.url),
