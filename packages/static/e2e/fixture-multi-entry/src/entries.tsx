@@ -17,5 +17,10 @@ export default function getEntries(): EntryDefinition[] {
       root: () => import("./root"),
       app: () => import("./pages/HmrTest"),
     },
+    {
+      path: "destructive.html",
+      root: () => import("./root-destructive"),
+      app: () => import("./pages/Destructive"),
+    },
   ];
 }

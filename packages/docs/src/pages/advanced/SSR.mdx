@@ -30,6 +30,10 @@ This improves perceived performance, especially on:
 
 The browser can start painting content as soon as the HTML arrives, while JavaScript loads in the background. Once loaded, React hydrates the existing HTML to make it interactive.
 
+### No Root Layout Constraint
+
+Without SSR, `{children}` must be the only content of its parent element in the Root component ([details](/learn/how-it-works#keep-children-alone-in-its-parent-element)). With SSR enabled, the whole document is hydrated instead of mounting the App into a container element, so this constraint does not apply.
+
 ## Cons
 
 ### Client Components Must Be SSR-Capable

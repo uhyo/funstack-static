@@ -65,6 +65,7 @@ The Root component:
 - is responsible for defining the shell HTML structure of your app
 - is a server component
 - **CANNOT** import client components; you could, but they are fully rendered into static HTML and never hydrated
+- must render `{children}` as the only content of its parent element (unless SSR is enabled); see [How It Works](/learn/how-it-works#keep-children-alone-in-its-parent-element)
 
 ### 3. Create Your App Component
 

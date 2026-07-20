@@ -31,6 +31,8 @@ export default defineConfig({
 
 **Entrypoint.** Here, the `root` option points to the Root component of your application which is responsible for the HTML shell of your application. The `app` option points to the main App component which is the entrypoint for your application's UI.
 
+**Root layout constraint.** Unless the `ssr` option is enabled, the Root component must render `{children}` as the only content of its parent element. The App is mounted into that parent element on the client, which removes any other content from it. Wrap `{children}` in a dedicated element (e.g. `<div>{children}</div>`) if the Root renders other content next to it.
+
 **Server and Client Components.** The entrypoint components (Root and App) are **server components**. FUNSTACK Static follows React's conventions for Server and Client Components; the entrypoint is executed as a Server module. Modules marked with the `"use client"` directive are executed as Client modules. Server modules can import both Server and Client modules, while Client modules can only import other Client modules.
 
 **Server Actions.** Note that Server Actions (`"use server"`) are **NOT** supported in FUNSTACK Static, as there is no server runtime deployed.

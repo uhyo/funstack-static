@@ -1,5 +1,11 @@
 # FAQ
 
+## I'm seeing a ``The Root component renders other content next to `{children}` `` error
+
+With `ssr: false` (the default), the App is mounted into the parent element of `{children}` in your Root component, and React removes all other content from that element when mounting. This error means your Root component renders content that is silently removed this way in production builds.
+
+Make `{children}` the only content of its parent element in the Root component (for example, wrap it in a dedicated `<div>`). See [How It Works](/learn/how-it-works#keep-children-alone-in-its-parent-element) for details.
+
 ## I'm seeing a ``<link rel=preload> must have a valid `as` value`` warning
 
 This is a bug in React itself. Please wait for [the fix](https://github.com/facebook/react/pull/34760) to be released.

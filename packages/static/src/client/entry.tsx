@@ -12,6 +12,7 @@ import { GlobalErrorBoundary } from "./error-boundary";
 import type { RscPayload } from "../rsc/entry";
 import { devMainRscPath } from "../rsc/request";
 import { appClientManifestVar, type AppClientManifest } from "./globals";
+import { findAppMarker, warnIfDestructiveMount } from "./mount-validation";
 import { withBasePath } from "../util/basePath";
 
 import { ssr as ssrEnabled } from "virtual:funstack/config";
@@ -59,7 +60,15 @@ async function devMain() {
   } else if (ssrEnabled) {
     hydrateRoot(document, browserRoot);
   } else {
-    // SSR off: Root shell is static HTML, mount App client-side
+    // SSR off: Root shell is static HTML, mount App client-side.
+    // The served shell has the same shape as the production build
+    // (marker span inside its container), so validate it before React
+    // replaces the document — this surfaces in dev the content that a
+    // production mount would destroy.
+    const appMarker = findAppMarker();
+    if (appMarker) {
+      warnIfDestructiveMount(appMarker);
+    }
     createRoot(document).render(browserRoot);
   }
 
@@ -94,8 +103,16 @@ async function prodMain() {
 
     hydrateRoot(document, browserRoot);
   } else {
-    // SSR off: Root shell only, mount App client-side
-    const browserRoot = <BrowserRoot />;
+    // SSR off: Root shell only, mount App client-side.
+    // The error boundary is embedded because the mount point is an inner
+    // element, where the document-level fallback's <html> would be invalid.
+    const browserRoot = (
+      <React.StrictMode>
+        <GlobalErrorBoundary embedded>
+          <BrowserRoot />
+        </GlobalErrorBoundary>
+      </React.StrictMode>
+    );
     const appRootId = manifest.marker!;
 
     const appMarker = document.getElementById(appRootId);
@@ -110,6 +127,7 @@ async function prodMain() {
         `App root element has no parent element. This is likely a bug.`,
       );
     }
+    warnIfDestructiveMount(appMarker);
     appMarker.remove();
 
     createRoot(appRoot).render(browserRoot);

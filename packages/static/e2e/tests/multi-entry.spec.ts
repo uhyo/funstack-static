@@ -92,3 +92,44 @@ test.describe("Multi-entry page rendering", () => {
     expect(errors).toEqual([]);
   });
 });
+
+test.describe("Destructive mount detection", () => {
+  test("warns when Root content shares the mount container", async ({
+    page,
+  }) => {
+    const consoleErrors: string[] = [];
+    page.on("console", (msg) => {
+      if (msg.type() === "error") {
+        consoleErrors.push(msg.text());
+      }
+    });
+
+    await page.goto("/destructive");
+    await expect(page.locator("h1")).toHaveText("Destructive Page");
+
+    // The <header> shares <body> with the mount point, so mounting removed it
+    await expect(page.getByTestId("doomed-header")).toHaveCount(0);
+
+    const warning = consoleErrors.find((m) => m.includes("[@funstack/static]"));
+    expect(warning).toBeDefined();
+    expect(warning).toContain("<header>");
+  });
+
+  test("does not warn when {children} is alone in its parent", async ({
+    page,
+  }) => {
+    const consoleErrors: string[] = [];
+    page.on("console", (msg) => {
+      if (msg.type() === "error") {
+        consoleErrors.push(msg.text());
+      }
+    });
+
+    await page.goto("/");
+    await expect(page.locator("h1")).toHaveText("Home Page");
+
+    expect(
+      consoleErrors.filter((m) => m.includes("[@funstack/static]")),
+    ).toEqual([]);
+  });
+});
