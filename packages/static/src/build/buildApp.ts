@@ -5,6 +5,7 @@ import type { ViteBuilder, MinimalPluginContextWithoutEnvironment } from "vite";
 import { rscPayloadPlaceholder, getRscPayloadPath } from "./rscPath";
 import { getModulePathFor } from "../rsc/rscModule";
 import { processRscComponents } from "./rscProcessor";
+import { replaceIdsInContent } from "./idReplacement";
 import { computeContentHash } from "./contentHash";
 import { drainStream } from "../util/drainStream";
 import { validateEntryPath, checkDuplicatePaths } from "./validateEntryPath";
@@ -89,22 +90,6 @@ export async function buildApp(
 function normalizeBase(base: string): string {
   const normalized = base.endsWith("/") ? base.slice(0, -1) : base;
   return normalized === "/" ? "" : normalized;
-}
-
-/**
- * Replaces temporary IDs with final hashed IDs in content.
- */
-function replaceIdsInContent(
-  content: string,
-  idMapping: Map<string, string>,
-): string {
-  let result = content;
-  for (const [oldId, newId] of idMapping) {
-    if (oldId !== newId) {
-      result = result.replaceAll(oldId, newId);
-    }
-  }
-  return result;
 }
 
 async function buildSingleEntry(

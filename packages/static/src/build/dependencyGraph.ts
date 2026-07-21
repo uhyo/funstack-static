@@ -85,9 +85,10 @@ export function topologicalSort(
   }
 
   // Nodes not in sorted result are part of cycles
+  const sortedSet = new Set(sorted);
   const inCycle: string[] = [];
   for (const node of allNodes) {
-    if (!sorted.includes(node)) {
+    if (!sortedSet.has(node)) {
       inCycle.push(node);
     }
   }
