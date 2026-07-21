@@ -51,15 +51,8 @@ export async function buildApp(
     }
 
     // Process all deferred components once across all entries.
-    // We pass a dummy empty stream since we handle per-entry RSC payloads separately.
-    const dummyStream = new ReadableStream<Uint8Array>({
-      start(controller) {
-        controller.close();
-      },
-    });
     const { components, idMapping } = await processRscComponents(
       deferRegistry.loadAll(),
-      dummyStream,
       options.rscPayloadDir,
       context,
     );
