@@ -332,8 +332,8 @@ export default function funstackStatic(
             const { root, adapter, globBase } = resolvedFsRoutes;
             const globPattern = `${globBase}/**/*.{tsx,jsx}`;
             const lines = [
-              `import Root from "${root}";`,
-              `import adapter from "${adapter}";`,
+              `import Root from ${JSON.stringify(root)};`,
+              `import adapter from ${JSON.stringify(adapter)};`,
               `import { createFsRoutesEntries } from "@funstack/static/fs-routes";`,
               `const modules = import.meta.glob(${JSON.stringify(globPattern)}, { eager: true });`,
               `export default createFsRoutesEntries({`,
@@ -347,13 +347,13 @@ export default function funstackStatic(
           }
           if (isMultiEntry) {
             // Re-export the user's entries module
-            return `export { default } from "${resolvedEntriesModule}";`;
+            return `export { default } from ${JSON.stringify(resolvedEntriesModule)};`;
           }
           // Synthesize a single-entry array from root+app
           const { root, app } = JSON.parse(resolvedEntriesModule);
           return [
-            `import Root from "${root}";`,
-            `import App from "${app}";`,
+            `import Root from ${JSON.stringify(root)};`,
+            `import App from ${JSON.stringify(app)};`,
             `export default function getEntries() {`,
             `  return [{ path: "index.html", root: { default: Root }, app: { default: App } }];`,
             `}`,
@@ -367,13 +367,13 @@ export default function funstackStatic(
         }
         if (id === "\0virtual:funstack/client-init") {
           if (resolvedClientInitEntry) {
-            return `import "${resolvedClientInitEntry}";`;
+            return `import ${JSON.stringify(resolvedClientInitEntry)};`;
           }
           return "";
         }
         if (id === "\0virtual:funstack/build-entry") {
           if (resolvedBuildEntry) {
-            return `export { default } from "${resolvedBuildEntry}";`;
+            return `export { default } from ${JSON.stringify(resolvedBuildEntry)};`;
           }
           return "export default undefined;";
         }
