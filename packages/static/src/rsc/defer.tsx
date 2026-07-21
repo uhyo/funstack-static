@@ -7,7 +7,7 @@ import { rscPayloadDir } from "virtual:funstack/config";
 
 export {
   DeferRegistry,
-  devDeferEntryTTL,
+  devDeferEvictionOptions,
   type DeferEntry,
   type LoadedDeferEntry,
 } from "./deferRegistry";

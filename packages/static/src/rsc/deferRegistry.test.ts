@@ -1,7 +1,9 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { createElement } from "react";
 import type { ReactElement } from "react";
-import { DeferRegistry, devDeferEntryTTL } from "./deferRegistry";
+import { DeferRegistry, devDeferEvictionOptions } from "./deferRegistry";
+
+const { ttlMs } = devDeferEvictionOptions;
 
 const encoder = new TextEncoder();
 
@@ -51,48 +53,52 @@ describe("DeferRegistry", () => {
   });
 
   describe("evictStale", () => {
-    it("evicts entries older than the TTL and keeps fresh ones", () => {
-      registry.register(element("old"), "old");
-      vi.advanceTimersByTime(devDeferEntryTTL + 1);
-      registry.register(element("fresh"), "fresh");
+    it("never evicts pending entries by time", () => {
+      // A pending entry may be fetched arbitrarily late, e.g. deferred
+      // content inside an accordion that is rarely opened.
+      registry.register(element("accordion"), "a");
+      vi.advanceTimersByTime(ttlMs * 100);
 
-      registry.evictStale(devDeferEntryTTL);
+      registry.evictStale(devDeferEvictionOptions);
+
+      expect(registry.has("a")).toBe(true);
+    });
+
+    it("evicts settled entries older than the TTL and keeps fresh ones", async () => {
+      registry.register(element("old"), "old");
+      await registry.load("old")?.drainPromise;
+      vi.advanceTimersByTime(ttlMs + 1);
+      registry.register(element("fresh"), "fresh");
+      await registry.load("fresh")?.drainPromise;
+
+      registry.evictStale(devDeferEvictionOptions);
 
       expect(registry.has("old")).toBe(false);
       expect(registry.has("fresh")).toBe(true);
     });
 
-    it("keeps entries within the TTL", () => {
+    it("keeps settled entries within the TTL", async () => {
       registry.register(element("a"), "a");
-      vi.advanceTimersByTime(devDeferEntryTTL);
+      await registry.load("a")?.drainPromise;
+      vi.advanceTimersByTime(ttlMs);
 
-      registry.evictStale(devDeferEntryTTL);
+      registry.evictStale(devDeferEvictionOptions);
 
       expect(registry.has("a")).toBe(true);
     });
 
-    it("treats a load as an access that refreshes the TTL", () => {
+    it("treats a load as an access that refreshes the TTL", async () => {
       registry.register(element("a"), "a");
-      vi.advanceTimersByTime(devDeferEntryTTL - 1);
+      await registry.load("a")?.drainPromise;
+      vi.advanceTimersByTime(ttlMs - 1);
       registry.load("a");
-      vi.advanceTimersByTime(devDeferEntryTTL - 1);
+      vi.advanceTimersByTime(ttlMs - 1);
 
-      registry.evictStale(devDeferEntryTTL);
+      registry.evictStale(devDeferEvictionOptions);
       expect(registry.has("a")).toBe(true);
 
       vi.advanceTimersByTime(2);
-      registry.evictStale(devDeferEntryTTL);
-      expect(registry.has("a")).toBe(false);
-    });
-
-    it("evicts loaded (ready) entries once stale", async () => {
-      registry.register(element("a"), "a");
-      const entry = registry.load("a");
-      await entry?.drainPromise;
-
-      vi.advanceTimersByTime(devDeferEntryTTL + 1);
-      registry.evictStale(devDeferEntryTTL);
-
+      registry.evictStale(devDeferEvictionOptions);
       expect(registry.has("a")).toBe(false);
     });
 
@@ -100,12 +106,37 @@ describe("DeferRegistry", () => {
       registry.register(element("in-flight"), "a");
       const entry = registry.load("a");
 
-      vi.advanceTimersByTime(devDeferEntryTTL + 1);
-      registry.evictStale(devDeferEntryTTL);
+      vi.advanceTimersByTime(ttlMs + 1);
+      registry.evictStale(devDeferEvictionOptions);
       expect(registry.has("a")).toBe(false);
 
       // The response holding the entry can still drain it.
       await expect(entry?.drainPromise).resolves.toBe("in-flight");
+    });
+
+    it("caps pending entries, evicting the oldest first", () => {
+      registry.register(element("p1"), "p1");
+      registry.register(element("p2"), "p2");
+      registry.register(element("p3"), "p3");
+
+      registry.evictStale({ ttlMs, maxPending: 2 });
+
+      expect(registry.has("p1")).toBe(false);
+      expect(registry.has("p2")).toBe(true);
+      expect(registry.has("p3")).toBe(true);
+    });
+
+    it("does not count settled entries toward the pending cap", async () => {
+      registry.register(element("s1"), "s1");
+      await registry.load("s1")?.drainPromise;
+      registry.register(element("p1"), "p1");
+      registry.register(element("p2"), "p2");
+
+      registry.evictStale({ ttlMs, maxPending: 2 });
+
+      expect(registry.has("s1")).toBe(true);
+      expect(registry.has("p1")).toBe(true);
+      expect(registry.has("p2")).toBe(true);
     });
   });
 

@@ -42,15 +42,33 @@ export type RenderToStream = (
   element: ReactElement,
 ) => ReadableStream<Uint8Array>;
 
+export interface EvictStaleOptions {
+  /**
+   * How long a settled (streaming/ready/error) entry is kept after it was
+   * last loaded. Once served, the client caches the payload per module ID
+   * and never legitimately re-fetches it, so a short TTL is safe.
+   */
+  ttlMs: number;
+  /**
+   * Maximum number of pending entries to keep (oldest evicted first).
+   * Pending entries are never evicted by time: a DeferredComponent may
+   * fetch its payload arbitrarily late (e.g. content inside an accordion
+   * that is rarely opened), so they stay until enough newer registrations
+   * push them out.
+   */
+  maxPending: number;
+}
+
 /**
- * How long a defer entry is kept in the dev registry after it was last
- * registered or loaded. Each dev render registers fresh entries (with new
- * IDs), so old entries become unreachable once the client re-renders;
- * without eviction the registry grows unboundedly over a dev session.
- * The TTL leaves a generous window for lazily-rendered DeferredComponents
- * to fetch their payload after the page loaded.
+ * Eviction policy for the dev server. Each dev render registers fresh
+ * entries (with new IDs), so old entries become unreachable once the
+ * client re-renders; without eviction the registry grows unboundedly
+ * over a dev session.
  */
-export const devDeferEntryTTL = 5 * 60 * 1000;
+export const devDeferEvictionOptions: EvictStaleOptions = {
+  ttlMs: 5 * 60 * 1000,
+  maxPending: 1000,
+};
 
 export class DeferRegistry {
   #registry = new Map<string, DeferEntry>();
@@ -108,17 +126,37 @@ export class DeferRegistry {
   }
 
   /**
-   * Drops entries that have not been registered or loaded within the given
-   * TTL. Called from dev server request handlers to keep the registry from
-   * growing unboundedly across renders; never called during a build.
+   * Drops entries that are no longer expected to be fetched. Called from
+   * dev server request handlers to keep the registry from growing
+   * unboundedly across renders; never called during a build.
+   *
+   * Settled entries (which retain the rendered payload string) are dropped
+   * once they have not been loaded within `ttlMs`. Pending entries (which
+   * retain only the React element) are exempt from the TTL — deferred
+   * content may be fetched arbitrarily late — and are instead capped at
+   * `maxPending`, evicting the oldest first.
    *
    * Evicting an entry does not cancel an in-flight render: responses
    * already holding the entry's stream or drain promise are unaffected.
    */
-  evictStale(ttlMs: number): void {
+  evictStale({ ttlMs, maxPending }: EvictStaleOptions): void {
     const now = Date.now();
+    let pendingCount = 0;
+    for (const entry of this.#registry.values()) {
+      if (entry.state.state === "pending") {
+        pendingCount++;
+      }
+    }
+    // Map iteration is in insertion order, so the oldest pending
+    // entries are encountered (and evicted) first.
+    let pendingToEvict = Math.max(0, pendingCount - maxPending);
     for (const [id, entry] of this.#registry) {
-      if (now - entry.lastAccessedAt > ttlMs) {
+      if (entry.state.state === "pending") {
+        if (pendingToEvict > 0) {
+          this.#registry.delete(id);
+          pendingToEvict--;
+        }
+      } else if (now - entry.lastAccessedAt > ttlMs) {
         this.#registry.delete(id);
       }
     }
