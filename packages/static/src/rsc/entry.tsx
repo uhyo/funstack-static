@@ -85,9 +85,13 @@ async function renderEntryToResponse(
   if (ssrEnabled) {
     // SSR on: single RSC stream with full tree
     const rscStart = performance.now();
-    const rootRscStream = renderToReadableStream<RscPayload>({
-      root: <Root>{appNode}</Root>,
-    });
+    // Scope defer() registrations to this render so the previous render's
+    // entries for this entry can be evicted (see DeferRegistry#startRender).
+    const rootRscStream = deferRegistry.startRender(entry.path, () =>
+      renderToReadableStream<RscPayload>({
+        root: <Root>{appNode}</Root>,
+      }),
+    );
     timings.push(`rsc;dur=${performance.now() - rscStart}`);
 
     const ssrStart = performance.now();
@@ -109,16 +113,23 @@ async function renderEntryToResponse(
   } else {
     // SSR off: shell RSC for SSR, full RSC for client
     const rscStart = performance.now();
-    const shellRscStream = renderToReadableStream<RscPayload>({
-      root: (
-        <Root>
-          <span id={marker} />
-        </Root>
-      ),
-    });
-    const clientRscStream = renderToReadableStream<RscPayload>({
-      root: <Root>{appNode}</Root>,
-    });
+    // Scope defer() registrations to this render so the previous render's
+    // entries for this entry can be evicted (see DeferRegistry#startRender).
+    const [shellRscStream, clientRscStream] = deferRegistry.startRender(
+      entry.path,
+      () => [
+        renderToReadableStream<RscPayload>({
+          root: (
+            <Root>
+              <span id={marker} />
+            </Root>
+          ),
+        }),
+        renderToReadableStream<RscPayload>({
+          root: <Root>{appNode}</Root>,
+        }),
+      ],
+    );
     timings.push(`rsc;dur=${performance.now() - rscStart}`);
 
     const ssrStart = performance.now();
@@ -209,9 +220,13 @@ export async function serveRSC(request: Request): Promise<Response> {
     timings.push(`resolve;dur=${performance.now() - resolveStart}`);
 
     const rscStart = performance.now();
-    const rootRscStream = renderToReadableStream<RscPayload>({
-      root: <Root>{appNode}</Root>,
-    });
+    // An HMR re-fetch is a new top-level render of the entry: scope it so
+    // the previous render's defer() registrations can be evicted.
+    const rootRscStream = deferRegistry.startRender(entry.path, () =>
+      renderToReadableStream<RscPayload>({
+        root: <Root>{appNode}</Root>,
+      }),
+    );
     timings.push(`rsc;dur=${performance.now() - rscStart}`);
 
     return new Response(rootRscStream, {
