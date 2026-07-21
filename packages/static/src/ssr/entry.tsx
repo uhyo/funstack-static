@@ -21,13 +21,21 @@ export async function renderHTML(
     clientRscStream?: ReadableStream<Uint8Array>;
   },
 ): Promise<{ stream: ReadableStream<Uint8Array>; status?: number }> {
-  const [rscStream1, rscStream2] = rscStream.tee();
+  // Tee only when the second branch is actually consumed (dev without a
+  // separate client RSC stream). An unread tee branch buffers the entire
+  // RSC payload in memory, so skip teeing in build mode and in dev when
+  // `clientRscStream` is injected instead.
+  let ssrRscStream = rscStream;
+  let inlineRscStream = options.clientRscStream;
+  if (!options.build && inlineRscStream === undefined) {
+    [ssrRscStream, inlineRscStream] = rscStream.tee();
+  }
 
   let payload: Promise<RscPayload> | undefined;
   function SsrRoot() {
     // Tip: calling `createFromReadableStream` inside a component
     // makes `preinit`/`preload` work properly.
-    payload ??= createFromReadableStream<RscPayload>(rscStream1);
+    payload ??= createFromReadableStream<RscPayload>(ssrRscStream);
     if (options.build) {
       preload(rscPayloadPlaceholder, {
         crossOrigin: "anonymous",
@@ -109,10 +117,9 @@ export async function renderHTML(
   // In dev: always inject (client reads from inline stream).
   // In build+SSR: skip (HTML already has full content, client hydrates directly).
   // In build+no-SSR: skip (client fetches RSC from separate file).
-  if (!options.build) {
-    const streamToInject = options.clientRscStream ?? rscStream2;
+  if (!options.build && inlineRscStream !== undefined) {
     responseStream = responseStream.pipeThrough(
-      injectRSCPayload(streamToInject, {
+      injectRSCPayload(inlineRscStream, {
         nonce: options?.nonce,
       }),
     );
