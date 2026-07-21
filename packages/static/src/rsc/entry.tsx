@@ -293,13 +293,12 @@ export async function build() {
     let appRscStream: ReadableStream<Uint8Array>;
 
     if (ssrEnabled) {
-      // SSR on: both streams have full tree
-      rootRscStream = renderToReadableStream<RscPayload>({
+      // SSR on: render the full tree once and tee the stream — one branch
+      // for SSR HTML, one for the app RSC payload. Rendering twice would
+      // execute every server component (and defer()) twice per entry (#147).
+      [rootRscStream, appRscStream] = renderToReadableStream<RscPayload>({
         root: <Root>{appNode}</Root>,
-      });
-      appRscStream = renderToReadableStream<RscPayload>({
-        root: <Root>{appNode}</Root>,
-      });
+      }).tee();
     } else {
       // SSR off: root stream has shell, app stream has App only
       rootRscStream = renderToReadableStream<RscPayload>({
