@@ -2,7 +2,7 @@ import React from "react";
 import { createFromFetch } from "@vitejs/plugin-rsc/browser";
 import { getModulePathFor } from "../rsc/rscModule";
 import { createContext, use } from "react";
-import type { LoadedDeferEntry, DeferRegistry } from "../rsc/defer";
+import type { LoadedDeferEntry, DeferRegistry } from "../rsc/deferRegistry";
 import { withBasePath } from "../util/basePath";
 
 interface DeferContextValue {

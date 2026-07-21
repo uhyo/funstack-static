@@ -7,7 +7,7 @@ import type { RscPayload } from "../rsc/entry";
 import { appClientManifestVar } from "../client/globals";
 import { rscPayloadPlaceholder } from "../build/rscPath";
 import { preload } from "react-dom";
-import type { DeferRegistry } from "../rsc/defer";
+import type { DeferRegistry } from "../rsc/deferRegistry";
 import { RegistryContext } from "#rsc-client";
 
 export async function renderHTML(

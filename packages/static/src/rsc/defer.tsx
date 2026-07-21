@@ -5,13 +5,6 @@ import { DeferRegistry } from "./deferRegistry";
 import { getPayloadIDFor } from "./rscModule";
 import { rscPayloadDir } from "virtual:funstack/config";
 
-export {
-  DeferRegistry,
-  devDeferEvictionOptions,
-  type DeferEntry,
-  type LoadedDeferEntry,
-} from "./deferRegistry";
-
 /**
  * Options for the defer function.
  */
