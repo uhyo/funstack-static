@@ -18,7 +18,10 @@ import { withBasePath } from "../util/basePath";
 import { ssr as ssrEnabled } from "virtual:funstack/config";
 
 async function devMain() {
-  let setPayload: (v: RscPayload) => void;
+  let setPayload: ((v: RscPayload) => void) | undefined;
+  // Holds an update that arrived before the component mounted; the mount
+  // effect applies it so early rsc:update events are not dropped.
+  let pendingPayload: RscPayload | undefined;
 
   const initialPayload = await createFromReadableStream<RscPayload>(rscStream);
 
@@ -27,6 +30,11 @@ async function devMain() {
 
     useEffect(() => {
       setPayload = (v) => startTransition(() => setPayload_(v));
+      if (pendingPayload !== undefined) {
+        const payload = pendingPayload;
+        pendingPayload = undefined;
+        setPayload(payload);
+      }
     }, [setPayload_]);
 
     return payload.root;
@@ -40,7 +48,11 @@ async function devMain() {
       location.pathname,
     )}`;
     const payload = await createFromFetch<RscPayload>(fetch(rscUrl));
-    setPayload(payload);
+    if (setPayload) {
+      setPayload(payload);
+    } else {
+      pendingPayload = payload;
+    }
   }
 
   const browserRoot = (
