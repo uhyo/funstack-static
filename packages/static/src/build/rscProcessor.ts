@@ -1,6 +1,7 @@
 import { getPayloadIDFor } from "../rsc/rscModule";
 import { computeContentHash } from "./contentHash";
 import { findReferencedIds, topologicalSort } from "./dependencyGraph";
+import { replaceIdsInContent } from "./idReplacement";
 
 export interface ProcessedComponent {
   finalId: string;
@@ -80,14 +81,8 @@ export async function processRscComponents(
   const processedComponents: ProcessedComponent[] = [];
 
   for (const tempId of sorted) {
-    let content = components.get(tempId)!;
-
     // Replace all already-finalized temp IDs with their hash-based IDs
-    for (const [oldId, newId] of idMapping) {
-      if (oldId !== newId) {
-        content = content.replaceAll(oldId, newId);
-      }
-    }
+    const content = replaceIdsInContent(components.get(tempId)!, idMapping);
 
     // Compute content hash for this component
     const contentHash = await computeContentHash(content);
@@ -105,14 +100,8 @@ export async function processRscComponents(
 
   // Add cycle members to processed components (with original IDs)
   for (const tempId of inCycle) {
-    let content = components.get(tempId)!;
-
     // Replace finalized IDs in cycle member content
-    for (const [oldId, newId] of idMapping) {
-      if (oldId !== newId) {
-        content = content.replaceAll(oldId, newId);
-      }
-    }
+    const content = replaceIdsInContent(components.get(tempId)!, idMapping);
 
     processedComponents.push({
       finalId: tempId, // Keep original temp ID
