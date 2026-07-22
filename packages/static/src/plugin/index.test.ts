@@ -49,6 +49,120 @@ const fsRoutesOptions: FunstackStaticOptions = {
   },
 };
 
+/**
+ * Find a plugin by name in the flattened plugin list.
+ */
+function getPlugin(plugins: (Plugin | Plugin[])[], name: string): Plugin {
+  const plugin = plugins.flat().find((p): p is Plugin => p.name === name);
+  if (!plugin) {
+    throw new Error(`${name} plugin not found`);
+  }
+  return plugin;
+}
+
+/**
+ * Run `configResolved` (with the given Vite root) followed by `load(id)` on
+ * the virtual-entry plugin, returning the generated module code.
+ */
+function loadVirtualModule(
+  options: FunstackStaticOptions,
+  viteRoot: string,
+  id: string,
+): string {
+  const plugins = funstackStatic(options);
+  const configPlugin = getPlugin(plugins, "@funstack/static:config");
+  const configResolved = configPlugin.configResolved;
+  const configResolvedHandler =
+    typeof configResolved === "function"
+      ? configResolved
+      : configResolved?.handler;
+  if (!configResolvedHandler) {
+    throw new Error("configResolved hook not found");
+  }
+  // The hook only reads `config.root`.
+  configResolvedHandler.call({} as never, { root: viteRoot } as never);
+
+  const virtualPlugin = getPlugin(plugins, "@funstack/static:virtual-entry");
+  const load = virtualPlugin.load;
+  const loadHandler = typeof load === "function" ? load : load?.handler;
+  if (!loadHandler) {
+    throw new Error("load hook not found");
+  }
+  const code = loadHandler.call({} as never, id, undefined);
+  if (typeof code !== "string") {
+    throw new Error(`load did not return code for ${id}`);
+  }
+  return code;
+}
+
+describe("virtual module path escaping", () => {
+  // A Vite root whose path needs escaping when embedded in a JS string
+  // literal. Such paths must not produce syntax errors (or injected code) in
+  // the generated virtual modules (#149).
+  const trickyRoot = '/pro"ject';
+
+  it("escapes root and app paths in the single-entry entries module", () => {
+    const code = loadVirtualModule(
+      { root: "./src/root.tsx", app: "./src/App.tsx" },
+      trickyRoot,
+      "\0virtual:funstack/entries",
+    );
+    expect(code).toContain('import Root from "/pro\\"ject/src/root.tsx";');
+    expect(code).toContain('import App from "/pro\\"ject/src/App.tsx";');
+  });
+
+  it("escapes the entries module path in multi-entry mode", () => {
+    const code = loadVirtualModule(
+      { entries: "./src/entries.tsx" },
+      trickyRoot,
+      "\0virtual:funstack/entries",
+    );
+    expect(code).toBe('export { default } from "/pro\\"ject/src/entries.tsx";');
+  });
+
+  it("escapes root and adapter paths in the fsRoutes entries module", () => {
+    const code = loadVirtualModule(
+      {
+        fsRoutes: {
+          dir: "./src/pages",
+          root: "./src/root.tsx",
+          adapter: "./src/adapter.ts",
+        },
+      },
+      trickyRoot,
+      "\0virtual:funstack/entries",
+    );
+    expect(code).toContain('import Root from "/pro\\"ject/src/root.tsx";');
+    expect(code).toContain('import adapter from "/pro\\"ject/src/adapter.ts";');
+  });
+
+  it("escapes the clientInit path in the client-init module", () => {
+    const code = loadVirtualModule(
+      {
+        root: "./src/root.tsx",
+        app: "./src/App.tsx",
+        clientInit: "./src/init.ts",
+      },
+      trickyRoot,
+      "\0virtual:funstack/client-init",
+    );
+    expect(code).toBe('import "/pro\\"ject/src/init.ts";');
+  });
+
+  it("escapes the build entry path in the build-entry module", () => {
+    const code = loadVirtualModule(
+      {
+        root: "./src/root.tsx",
+        app: "./src/App.tsx",
+        build: "./src/build.ts",
+      },
+      trickyRoot,
+      "\0virtual:funstack/build-entry",
+    );
+    expect(code).toBe('export { default } from "/pro\\"ject/src/build.ts";');
+  });
+});
+
 describe("configEnvironment optimizeDeps", () => {
   it("includes React and ReactDOM as a single (bare) optimized chunk", () => {
     const { include, exclude } = runConfigEnvironment(
