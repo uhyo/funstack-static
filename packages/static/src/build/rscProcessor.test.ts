@@ -7,15 +7,6 @@ function id(rawId: string): string {
   return `${dir}/${rawId}`;
 }
 
-function streamOf(content: string): ReadableStream<Uint8Array> {
-  return new ReadableStream({
-    start(controller) {
-      controller.enqueue(new TextEncoder().encode(content));
-      controller.close();
-    },
-  });
-}
-
 async function* componentsOf(
   items: Array<{ id: string; data: string; name?: string }>,
 ) {
@@ -30,18 +21,17 @@ function referencedIds(content: string): string[] {
 }
 
 describe("processRscComponents", () => {
-  it("replaces temp IDs with content hashes in app content", async () => {
+  it("maps temp IDs to content hashes", async () => {
     const a = id("temp-a");
     const result = await processRscComponents(
       componentsOf([{ id: a, data: "content of a" }]),
-      streamOf(`app references ${a}`),
       dir,
     );
 
     expect(result.components).toHaveLength(1);
     const finalId = result.components[0]!.finalId;
     expect(finalId).not.toBe(a);
-    expect(result.appRscContent).toBe(`app references ${finalId}`);
+    expect(result.idMapping.get(a)).toBe(finalId);
   });
 
   it("finalizes nested references before hashing the referencing payload", async () => {
@@ -52,7 +42,6 @@ describe("processRscComponents", () => {
         { id: parent, data: `parent references ${child}` },
         { id: child, data: "child content" },
       ]),
-      streamOf(`app references ${parent}`),
       dir,
     );
 
@@ -65,8 +54,8 @@ describe("processRscComponents", () => {
         expect(finalIds).toContain(ref);
       }
     }
-    expect(result.appRscContent).not.toContain("temp-");
-    expect(finalIds).toContain(referencedIds(result.appRscContent)[0]);
+    expect(finalIds).toContain(result.idMapping.get(parent));
+    expect(finalIds).toContain(result.idMapping.get(child));
   });
 
   it("resolves a diamond of references", async () => {
@@ -81,14 +70,15 @@ describe("processRscComponents", () => {
         { id: right, data: `right references ${bottom}` },
         { id: bottom, data: "bottom content" },
       ]),
-      streamOf(`app references ${top}`),
       dir,
     );
 
     for (const component of result.components) {
       expect(component.finalContent).not.toContain("temp-");
     }
-    expect(result.appRscContent).not.toContain("temp-");
+    for (const finalId of result.idMapping.values()) {
+      expect(finalId).not.toContain("temp-");
+    }
   });
 
   it("produces the same hashes regardless of temp IDs and order", async () => {
@@ -100,21 +90,17 @@ describe("processRscComponents", () => {
         { id: child, data: "child content" },
       ];
       if (flip) items.reverse();
-      const result = await processRscComponents(
-        componentsOf(items),
-        streamOf(`app references ${parent}`),
-        dir,
-      );
+      const result = await processRscComponents(componentsOf(items), dir);
       return {
         finalIds: new Set(result.components.map((c) => c.finalId)),
-        appRscContent: result.appRscContent,
+        parentFinalId: result.idMapping.get(parent),
       };
     }
 
     const first = await run("temp-parent-1", "temp-child-1", false);
     const second = await run("temp-parent-2", "temp-child-2", true);
     expect(first.finalIds).toEqual(second.finalIds);
-    expect(first.appRscContent).toBe(second.appRscContent);
+    expect(first.parentFinalId).toBe(second.parentFinalId);
   });
 
   it("keeps temp IDs for components in cycles and warns", async () => {
@@ -126,7 +112,6 @@ describe("processRscComponents", () => {
         { id: a, data: `a references ${b}` },
         { id: b, data: `b references ${a}` },
       ]),
-      streamOf(`app references ${a}`),
       dir,
       { warn },
     );
@@ -134,6 +119,7 @@ describe("processRscComponents", () => {
     expect(warn).toHaveBeenCalledTimes(1);
     const finalIds = result.components.map((c) => c.finalId).sort();
     expect(finalIds).toEqual([a, b]);
-    expect(result.appRscContent).toBe(`app references ${a}`);
+    expect(result.idMapping.get(a)).toBe(a);
+    expect(result.idMapping.get(b)).toBe(b);
   });
 });
