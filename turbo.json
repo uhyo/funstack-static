@@ -22,11 +22,11 @@
       "outputs": []
     },
     "test:e2e": {
-      "dependsOn": ["^build"],
+      "dependsOn": ["build", "^build"],
       "outputs": []
     },
     "test:e2e:dev": {
-      "dependsOn": ["^build"],
+      "dependsOn": ["build", "^build"],
       "outputs": []
     }
   }
