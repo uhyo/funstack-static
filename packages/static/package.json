@@ -65,23 +65,23 @@
   "license": "MIT",
   "devDependencies": {
     "@funstack/router": "^1.2.0",
-    "@playwright/test": "^1.61.1",
+    "@playwright/test": "^1.62.0",
     "@types/node": "catalog:",
     "@types/react": "^19.2.17",
     "@types/react-dom": "^19.2.3",
     "react": "catalog:",
     "react-dom": "catalog:",
-    "tsdown": "^0.22.9",
+    "tsdown": "^0.22.14",
     "typescript": "catalog:",
     "vite": "catalog:",
     "vitest": "^4.1.10"
   },
   "dependencies": {
     "@funstack/skill-installer": "^1.1.0",
-    "@vitejs/plugin-rsc": "^0.5.28",
+    "@vitejs/plugin-rsc": "^0.5.30",
     "react-error-boundary": "^6.1.2",
     "rsc-html-stream": "^0.0.7",
-    "srvx": "^0.11.22"
+    "srvx": "^0.12.4"
   },
   "peerDependencies": {
     "@funstack/router": "^1.2.0",
