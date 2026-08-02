@@ -78,10 +78,10 @@
   },
   "dependencies": {
     "@funstack/skill-installer": "^1.1.0",
-    "@vitejs/plugin-rsc": "^0.5.30",
+    "@vitejs/plugin-rsc": "^0.5.32",
     "react-error-boundary": "^6.1.2",
     "rsc-html-stream": "^0.0.7",
-    "srvx": "^0.12.4"
+    "srvx": "^0.12.5"
   },
   "peerDependencies": {
     "@funstack/router": "^1.2.0",
