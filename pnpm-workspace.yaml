@@ -7,11 +7,11 @@ packages:
 
 catalog:
   "@types/node": ^26.1.2
-  "@vitejs/plugin-react": ^6.0.4
+  "@vitejs/plugin-react": ^6.0.5
   react: ^19.2.8
   react-dom: ^19.2.8
   typescript: ^7.0.2
-  vite: ^8.1.5
+  vite: ^8.2.0
 
 onlyBuiltDependencies:
   - esbuild
