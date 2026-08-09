@@ -13,22 +13,22 @@
   "dependencies": {
     "@funstack/router": "^1.2.0",
     "@funstack/static": "workspace:*",
-    "@shikijs/rehype": "^4.3.1",
+    "@shikijs/rehype": "^4.4.2",
     "@types/node": "catalog:",
     "react": "catalog:",
     "react-dom": "catalog:",
     "rehype-slug": "^6.0.0",
-    "shiki": "^4.3.1"
+    "shiki": "^4.4.2"
   },
   "devDependencies": {
     "@mdx-js/rollup": "^3.1.1",
     "@types/mdx": "^2.0.14",
-    "@types/react": "^19.2.17",
-    "@types/react-dom": "^19.2.3",
+    "@types/react": "^19.2.18",
+    "@types/react-dom": "^19.2.4",
     "@vitejs/plugin-react": "catalog:",
     "rsc-html-stream": "^0.0.7",
     "typescript": "catalog:",
     "vite": "catalog:",
-    "wrangler": "^4.115.0"
+    "wrangler": "^4.119.0"
   }
 }
