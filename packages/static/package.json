@@ -78,9 +78,9 @@
   },
   "dependencies": {
     "@funstack/skill-installer": "^1.1.0",
-    "@vitejs/plugin-rsc": "^0.5.33",
+    "@vitejs/plugin-rsc": "^0.5.34",
     "react-error-boundary": "^6.1.2",
-    "rsc-html-stream": "^0.0.7",
+    "rsc-html-stream": "^0.0.8",
     "srvx": "^0.12.5"
   },
   "peerDependencies": {
