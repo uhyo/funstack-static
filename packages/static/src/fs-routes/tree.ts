@@ -1,5 +1,22 @@
 import type { FsRouteFile, FsRouteModule, FsRouteTreeNode } from "./types";
 
+const CLIENT_REFERENCE_TAG = Symbol.for("react.client.reference");
+
+/**
+ * Whether a value is a client reference — the stand-in the RSC transform
+ * substitutes for each export of a module marked `"use client"` when it is
+ * imported on the server. A client reference is a function (so it passes a
+ * plain `typeof` check) tagged with `$$typeof`, but throws when called on
+ * the server.
+ */
+function isClientReference(value: unknown): boolean {
+  return (
+    (typeof value === "function" || typeof value === "object") &&
+    value !== null &&
+    (value as { $$typeof?: unknown }).$$typeof === CLIENT_REFERENCE_TAG
+  );
+}
+
 /**
  * Returns the candidate `"<dir>/"` prefixes to strip for a user-provided
  * base. A base written without a leading `"./"` also matches the `"./"`-style
@@ -94,9 +111,19 @@ function isDynamicSegment(segment: string): boolean {
   return segment.startsWith(":");
 }
 
+/**
+ * Names a route in an error message: the URL path, plus the source file when
+ * the tree carries one (e.g. `"/blog/:slug" ("blog/[slug]/page.tsx")`).
+ */
+function routeLabel(segments: string[], filePath: string | undefined): string {
+  const url = `"${segmentsToUrl(segments)}"`;
+  return filePath === undefined ? url : `${url} ("${filePath}")`;
+}
+
 async function addPagesForLeaf(
   segments: string[],
   module: FsRouteModule,
+  filePath: string | undefined,
   pages: StaticPage[],
 ): Promise<void> {
   const dynamicSegments = segments.filter(isDynamicSegment);
@@ -107,9 +134,18 @@ async function addPagesForLeaf(
   }
 
   const generate = module.generateStaticParams;
+  if (isClientReference(generate)) {
+    throw new Error(
+      `Dynamic route ${routeLabel(segments, filePath)} exports generateStaticParams() ` +
+        `from a module marked "use client". generateStaticParams() runs on the server ` +
+        `at build time, so a page module cannot be a Client Component. ` +
+        `Move the component body into a separate "use client" module and re-export it ` +
+        `from the page: export { default } from "./_page";`,
+    );
+  }
   if (typeof generate !== "function") {
     throw new Error(
-      `Dynamic route "${segmentsToUrl(segments)}" has no generateStaticParams() export. ` +
+      `Dynamic route ${routeLabel(segments, filePath)} has no generateStaticParams() export. ` +
         `Every page of a static site must be enumerated at build time; ` +
         `export generateStaticParams() from the page module to list the params to pre-render.`,
     );
@@ -123,7 +159,7 @@ async function addPagesForLeaf(
       const value = params[name];
       if (value === undefined) {
         throw new Error(
-          `generateStaticParams() for "${segmentsToUrl(segments)}" is missing a value for param "${name}".`,
+          `generateStaticParams() for ${routeLabel(segments, filePath)} is missing a value for param "${name}".`,
         );
       }
       return value;
@@ -142,7 +178,7 @@ async function walk(
       node.path !== undefined ? splitRoutePath(node.path) : [];
     const segments = [...prefixSegments, ...ownSegments];
     if (node.page) {
-      await addPagesForLeaf(segments, node.module, pages);
+      await addPagesForLeaf(segments, node.module, node.filePath, pages);
     }
     if (node.children) {
       await walk(node.children, segments, pages);

@@ -14,6 +14,23 @@ function pageModule(
   return { default: () => null, generateStaticParams };
 }
 
+/**
+ * Mimics the export produced by the RSC transform for a module marked
+ * "use client": a function tagged with the client-reference `$$typeof` that
+ * throws when called on the server.
+ */
+function clientReference(): FsRouteModule["generateStaticParams"] {
+  const reference = () => {
+    throw new Error(
+      "Unexpectedly client reference export 'generateStaticParams' is called on server",
+    );
+  };
+  return Object.defineProperties(reference, {
+    $$typeof: { value: Symbol.for("react.client.reference") },
+    $$id: { value: "blog/[slug]/page.tsx#generateStaticParams" },
+  }) as FsRouteModule["generateStaticParams"];
+}
+
 describe("collectStaticPaths", () => {
   it("collects static pages, including index pages under a layout", async () => {
     const tree: FsRouteTreeNode[] = [
@@ -103,6 +120,20 @@ describe("collectStaticPaths", () => {
     );
   });
 
+  it("names the source file for a dynamic route without generateStaticParams", async () => {
+    const tree: FsRouteTreeNode[] = [
+      {
+        path: "/blog/:slug",
+        page: true,
+        module: component,
+        filePath: "blog/[slug]/page.tsx",
+      },
+    ];
+    await expect(collectStaticPaths(tree)).rejects.toThrow(
+      /"\/blog\/:slug" \("blog\/\[slug\]\/page\.tsx"\).*generateStaticParams/,
+    );
+  });
+
   it("throws when generateStaticParams is missing a param value", async () => {
     const tree: FsRouteTreeNode[] = [
       {
@@ -112,6 +143,61 @@ describe("collectStaticPaths", () => {
       },
     ];
     await expect(collectStaticPaths(tree)).rejects.toThrow(/slug/);
+  });
+
+  it("names the source file when generateStaticParams is missing a param value", async () => {
+    const tree: FsRouteTreeNode[] = [
+      {
+        path: "/blog/:slug",
+        page: true,
+        module: pageModule(() => [{ other: "x" }]),
+        filePath: "blog/[slug]/page.tsx",
+      },
+    ];
+    await expect(collectStaticPaths(tree)).rejects.toThrow(
+      /"\/blog\/:slug" \("blog\/\[slug\]\/page\.tsx"\).*param "slug"/,
+    );
+  });
+
+  it('reports a clear error when generateStaticParams is a "use client" reference', async () => {
+    const tree: FsRouteTreeNode[] = [
+      {
+        path: "/blog/:slug",
+        page: true,
+        module: pageModule(clientReference()),
+        filePath: "blog/[slug]/page.tsx",
+      },
+    ];
+    await expect(collectStaticPaths(tree)).rejects.toThrow(
+      /"\/blog\/:slug" \("blog\/\[slug\]\/page\.tsx"\).*marked "use client".*cannot be a Client Component/s,
+    );
+  });
+
+  it("reports the client-reference error without a file path for hand-built trees", async () => {
+    const tree: FsRouteTreeNode[] = [
+      {
+        path: "/blog/:slug",
+        page: true,
+        module: pageModule(clientReference()),
+      },
+    ];
+    await expect(collectStaticPaths(tree)).rejects.toThrow(
+      /Dynamic route "\/blog\/:slug" exports generateStaticParams\(\) from a module marked "use client"/,
+    );
+  });
+
+  it("does not mistake a plain generateStaticParams for a client reference", async () => {
+    const tree: FsRouteTreeNode[] = [
+      {
+        path: "/blog/:slug",
+        page: true,
+        module: pageModule(() => [{ slug: "hello" }]),
+      },
+    ];
+    const pages = await collectStaticPaths(tree);
+    expect(pages).toEqual([
+      { urlPath: "/blog/hello", params: { slug: "hello" } },
+    ]);
   });
 });
 

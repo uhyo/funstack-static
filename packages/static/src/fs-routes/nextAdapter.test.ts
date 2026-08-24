@@ -181,6 +181,23 @@ describe("nextRoutes adapter", () => {
     ]);
   });
 
+  it("carries each file's path onto its tree node for diagnostics", () => {
+    const adapter = nextRoutes();
+    const tree = adapter.buildRoutes(
+      makeFiles([
+        "dashboard/layout.tsx",
+        "dashboard/page.tsx",
+        "dashboard/[id]/page.tsx",
+      ]),
+    );
+    const layout = tree[0]!;
+    expect(layout.filePath).toBe("dashboard/layout.tsx");
+    expect(layout.children?.map((child) => child.filePath)).toEqual([
+      "dashboard/page.tsx",
+      "dashboard/[id]/page.tsx",
+    ]);
+  });
+
   it("rejects optional catch-all segments", () => {
     const adapter = nextRoutes();
     expect(() =>

@@ -1,9 +1,4 @@
-import type {
-  FsRouteFile,
-  FsRouteModule,
-  FsRouteTreeNode,
-  FsRoutesAdapter,
-} from "./types";
+import type { FsRouteFile, FsRouteTreeNode, FsRoutesAdapter } from "./types";
 
 /**
  * Options for the built-in Next.js-like adapter.
@@ -24,8 +19,8 @@ export interface NextRoutesOptions {
 interface TrieNode {
   /** Raw directory segment name (`""` for the routes-directory root). */
   segment: string;
-  page?: FsRouteModule;
-  layout?: FsRouteModule;
+  page?: FsRouteFile;
+  layout?: FsRouteFile;
   children: Map<string, TrieNode>;
 }
 
@@ -178,20 +173,38 @@ function emit(node: TrieNode, prefix: string[]): FsRouteTreeNode[] {
   if (node.layout) {
     const children: FsRouteTreeNode[] = [];
     if (node.page) {
-      children.push({ path: "/", module: node.page, page: true });
+      children.push({
+        path: "/",
+        module: node.page.module,
+        filePath: node.page.filePath,
+        page: true,
+      });
     }
     for (const child of childNodes) {
       children.push(...emit(child, []));
     }
     children.sort(compareNodes);
     const path = here.length === 0 ? undefined : `/${here.join("/")}`;
-    return [{ path, module: node.layout, page: false, children }];
+    return [
+      {
+        path,
+        module: node.layout.module,
+        filePath: node.layout.filePath,
+        page: false,
+        children,
+      },
+    ];
   }
 
   const result: FsRouteTreeNode[] = [];
   if (node.page) {
     const path = here.length === 0 ? "/" : `/${here.join("/")}`;
-    result.push({ path, module: node.page, page: true });
+    result.push({
+      path,
+      module: node.page.module,
+      filePath: node.page.filePath,
+      page: true,
+    });
   }
   for (const child of childNodes) {
     result.push(...emit(child, here));
@@ -284,9 +297,9 @@ export function nextRoutes(options: NextRoutesOptions = {}): FsRoutesAdapter {
         }
         const node = ensureDir(root, dirs);
         if (kind === "page") {
-          node.page = file.module;
+          node.page = file;
         } else {
-          node.layout = file.module;
+          node.layout = file;
         }
       }
       return emit(root, []);

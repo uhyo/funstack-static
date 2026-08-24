@@ -59,6 +59,12 @@ export interface FsRouteTreeNode {
   /** The module providing this node's component (page or layout). */
   module: FsRouteModule;
   /**
+   * Source file path of `module` relative to the routes directory, when
+   * known (see {@link FsRouteFile.filePath}). Used to point error messages
+   * at the offending file; optional so hand-built trees remain valid.
+   */
+  filePath?: string;
+  /**
    * Whether this node is a concrete page that should be statically generated.
    * Layout nodes set this to `false`.
    */
