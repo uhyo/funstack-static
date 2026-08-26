@@ -36,4 +36,24 @@ test.describe("File-system routing (dev server)", () => {
     await page.getByRole("link", { name: "About" }).click();
     await expect(page.getByTestId("page-id")).toHaveText("about");
   });
+
+  test("a Client Component layout receives live params on soft navigation", async ({
+    page,
+  }) => {
+    await page.goto("/ja");
+    await expect(page.getByTestId("lang-layout-lang")).toHaveText("ja");
+
+    await page.getByTestId("link-en").click();
+    await expect(page.getByTestId("lang-layout-lang")).toHaveText("en");
+  });
+
+  test("a Client Component reads live params via the route object", async ({
+    page,
+  }) => {
+    await page.goto("/ja");
+    await expect(page.getByTestId("live-lang")).toHaveText("ja");
+
+    await page.getByTestId("link-en").click();
+    await expect(page.getByTestId("live-lang")).toHaveText("en");
+  });
 });

@@ -1,6 +1,48 @@
+import type { PartialRouteDefinition } from "@funstack/router/server";
 import type { ComponentType, ReactNode } from "react";
 
 export type MaybePromise<T> = T | Promise<T>;
+
+/**
+ * Opaque route object identifying the route of a page or layout.
+ *
+ * Passed to Server Component pages and layouts as the `route` prop. Pass it
+ * to a Client Component and give it to FUNSTACK Router's typed hooks
+ * (`useRouteParams(route)`) to read the params of the URL currently shown,
+ * which may differ from the build-time `params` prop after soft client-side
+ * navigation between pages of the same dynamic route.
+ *
+ * The `Params` type argument describes the route's dynamic params, like the
+ * `params` prop it is not verified against the route's actual path.
+ *
+ * @experimental File-system routing is experimental and not yet subject to
+ * semantic versioning.
+ */
+export type FsRouteObject<
+  Params extends Record<string, string> = Record<string, string>,
+> = PartialRouteDefinition<string, Params, unknown, undefined>;
+
+/**
+ * Props received by a Server Component page or layout under file-system
+ * routing: the concrete `params` the page was generated with, and the
+ * {@link FsRouteObject | route object} identifying its route.
+ *
+ * Client Component pages and layouts do not receive `route`; FUNSTACK Router
+ * renders them directly with the live `params` of the current match (along
+ * with its other route component props), so they stay correct across soft
+ * client-side navigation on their own.
+ *
+ * @experimental File-system routing is experimental and not yet subject to
+ * semantic versioning.
+ */
+export interface FsRouteComponentProps<
+  Params extends Record<string, string> = Record<string, string>,
+> {
+  /** Dynamic route params. For a Server Component, the build-time values. */
+  params: Params;
+  /** Opaque route object for FUNSTACK Router's typed hooks. */
+  route: FsRouteObject<Params>;
+}
 
 /**
  * Module shape for a discovered route file (a page or a layout).
@@ -11,7 +53,10 @@ export type MaybePromise<T> = T | Promise<T>;
  */
 export interface FsRouteModule {
   /** The component for this page or layout. */
-  default?: ComponentType<{ params: Record<string, string> }> | ComponentType;
+  default?:
+    | ComponentType<FsRouteComponentProps>
+    | ComponentType<{ params: Record<string, string> }>
+    | ComponentType;
   /**
    * Function used to statically generate a dynamic route. Required for pages
    * whose route contains a dynamic segment; the build fails without it, since

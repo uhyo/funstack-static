@@ -9,8 +9,10 @@
 export { nextRoutes, type NextRoutesOptions } from "./nextAdapter";
 export type {
   FsRoutesAdapter,
+  FsRouteComponentProps,
   FsRouteFile,
   FsRouteModule,
+  FsRouteObject,
   FsRouteTreeNode,
   FsRootComponent,
   MaybePromise,

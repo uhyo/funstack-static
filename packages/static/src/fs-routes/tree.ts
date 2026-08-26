@@ -101,7 +101,7 @@ const CLIENT_REFERENCE = Symbol.for("react.client.reference");
  * `"use client"`. React's `registerClientReference` tags every such export
  * with `$$typeof`.
  */
-function isClientReference(value: unknown): boolean {
+export function isClientReference(value: unknown): boolean {
   return (
     typeof value === "function" &&
     "$$typeof" in value &&
