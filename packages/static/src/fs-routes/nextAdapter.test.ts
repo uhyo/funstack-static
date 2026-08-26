@@ -262,6 +262,17 @@ describe("nextRoutes adapter", () => {
     ]);
   });
 
+  it("records the source file path on each node", () => {
+    const tree = nextRoutes().buildRoutes(
+      makeFiles(["layout.tsx", "page.tsx", "blog/[slug]/page.tsx"]),
+    );
+    expect(tree[0]!.filePath).toBe("layout.tsx");
+    expect(tree[0]!.children!.map((child) => child.filePath)).toEqual([
+      "page.tsx",
+      "blog/[slug]/page.tsx",
+    ]);
+  });
+
   it("honours custom page/layout file names", () => {
     const adapter = nextRoutes({
       pageFileName: "index",

@@ -14,6 +14,24 @@ function pageModule(
   return { default: () => null, generateStaticParams };
 }
 
+function clientReference(name: string): () => never {
+  return Object.defineProperties(
+    (): never => {
+      throw new Error(
+        `Unexpectedly client reference export '${name}' is called on server`,
+      );
+    },
+    { $$typeof: { value: Symbol.for("react.client.reference") } },
+  );
+}
+
+function clientPageModule(): FsRouteModule {
+  return {
+    default: clientReference("default"),
+    generateStaticParams: clientReference("generateStaticParams"),
+  };
+}
+
 describe("collectStaticPaths", () => {
   it("collects static pages, including index pages under a layout", async () => {
     const tree: FsRouteTreeNode[] = [
@@ -112,6 +130,61 @@ describe("collectStaticPaths", () => {
       },
     ];
     await expect(collectStaticPaths(tree)).rejects.toThrow(/slug/);
+  });
+
+  it("allows a client component page on a static route", async () => {
+    const tree: FsRouteTreeNode[] = [
+      {
+        path: "/about",
+        page: true,
+        module: { default: clientReference("default") },
+        filePath: "about/page.tsx",
+      },
+    ];
+    const pages = await collectStaticPaths(tree);
+    expect(pages).toEqual([{ urlPath: "/about", params: {} }]);
+  });
+
+  it('explains that a "use client" page cannot export generateStaticParams', async () => {
+    const tree: FsRouteTreeNode[] = [
+      {
+        path: "/blog/:slug",
+        page: true,
+        module: clientPageModule(),
+        filePath: "blog/[slug]/page.tsx",
+      },
+    ];
+    await expect(collectStaticPaths(tree)).rejects.toThrow(
+      /\("blog\/\[slug\]\/page\.tsx"\).*marked "use client"/,
+    );
+  });
+
+  it("names the source file in errors when the node carries one", async () => {
+    const tree: FsRouteTreeNode[] = [
+      {
+        path: "/blog/:slug",
+        page: true,
+        module: component,
+        filePath: "blog/[slug]/page.tsx",
+      },
+    ];
+    await expect(collectStaticPaths(tree)).rejects.toThrow(
+      /\("blog\/\[slug\]\/page\.tsx"\) has no generateStaticParams/,
+    );
+  });
+
+  it("names the source file when a param value is missing", async () => {
+    const tree: FsRouteTreeNode[] = [
+      {
+        path: "/blog/:slug",
+        page: true,
+        module: pageModule(() => [{ other: "x" }]),
+        filePath: "blog/[slug]/page.tsx",
+      },
+    ];
+    await expect(collectStaticPaths(tree)).rejects.toThrow(
+      /\("blog\/\[slug\]\/page\.tsx"\) is missing a value for param "slug"/,
+    );
   });
 });
 
