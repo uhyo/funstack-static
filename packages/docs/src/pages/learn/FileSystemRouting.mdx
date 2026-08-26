@@ -122,6 +122,16 @@ This generates `blog/hello.html` and `blog/world.html`. Each page component rece
 
 A dynamic route **must** export `generateStaticParams`; the build fails otherwise. A static site can only serve pages that were enumerated at build time, so a dynamic route without it would produce no output.
 
+Because `generateStaticParams` runs on the server at build time, a page module that exports it cannot be marked `"use client"`. If the page body needs to be a Client Component, move it into a separate `"use client"` module and re-export it from the page:
+
+```tsx
+// src/pages/blog/[slug]/page.tsx (a Server Component)
+export function generateStaticParams() {
+  return [{ slug: "hello" }, { slug: "world" }];
+}
+export { default } from "./_page"; // _page.tsx is marked "use client"
+```
+
 > **Note:** Because static hosting serves one pre-rendered RSC payload per page, soft client-side navigation between different values of the _same_ dynamic route reflects the params of the initially-loaded page. Loading a dynamic URL directly always renders the correct params. Static routes and layouts navigate fully on the client.
 
 ## Custom Conventions (Adapters)

@@ -25,7 +25,9 @@ interface TrieNode {
   /** Raw directory segment name (`""` for the routes-directory root). */
   segment: string;
   page?: FsRouteModule;
+  pageFile?: string;
   layout?: FsRouteModule;
+  layoutFile?: string;
   children: Map<string, TrieNode>;
 }
 
@@ -178,20 +180,38 @@ function emit(node: TrieNode, prefix: string[]): FsRouteTreeNode[] {
   if (node.layout) {
     const children: FsRouteTreeNode[] = [];
     if (node.page) {
-      children.push({ path: "/", module: node.page, page: true });
+      children.push({
+        path: "/",
+        module: node.page,
+        filePath: node.pageFile,
+        page: true,
+      });
     }
     for (const child of childNodes) {
       children.push(...emit(child, []));
     }
     children.sort(compareNodes);
     const path = here.length === 0 ? undefined : `/${here.join("/")}`;
-    return [{ path, module: node.layout, page: false, children }];
+    return [
+      {
+        path,
+        module: node.layout,
+        filePath: node.layoutFile,
+        page: false,
+        children,
+      },
+    ];
   }
 
   const result: FsRouteTreeNode[] = [];
   if (node.page) {
     const path = here.length === 0 ? "/" : `/${here.join("/")}`;
-    result.push({ path, module: node.page, page: true });
+    result.push({
+      path,
+      module: node.page,
+      filePath: node.pageFile,
+      page: true,
+    });
   }
   for (const child of childNodes) {
     result.push(...emit(child, here));
@@ -285,8 +305,10 @@ export function nextRoutes(options: NextRoutesOptions = {}): FsRoutesAdapter {
         const node = ensureDir(root, dirs);
         if (kind === "page") {
           node.page = file.module;
+          node.pageFile = file.filePath;
         } else {
           node.layout = file.module;
+          node.layoutFile = file.filePath;
         }
       }
       return emit(root, []);

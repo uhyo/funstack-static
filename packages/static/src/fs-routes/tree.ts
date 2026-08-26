@@ -94,10 +94,33 @@ function isDynamicSegment(segment: string): boolean {
   return segment.startsWith(":");
 }
 
+const CLIENT_REFERENCE = Symbol.for("react.client.reference");
+
+/**
+ * Whether a module export is a client reference, meaning the module is marked
+ * `"use client"`. React's `registerClientReference` tags every such export
+ * with `$$typeof`.
+ */
+function isClientReference(value: unknown): boolean {
+  return (
+    typeof value === "function" &&
+    "$$typeof" in value &&
+    value.$$typeof === CLIENT_REFERENCE
+  );
+}
+
+/**
+ * Formats the source file of a route for an error message, when known.
+ */
+function inFile(filePath: string | undefined): string {
+  return filePath === undefined ? "" : ` ("${filePath}")`;
+}
+
 async function addPagesForLeaf(
   segments: string[],
   module: FsRouteModule,
   pages: StaticPage[],
+  filePath: string | undefined,
 ): Promise<void> {
   const dynamicSegments = segments.filter(isDynamicSegment);
 
@@ -107,9 +130,19 @@ async function addPagesForLeaf(
   }
 
   const generate = module.generateStaticParams;
+  if (isClientReference(generate)) {
+    throw new Error(
+      `Dynamic route "${segmentsToUrl(segments)}"${inFile(filePath)} exports ` +
+        `generateStaticParams() from a module marked "use client". ` +
+        `generateStaticParams() runs on the server at build time, so a page module ` +
+        `cannot be a Client Component. Move the component body into a separate ` +
+        `"use client" module and re-export it from the page: ` +
+        `export { default } from "./_page";`,
+    );
+  }
   if (typeof generate !== "function") {
     throw new Error(
-      `Dynamic route "${segmentsToUrl(segments)}" has no generateStaticParams() export. ` +
+      `Dynamic route "${segmentsToUrl(segments)}"${inFile(filePath)} has no generateStaticParams() export. ` +
         `Every page of a static site must be enumerated at build time; ` +
         `export generateStaticParams() from the page module to list the params to pre-render.`,
     );
@@ -123,7 +156,7 @@ async function addPagesForLeaf(
       const value = params[name];
       if (value === undefined) {
         throw new Error(
-          `generateStaticParams() for "${segmentsToUrl(segments)}" is missing a value for param "${name}".`,
+          `generateStaticParams() for "${segmentsToUrl(segments)}"${inFile(filePath)} is missing a value for param "${name}".`,
         );
       }
       return value;
@@ -142,7 +175,7 @@ async function walk(
       node.path !== undefined ? splitRoutePath(node.path) : [];
     const segments = [...prefixSegments, ...ownSegments];
     if (node.page) {
-      await addPagesForLeaf(segments, node.module, pages);
+      await addPagesForLeaf(segments, node.module, pages, node.filePath);
     }
     if (node.children) {
       await walk(node.children, segments, pages);

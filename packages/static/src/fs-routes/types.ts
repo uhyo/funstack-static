@@ -17,6 +17,10 @@ export interface FsRouteModule {
    * whose route contains a dynamic segment; the build fails without it, since
    * a static site cannot serve pages that were not enumerated at build time.
    *
+   * Runs on the server at build time, so the exporting module cannot be
+   * marked `"use client"`; move the page body into a separate `"use client"`
+   * module and re-export it as `default` instead.
+   *
    * Returns the list of concrete params to pre-render. Each entry maps every
    * dynamic param name in the route's path to a concrete string value. For a
    * catch-all segment, the value may contain slashes.
@@ -58,6 +62,12 @@ export interface FsRouteTreeNode {
   path?: string;
   /** The module providing this node's component (page or layout). */
   module: FsRouteModule;
+  /**
+   * Path of the file that provided this node's module, relative to the routes
+   * directory (as in {@link FsRouteFile.filePath}). Adapters should set this
+   * so that error messages can name the offending file.
+   */
+  filePath?: string;
   /**
    * Whether this node is a concrete page that should be statically generated.
    * Layout nodes set this to `false`.
