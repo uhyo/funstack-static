@@ -137,11 +137,11 @@ export { default } from "./_page"; // _page.tsx is marked "use client"
 Loading any generated URL directly always renders the correct params. During soft client-side navigation between pages of the _same_ dynamic route (say, from `/blog/hello` to `/blog/world`), what the `params` prop holds depends on the kind of the component:
 
 - **Client Components** (pages and layouts marked `"use client"`) are rendered by FUNSTACK Router in the browser, so they receive the **live** params of the URL currently shown. They stay correct across soft navigation.
-- **Server Components** render once at build time, so their `params` prop — and their entire rendered output — reflects the values the page was generated with. Because static hosting serves one pre-rendered RSC payload per page, nothing can re-render a Server Component with different params in the browser.
+- **Server Components** render once at build time, so their `params` prop — and their entire rendered output — currently reflects the values the page was generated with after such a navigation. This is a temporary limitation, not the intended end state: the destination page's pre-rendered RSC payload exists in the build output, and loading it on client-side navigation so that Server Component pages update too is being worked on ([#174](https://github.com/uhyo/funstack-static/issues/174)). Until then, use the route object below to read live params, or make the page body a Client Component if it must fully react to param changes.
 
 ### Reading Live Params with the Route Object
 
-Server Component pages and layouts additionally receive a `route` prop: an opaque **route object** identifying their route. Pass it to a Client Component and hand it to FUNSTACK Router's [`useRouteParams`](https://github.com/uhyo/funstack-router) hook to read the live params of the current URL:
+Every page and layout receives a `route` prop: an opaque **route object** identifying its route. In a Client Component, hand it to FUNSTACK Router's [`useRouteParams`](https://github.com/uhyo/funstack-router) hook to read the live params of the current URL. A Server Component cannot use hooks itself, but can forward the prop to a Client Component:
 
 ```tsx
 // src/pages/blog/[slug]/page.tsx (a Server Component)
@@ -181,11 +181,9 @@ export function LiveSlug({
 }
 ```
 
-The `FsRouteComponentProps<Params>` helper types both props of a Server Component page or layout. Like the `params` prop itself, the `Params` type argument is declared by you and not verified against the route's path.
+The `FsRouteComponentProps<Params>` helper types the `params` and `route` props any page or layout receives. Like the `params` prop itself, the `Params` type argument is declared by you and not verified against the route's path.
 
-Client Components do not receive `route` — they don't need it, since FUNSTACK Router already passes them the live `params` directly (along with its other [route component props](https://github.com/uhyo/funstack-router)).
-
-> **Note:** The rest of a Server Component page's output still shows its build-time content after soft navigation to another param value of the same route. If a page must fully react to param changes on client-side navigation, make its body a Client Component (see the re-export pattern above).
+The `route` prop reaches the two kinds of components differently, with the same result: FUNSTACK Static passes it to Server Components at build time, while FUNSTACK Router (v1.4.0 or later) passes it to Client Components at render time — along with the live `params` and its other [route component props](https://github.com/uhyo/funstack-router).
 
 ## Custom Conventions (Adapters)
 

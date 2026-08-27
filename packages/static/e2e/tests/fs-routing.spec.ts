@@ -122,12 +122,16 @@ test.describe("Dynamic params on soft client-side navigation", () => {
     await expect(page.getByTestId("lang-layout-lang")).toHaveText("en");
   });
 
-  test("a Client Component page receives live params", async ({ page }) => {
+  test("a Client Component page receives live params and its route object", async ({
+    page,
+  }) => {
     await page.goto("/en/client");
     await expect(page.getByTestId("client-page-lang")).toHaveText("en");
+    await expect(page.getByTestId("client-page-hook-lang")).toHaveText("en");
 
     await page.getByTestId("link-ja-client").click();
     await expect(page.getByTestId("client-page-lang")).toHaveText("ja");
+    await expect(page.getByTestId("client-page-hook-lang")).toHaveText("ja");
   });
 
   test("a Client Component reads live params via the route object under a Server Component page", async ({

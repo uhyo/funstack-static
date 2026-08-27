@@ -1,18 +1,17 @@
-import type { PartialRouteDefinition } from "@funstack/router/server";
+import type { RouteHandle } from "@funstack/router";
 import type { ComponentType, ReactNode } from "react";
 
 export type MaybePromise<T> = T | Promise<T>;
 
 /**
- * Opaque route object identifying the route of a page or layout.
+ * Opaque route object identifying the route of a page or layout, received as
+ * the `route` prop. Give it to FUNSTACK Router's typed hooks
+ * (`useRouteParams(route)`, in a Client Component) to read the params of the
+ * URL currently shown, which may differ from a Server Component's build-time
+ * `params` prop after soft client-side navigation between pages of the same
+ * dynamic route.
  *
- * Passed to Server Component pages and layouts as the `route` prop. Pass it
- * to a Client Component and give it to FUNSTACK Router's typed hooks
- * (`useRouteParams(route)`) to read the params of the URL currently shown,
- * which may differ from the build-time `params` prop after soft client-side
- * navigation between pages of the same dynamic route.
- *
- * The `Params` type argument describes the route's dynamic params, like the
+ * The `Params` type argument describes the route's dynamic params; like the
  * `params` prop it is not verified against the route's actual path.
  *
  * @experimental File-system routing is experimental and not yet subject to
@@ -20,17 +19,17 @@ export type MaybePromise<T> = T | Promise<T>;
  */
 export type FsRouteObject<
   Params extends Record<string, string> = Record<string, string>,
-> = PartialRouteDefinition<string, Params, unknown, undefined>;
+> = RouteHandle<string, Params, unknown, undefined>;
 
 /**
- * Props received by a Server Component page or layout under file-system
- * routing: the concrete `params` the page was generated with, and the
- * {@link FsRouteObject | route object} identifying its route.
+ * Props received by every page or layout under file-system routing: the
+ * route's dynamic `params`, and the {@link FsRouteObject | route object}
+ * identifying its route.
  *
- * Client Component pages and layouts do not receive `route`; FUNSTACK Router
- * renders them directly with the live `params` of the current match (along
- * with its other route component props), so they stay correct across soft
- * client-side navigation on their own.
+ * A Server Component receives exactly these props, with the `params` the
+ * page was generated with. A Client Component is rendered by FUNSTACK Router
+ * with the live `params` of the current match, plus the router's other route
+ * component props; these two are the subset shared by both kinds.
  *
  * @experimental File-system routing is experimental and not yet subject to
  * semantic versioning.
@@ -38,7 +37,10 @@ export type FsRouteObject<
 export interface FsRouteComponentProps<
   Params extends Record<string, string> = Record<string, string>,
 > {
-  /** Dynamic route params. For a Server Component, the build-time values. */
+  /**
+   * Dynamic route params. Build-time values for a Server Component; live
+   * values for a Client Component.
+   */
   params: Params;
   /** Opaque route object for FUNSTACK Router's typed hooks. */
   route: FsRouteObject<Params>;

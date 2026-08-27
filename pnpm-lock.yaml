@@ -42,8 +42,8 @@ importers:
   packages/docs:
     dependencies:
       '@funstack/router':
-        specifier: ^1.2.0
-        version: 1.2.0(react@19.2.8)
+        specifier: ^1.4.0
+        version: 1.4.0(react-dom@19.2.8(react@19.2.8))(react@19.2.8)
       '@funstack/static':
         specifier: workspace:*
         version: link:../static
@@ -125,8 +125,8 @@ importers:
   packages/example-fs-routing:
     dependencies:
       '@funstack/router':
-        specifier: ^1.2.0
-        version: 1.2.0(react@19.2.8)
+        specifier: ^1.4.0
+        version: 1.4.0(react-dom@19.2.8(react@19.2.8))(react@19.2.8)
       '@funstack/static':
         specifier: workspace:*
         version: link:../static
@@ -172,8 +172,8 @@ importers:
         version: 0.12.5
     devDependencies:
       '@funstack/router':
-        specifier: ^1.2.0
-        version: 1.2.0(react@19.2.8)
+        specifier: ^1.4.0
+        version: 1.4.0(react-dom@19.2.8(react@19.2.8))(react@19.2.8)
       '@playwright/test':
         specifier: ^1.62.1
         version: 1.62.1
@@ -232,8 +232,8 @@ importers:
   packages/static/e2e/fixture-fs-routing:
     devDependencies:
       '@funstack/router':
-        specifier: ^1.2.0
-        version: 1.2.0(react@19.2.8)
+        specifier: ^1.4.0
+        version: 1.4.0(react-dom@19.2.8(react@19.2.8))(react@19.2.8)
       '@funstack/static':
         specifier: workspace:*
         version: link:../..
@@ -383,8 +383,8 @@ packages:
       '@csstools/css-parser-algorithms': ^4.0.0
       '@csstools/css-tokenizer': ^4.0.0
 
-  '@csstools/css-color-parser@4.2.0':
-    resolution: {integrity: sha512-5+5LEmFuY1AjXdYhmgjTJogtQnP1evJ1zrBZGUNZ0thkpwnnmKxcHdAMn/OtFjAb25zA+jKDVYVRl+5G7rjv1A==}
+  '@csstools/css-color-parser@4.2.1':
+    resolution: {integrity: sha512-YpAJZhaHplYQkG8ib+/Fx5Y0eF2lVWi3tIvMJA6i39TLyUNp2439cifzW8VMjhlqrBjHzK5hVGugRRm2zTKI/A==}
     engines: {node: '>=20.19.0'}
     peerDependencies:
       '@csstools/css-parser-algorithms': ^4.0.0
@@ -396,8 +396,8 @@ packages:
     peerDependencies:
       '@csstools/css-tokenizer': ^4.0.0
 
-  '@csstools/css-syntax-patches-for-csstree@1.1.8':
-    resolution: {integrity: sha512-CpMLjAvwQg3BL5S0IeqsZNMH7EQrEWi0kLKOC13ZBF0ZwERiLWlibNPJr8G1kdU3Ms/r2KiNrF81pUh2HwAHdg==}
+  '@csstools/css-syntax-patches-for-csstree@1.1.9':
+    resolution: {integrity: sha512-iGGw4OsAYsS6pD29MdJ2bX/nJx65a04ZZiw6x+VwWlP2DdXf6f++Zmuv/OzALpdyfVhjbduIIF2cXM7HWBIe9A==}
     peerDependencies:
       css-tree: ^3.2.1
     peerDependenciesMeta:
@@ -750,11 +750,12 @@ packages:
       '@noble/hashes':
         optional: true
 
-  '@funstack/router@1.2.0':
-    resolution: {integrity: sha512-Y2OLyxcqx+TaijRa/MyA2ue7bk5svIPhjx/yvKHeQ1gB6O7gdI+D5gnuWn4W6zLuGmAXeopWd9Qco1AdnPWwQQ==}
+  '@funstack/router@1.4.0':
+    resolution: {integrity: sha512-hGBtHzNGWiCWzM+THX30oMk4wIzpfEVuIjFbh7vDz2F2gOZhHh+pbUB86VxxbWj+mLoadxts7d0JLDVK3IFRNw==}
     hasBin: true
     peerDependencies:
       react: ^19.2.0
+      react-dom: ^19.2.0
 
   '@funstack/skill-installer@1.1.0':
     resolution: {integrity: sha512-reB4V8FE8foqDULiqOhrlMq5ZqrdKpqlM8ulU/gtklf9OW71O4w5z5EZWjzygmIthmTriDo745EcRGm5+DQR1w==}
@@ -2764,11 +2765,11 @@ packages:
     resolution: {integrity: sha512-yau8yJdTt989Mm0Bd/236QnzEiPf2xLLTqUZRUJOo/3CB078LSwzei343DgtJVmfJKJE3TMINY1u42SQsP6mXw==}
     engines: {node: '>=14.0.0'}
 
-  tldts-core@7.4.10:
-    resolution: {integrity: sha512-KnQjp53ZekKgm/r3l+u8kJGGzYgrWdP8+Mql7a4vijh2WE0IrZWspQj/TpTxDho/YxO+AnOZnIjQcCD+q6iJsw==}
+  tldts-core@7.4.11:
+    resolution: {integrity: sha512-CW3WN2rIIE/Of21mulhgnGOwoDyEFNygyIBOONSdyAuSATgMMUCpLeUlB+E8sAwA5xRV9hYPl+kyZ9citHCaKg==}
 
-  tldts@7.4.10:
-    resolution: {integrity: sha512-GgouD1B+sWwvkaEq8vXC15DjQitxbvs12oIXELpconwm+Tg3zfcEv4jgzq3vtKverDXsg3VI8aRgNL2Nra0Iog==}
+  tldts@7.4.11:
+    resolution: {integrity: sha512-aBiNayCfTQxuIJBm06M+xR14cYaYlDlSXZbgsnKzKNxDKUVq7KFwTjwBSsb7m9Y5xO8WfPnBc63WaYFMTGlvqw==}
     hasBin: true
 
   tough-cookie@6.0.2:
@@ -3068,7 +3069,7 @@ snapshots:
     dependencies:
       '@asamuzakjp/generational-cache': 1.0.1
       '@csstools/css-calc': 3.3.0(@csstools/css-parser-algorithms@4.0.0(@csstools/css-tokenizer@4.0.0))(@csstools/css-tokenizer@4.0.0)
-      '@csstools/css-color-parser': 4.2.0(@csstools/css-parser-algorithms@4.0.0(@csstools/css-tokenizer@4.0.0))(@csstools/css-tokenizer@4.0.0)
+      '@csstools/css-color-parser': 4.2.1(@csstools/css-parser-algorithms@4.0.0(@csstools/css-tokenizer@4.0.0))(@csstools/css-tokenizer@4.0.0)
       '@csstools/css-parser-algorithms': 4.0.0(@csstools/css-tokenizer@4.0.0)
       '@csstools/css-tokenizer': 4.0.0
     optional: true
@@ -3129,7 +3130,7 @@ snapshots:
       '@csstools/css-tokenizer': 4.0.0
     optional: true
 
-  '@csstools/css-color-parser@4.2.0(@csstools/css-parser-algorithms@4.0.0(@csstools/css-tokenizer@4.0.0))(@csstools/css-tokenizer@4.0.0)':
+  '@csstools/css-color-parser@4.2.1(@csstools/css-parser-algorithms@4.0.0(@csstools/css-tokenizer@4.0.0))(@csstools/css-tokenizer@4.0.0)':
     dependencies:
       '@csstools/color-helpers': 6.1.1
       '@csstools/css-calc': 3.3.0(@csstools/css-parser-algorithms@4.0.0(@csstools/css-tokenizer@4.0.0))(@csstools/css-tokenizer@4.0.0)
@@ -3142,7 +3143,7 @@ snapshots:
       '@csstools/css-tokenizer': 4.0.0
     optional: true
 
-  '@csstools/css-syntax-patches-for-csstree@1.1.8(css-tree@3.2.1)':
+  '@csstools/css-syntax-patches-for-csstree@1.1.9(css-tree@3.2.1)':
     optionalDependencies:
       css-tree: 3.2.1
     optional: true
@@ -3346,10 +3347,11 @@ snapshots:
   '@exodus/bytes@1.15.1':
     optional: true
 
-  '@funstack/router@1.2.0(react@19.2.8)':
+  '@funstack/router@1.4.0(react-dom@19.2.8(react@19.2.8))(react@19.2.8)':
     dependencies:
       '@funstack/skill-installer': 1.1.0
       react: 19.2.8
+      react-dom: 19.2.8(react@19.2.8)
 
   '@funstack/skill-installer@1.1.0': {}
 
@@ -4520,7 +4522,7 @@ snapshots:
       '@asamuzakjp/css-color': 5.1.11
       '@asamuzakjp/dom-selector': 7.1.1
       '@bramus/specificity': 2.4.2
-      '@csstools/css-syntax-patches-for-csstree': 1.1.8(css-tree@3.2.1)
+      '@csstools/css-syntax-patches-for-csstree': 1.1.9(css-tree@3.2.1)
       '@exodus/bytes': 1.15.1
       css-tree: 3.2.1
       data-urls: 7.0.0
@@ -5334,17 +5336,17 @@ snapshots:
 
   tinyrainbow@3.1.1: {}
 
-  tldts-core@7.4.10:
+  tldts-core@7.4.11:
     optional: true
 
-  tldts@7.4.10:
+  tldts@7.4.11:
     dependencies:
-      tldts-core: 7.4.10
+      tldts-core: 7.4.11
     optional: true
 
   tough-cookie@6.0.2:
     dependencies:
-      tldts: 7.4.10
+      tldts: 7.4.11
     optional: true
 
   tr46@6.0.0:

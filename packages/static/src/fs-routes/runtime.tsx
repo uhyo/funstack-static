@@ -13,10 +13,10 @@ import type { EntryDefinition, GetEntriesResult } from "../entryDefinition";
 import { nextRoutes } from "./nextAdapter";
 import {
   collectStaticPaths,
-  isClientReference,
   modulesToRouteFiles,
   urlPathToFilePath,
 } from "./tree";
+import { isClientReference } from "../util/clientReference";
 
 /**
  * Options for {@link createFsRoutesEntries}.
@@ -117,7 +117,7 @@ export function createFsRoutesEntries(
           // The route object lets Client Components below it read the live
           // params through FUNSTACK Router's typed hooks.
           // The typed hooks resolve a route object by its runtime `id`; the
-          // branding symbol of `PartialRouteDefinition` is type-level only.
+          // branding symbol of `RouteHandle` is type-level only.
           const route = { id } as unknown as FsRouteObject;
           definition.component = createElement(
             Component as React.ComponentType<FsRouteComponentProps>,
