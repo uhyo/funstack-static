@@ -11,6 +11,10 @@ test.describe("File-system routing build output", () => {
       "/blog/world",
       "/dashboard",
       "/dashboard/settings",
+      "/en",
+      "/ja",
+      "/en/client",
+      "/ja/client",
     ]) {
       const response = await request.get(path);
       expect(response.ok(), `expected ${path} to be served`).toBe(true);
@@ -84,6 +88,17 @@ test.describe("File-system routing rendering", () => {
     await expect(page.getByTestId("page-id")).toHaveText("dashboard");
   });
 
+  test("renders correct params when a dynamic page is loaded directly", async ({
+    page,
+  }) => {
+    for (const lang of ["en", "ja"]) {
+      await page.goto(`/${lang}`);
+      await expect(page.getByTestId("lang-layout-lang")).toHaveText(lang);
+      await expect(page.getByTestId("lang-page-lang")).toHaveText(lang);
+      await expect(page.getByTestId("live-lang")).toHaveText(lang);
+    }
+  });
+
   test("no JavaScript errors while navigating", async ({ page }) => {
     const errors: string[] = [];
     page.on("pageerror", (error) => {
@@ -93,6 +108,58 @@ test.describe("File-system routing rendering", () => {
     await page.waitForLoadState("networkidle");
     await page.getByRole("link", { name: "Dashboard" }).click();
     await expect(page.getByTestId("page-id")).toHaveText("dashboard");
+    expect(errors).toEqual([]);
+  });
+});
+
+test.describe("Dynamic params on soft client-side navigation", () => {
+  test("a Client Component layout receives live params", async ({ page }) => {
+    await page.goto("/ja");
+    await expect(page.getByTestId("lang-layout-lang")).toHaveText("ja");
+
+    await page.getByTestId("link-en").click();
+    await expect(page.getByTestId("lang-layout-pathname")).toHaveText("/en");
+    await expect(page.getByTestId("lang-layout-lang")).toHaveText("en");
+  });
+
+  test("a Client Component page receives live params and its route object", async ({
+    page,
+  }) => {
+    await page.goto("/en/client");
+    await expect(page.getByTestId("client-page-lang")).toHaveText("en");
+    await expect(page.getByTestId("client-page-hook-lang")).toHaveText("en");
+
+    await page.getByTestId("link-ja-client").click();
+    await expect(page.getByTestId("client-page-lang")).toHaveText("ja");
+    await expect(page.getByTestId("client-page-hook-lang")).toHaveText("ja");
+  });
+
+  test("a Client Component reads live params via the route object under a Server Component page", async ({
+    page,
+  }) => {
+    await page.goto("/ja");
+    await expect(page.getByTestId("live-lang")).toHaveText("ja");
+
+    await page.getByTestId("link-en").click();
+    await expect(page.getByTestId("live-lang")).toHaveText("en");
+    // The Server Component page's own output was rendered at build time and
+    // keeps its build-time params — the documented static-hosting limitation.
+    await expect(page.getByTestId("lang-page-lang")).toHaveText("ja");
+  });
+
+  test("no JavaScript errors while navigating between dynamic pages", async ({
+    page,
+  }) => {
+    const errors: string[] = [];
+    page.on("pageerror", (error) => {
+      errors.push(error.message);
+    });
+    await page.goto("/ja");
+    await page.waitForLoadState("networkidle");
+    await page.getByTestId("link-en").click();
+    await expect(page.getByTestId("lang-layout-lang")).toHaveText("en");
+    await page.getByTestId("link-en-client").click();
+    await expect(page.getByTestId("client-page-lang")).toHaveText("en");
     expect(errors).toEqual([]);
   });
 });
