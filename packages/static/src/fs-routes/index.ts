@@ -18,4 +18,5 @@ export type {
   MaybePromise,
 } from "./types";
 export { collectStaticPaths, urlPathToFilePath, type StaticPage } from "./tree";
-export { createFsRoutesEntries, type CreateFsRoutesOptions } from "./runtime";
+export { createFsRoutesEntries } from "./entries";
+export type { CreateFsRoutesOptions } from "./runtime";

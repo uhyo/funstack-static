@@ -1,8 +1,12 @@
-import { isValidElement } from "react";
+import { isValidElement, type ReactElement } from "react";
 import { describe, expect, it } from "vitest";
-import { createFsRoutesEntries } from "./runtime";
+import {
+  createFsRoutesEntriesWithHost,
+  type FsRoutesRuntimeHost,
+} from "./runtime";
 import type { EntryDefinition } from "../entryDefinition";
 import type { FsRouteComponentProps, FsRouteModule } from "./types";
+import type { FsRouteSlotProps } from "./slot";
 
 function clientReference(): () => never {
   return Object.defineProperties(
@@ -14,6 +18,34 @@ function clientReference(): () => never {
 }
 
 const Root = ({ children }: { children: React.ReactNode }) => children;
+
+const FakeSlot = (_props: FsRouteSlotProps): React.ReactNode => null;
+
+interface RegisteredChunk {
+  element: ReactElement<FsRouteComponentProps>;
+  name: string;
+  id: string;
+}
+
+function fakeHost(): {
+  host: FsRoutesRuntimeHost;
+  registered: RegisteredChunk[];
+} {
+  const registered: RegisteredChunk[] = [];
+  const host: FsRoutesRuntimeHost = {
+    registerChunk(element, name) {
+      const id = `fun__rsc-payload/chunk-${registered.length}`;
+      registered.push({
+        element: element as ReactElement<FsRouteComponentProps>,
+        name,
+        id,
+      });
+      return id;
+    },
+    RouteSlot: FakeSlot,
+  };
+  return { host, registered };
+}
 
 interface DefinitionLike {
   id?: string;
@@ -48,17 +80,28 @@ function collectDefinitions(
 
 async function entriesFor(
   modules: Record<string, FsRouteModule>,
+  host: FsRoutesRuntimeHost = fakeHost().host,
 ): Promise<EntryDefinition[]> {
-  const getEntries = createFsRoutesEntries({
-    modules,
-    base: "./pages",
-    root: Root,
-  });
+  const getEntries = createFsRoutesEntriesWithHost(
+    {
+      modules,
+      base: "./pages",
+      root: Root,
+    },
+    host,
+  );
   const entries: EntryDefinition[] = [];
   for await (const entry of getEntries()) {
     entries.push(entry);
   }
   return entries;
+}
+
+function slotOf(definition: DefinitionLike): FsRouteSlotProps {
+  expect(isValidElement(definition.component)).toBe(true);
+  const element = definition.component as ReactElement<FsRouteSlotProps>;
+  expect(element.type).toBe(FakeSlot);
+  return element.props;
 }
 
 describe("createFsRoutesEntries route definitions", () => {
@@ -79,16 +122,87 @@ describe("createFsRoutesEntries route definitions", () => {
     expect(layout.component).toBe(clientLayout);
   });
 
-  it("renders a Server Component with build-time params and its route object", async () => {
+  it("wraps a Server Component in a slot with build-time output and its route object", async () => {
     const entries = await entriesFor(modules);
     const routes = routesOfEntry(entries.find((e) => e.path === "ja.html")!);
     const layout = routes.find((d) => d.path === "/:lang")!;
     const page = layout.children!.find((d) => d.path === "/")!;
-    expect(isValidElement(page.component)).toBe(true);
-    const props = (page.component as React.ReactElement<FsRouteComponentProps>)
-      .props;
-    expect(props.params).toEqual({ lang: "ja" });
-    expect(props.route).toEqual({ id: page.id });
+    const slot = slotOf(page);
+    expect(slot.route).toEqual({ id: page.id });
+    expect(slot.paramNames).toEqual(["lang"]);
+    expect(slot.initialKey).toBe('["ja"]');
+    expect(isValidElement(slot.initial)).toBe(true);
+    const initial = slot.initial as ReactElement<FsRouteComponentProps>;
+    expect(initial.props.params).toEqual({ lang: "ja" });
+    expect(initial.props.route).toEqual({ id: page.id });
+  });
+
+  it("registers one chunk per Server Component node per params combination", async () => {
+    const { host, registered } = fakeHost();
+    const entries = await entriesFor(modules, host);
+    // [lang]/page for en and ja, about/page once; the client layout gets none.
+    expect(registered).toHaveLength(3);
+    const langChunks = registered.filter((r) =>
+      r.name.startsWith("fs-route [lang]/page.tsx"),
+    );
+    expect(langChunks.map((r) => r.element.props.params)).toEqual([
+      { lang: "en" },
+      { lang: "ja" },
+    ]);
+
+    // Every page's payload carries the same chunk map for a given node.
+    const slots = entries.map((entry) => {
+      const routes = routesOfEntry(entry);
+      const layout = routes.find((d) => d.path === "/:lang")!;
+      return slotOf(layout.children!.find((d) => d.path === "/")!);
+    });
+    for (const slot of slots) {
+      expect(slot.chunks).toEqual({
+        '["en"]': langChunks[0]!.id,
+        '["ja"]': langChunks[1]!.id,
+      });
+    }
+  });
+
+  it("inlines build-time output only for nodes on the page's own chain", async () => {
+    const entries = await entriesFor(modules);
+    const routes = routesOfEntry(entries.find((e) => e.path === "en.html")!);
+    const about = routes.find((d) => d.path === "/about")!;
+    const slot = slotOf(about);
+    expect(slot.initialKey).toBeUndefined();
+    expect(slot.initial).toBeUndefined();
+    expect(Object.keys(slot.chunks)).toEqual(["[]"]);
+  });
+
+  it("restricts a Server Component layout's params to its own segments", async () => {
+    const { host, registered } = fakeHost();
+    const serverLayout = () => null;
+    await entriesFor(
+      {
+        "./pages/[lang]/docs/layout.tsx": { default: serverLayout },
+        "./pages/[lang]/docs/[slug]/page.tsx": {
+          default: () => null,
+          generateStaticParams: () => [
+            { lang: "en", slug: "a" },
+            { lang: "en", slug: "b" },
+            { lang: "ja", slug: "a" },
+          ],
+        },
+      },
+      host,
+    );
+    const layoutChunks = registered.filter((r) =>
+      r.name.startsWith("fs-route [lang]/docs/layout.tsx"),
+    );
+    // One chunk per lang, shared by all slugs, with only the lang param.
+    expect(layoutChunks.map((r) => r.element.props.params)).toEqual([
+      { lang: "en" },
+      { lang: "ja" },
+    ]);
+    const pageChunks = registered.filter((r) =>
+      r.name.startsWith("fs-route [lang]/docs/[slug]/page.tsx"),
+    );
+    expect(pageChunks).toHaveLength(3);
   });
 
   it("assigns a unique id to every route definition", async () => {

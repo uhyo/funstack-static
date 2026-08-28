@@ -15,6 +15,8 @@ test.describe("File-system routing build output", () => {
       "/ja",
       "/en/client",
       "/ja/client",
+      "/en/info",
+      "/ja/info",
     ]) {
       const response = await request.get(path);
       expect(response.ok(), `expected ${path} to be served`).toBe(true);
@@ -142,9 +144,46 @@ test.describe("Dynamic params on soft client-side navigation", () => {
 
     await page.getByTestId("link-en").click();
     await expect(page.getByTestId("live-lang")).toHaveText("en");
-    // The Server Component page's own output was rendered at build time and
-    // keeps its build-time params — the documented static-hosting limitation.
+  });
+
+  test("a Server Component page re-renders with the destination's params", async ({
+    page,
+  }) => {
+    await page.goto("/ja");
     await expect(page.getByTestId("lang-page-lang")).toHaveText("ja");
+
+    // The destination's pre-rendered RSC chunk is fetched on soft
+    // navigation, so the Server Component output shows the live params.
+    await page.getByTestId("link-en").click();
+    await expect(page.getByTestId("lang-page-lang")).toHaveText("en");
+
+    // Navigating back re-renders the build-time output of the loaded page.
+    await page.goBack();
+    await expect(page.getByTestId("lang-page-lang")).toHaveText("ja");
+  });
+
+  test("a Server Component layout and page under a dynamic segment update together", async ({
+    page,
+  }) => {
+    await page.goto("/en/info");
+    await expect(page.getByTestId("info-layout-lang")).toHaveText("en");
+    await expect(page.getByTestId("info-page-lang")).toHaveText("en");
+
+    await page.getByTestId("link-ja-info").click();
+    await expect(page.getByTestId("info-layout-lang")).toHaveText("ja");
+    await expect(page.getByTestId("info-page-lang")).toHaveText("ja");
+  });
+
+  test("navigates from a dynamic page into a nested Server Component page", async ({
+    page,
+  }) => {
+    await page.goto("/ja");
+    await page.getByTestId("link-en-info").click();
+    await expect(page.getByTestId("info-layout-lang")).toHaveText("en");
+    await expect(page.getByTestId("info-page-lang")).toHaveText("en");
+
+    await page.getByTestId("link-en-home").click();
+    await expect(page.getByTestId("lang-page-lang")).toHaveText("en");
   });
 
   test("no JavaScript errors while navigating between dynamic pages", async ({

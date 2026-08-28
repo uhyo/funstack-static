@@ -1,4 +1,4 @@
-import { createElement } from "react";
+import { createElement, type ComponentType, type ReactElement } from "react";
 import { Router } from "@funstack/router";
 import type { RouteDefinition } from "@funstack/router/server";
 import type {
@@ -13,10 +13,15 @@ import type { EntryDefinition, GetEntriesResult } from "../entryDefinition";
 import { nextRoutes } from "./nextAdapter";
 import {
   collectStaticPaths,
+  isDynamicSegment,
   modulesToRouteFiles,
+  paramName,
+  splitRoutePath,
   urlPathToFilePath,
+  type StaticPage,
 } from "./tree";
 import { isClientReference } from "../util/clientReference";
+import { paramsKey, pickParams, type FsRouteSlotProps } from "./slot";
 
 /**
  * Options for {@link createFsRoutesEntries}.
@@ -55,52 +60,154 @@ export interface CreateFsRoutesOptions {
 }
 
 /**
+ * Environment-specific services injected into the fs-routes runtime. The
+ * real host (attached by `createFsRoutesEntries` in `./entries`) uses the
+ * RSC runtime's defer registry; tests supply a fake to keep this module
+ * importable outside a Vite RSC environment.
+ */
+export interface FsRoutesRuntimeHost {
+  /**
+   * Registers a pre-rendered RSC chunk for a Server Component route node
+   * with one concrete params combination. Returns the payload ID under
+   * which the chunk is served (and baked into the slot's `chunks` map).
+   * `name` is a debugging label for build logs.
+   */
+  registerChunk(element: ReactElement, name: string): string;
+  /**
+   * The client component standing in for Server Component route nodes,
+   * resolving the chunk for the current match's params. A client reference
+   * to `FsRouteSlot` from `#rsc-client` in the real host.
+   */
+  RouteSlot: ComponentType<FsRouteSlotProps>;
+}
+
+/**
+ * Per-node routing metadata shared by every generated page: the stable
+ * definition id, the dynamic params visible to the node, and (for Server
+ * Component nodes) the registered chunk for each generated params
+ * combination.
+ */
+interface NodeMeta {
+  id: string;
+  route: FsRouteObject;
+  /** Dynamic param names consumed by segments at or above this node. */
+  paramNames: string[];
+  /**
+   * Chunk payload ID by params key, for Server Component nodes. Filled by
+   * chunk registration before any page is yielded.
+   */
+  chunks: Record<string, string>;
+}
+
+function buildNodeMetas(
+  nodes: FsRouteTreeNode[],
+  inheritedParamNames: string[],
+  idPrefix: string,
+  into: Map<FsRouteTreeNode, NodeMeta>,
+): void {
+  nodes.forEach((node, index) => {
+    // Unique id (by tree position) so that the route object passed to the
+    // component resolves to this route's context in the typed hooks; the
+    // file path is appended for legible debugging output.
+    const id = `${idPrefix}${index}${
+      node.filePath === undefined ? "" : ` ${node.filePath}`
+    }`;
+    const ownParamNames =
+      node.path === undefined
+        ? []
+        : splitRoutePath(node.path).filter(isDynamicSegment).map(paramName);
+    const paramNames = [...inheritedParamNames, ...ownParamNames];
+    // The typed hooks resolve a route object by its runtime `id`; the
+    // branding symbol of `RouteHandle` is type-level only.
+    const route = { id } as unknown as FsRouteObject;
+    into.set(node, { id, route, paramNames, chunks: {} });
+    if (node.children) {
+      buildNodeMetas(node.children, paramNames, `${idPrefix}${index}.`, into);
+    }
+  });
+}
+
+/**
+ * Registers one pre-rendered RSC chunk per Server Component node per params
+ * combination occurring among the generated pages, filling each node's
+ * `chunks` map. Client-side soft navigation fetches these chunks to render
+ * Server Component output for the destination's params.
+ */
+function registerChunks(
+  pages: StaticPage[],
+  metas: Map<FsRouteTreeNode, NodeMeta>,
+  host: FsRoutesRuntimeHost,
+): void {
+  const combos = new Map<
+    FsRouteTreeNode,
+    Map<string, Record<string, string>>
+  >();
+  for (const page of pages) {
+    for (const node of page.chain) {
+      const Component = node.module.default;
+      if (!Component || isClientReference(Component)) {
+        continue;
+      }
+      const meta = metas.get(node)!;
+      let nodeCombos = combos.get(node);
+      if (!nodeCombos) {
+        nodeCombos = new Map();
+        combos.set(node, nodeCombos);
+      }
+      const key = paramsKey(meta.paramNames, page.params);
+      if (!nodeCombos.has(key)) {
+        nodeCombos.set(key, pickParams(page.params, meta.paramNames));
+      }
+    }
+  }
+  for (const [node, nodeCombos] of combos) {
+    const meta = metas.get(node)!;
+    const Component = node.module
+      .default as ComponentType<FsRouteComponentProps>;
+    for (const [key, params] of nodeCombos) {
+      const element = createElement(Component, { params, route: meta.route });
+      meta.chunks[key] = host.registerChunk(
+        element,
+        `fs-route ${node.filePath ?? meta.id} ${key}`,
+      );
+    }
+  }
+}
+
+/**
  * Builds FUNSTACK Router state for file-system routing and returns a
  * `getEntries` function (the default export expected by the `entries` plugin
  * option). One entry is produced per statically-generated page.
  *
  * The route tree is built once via the adapter; the router route definitions
- * are rebuilt per page so that concrete dynamic `params` can be passed to the
- * route components.
+ * are rebuilt per page so that the page's own Server Component output can be
+ * inlined into its payload.
  *
- * @experimental File-system routing is experimental and not yet subject to
- * semantic versioning. Its API may change in a minor release.
- *
- * @example
- * ```tsx
- * // src/entries.tsx
- * import { createFsRoutesEntries } from "@funstack/static/fs-routes";
- * import Root from "./root";
- *
- * const modules = import.meta.glob("./pages/**\/*.{tsx,jsx}", { eager: true });
- *
- * export default createFsRoutesEntries({ modules, base: "./pages", root: Root });
- * ```
+ * This is the host-parameterized implementation behind
+ * `createFsRoutesEntries` (see `./entries`), kept free of RSC-runtime
+ * imports so it stays testable outside a Vite environment.
  */
-export function createFsRoutesEntries(
+export function createFsRoutesEntriesWithHost(
   options: CreateFsRoutesOptions,
+  host: FsRoutesRuntimeHost,
 ): () => GetEntriesResult {
   const { modules, base, root: Root, adapter = nextRoutes() } = options;
 
   function buildRouteDefinitions(
     nodes: FsRouteTreeNode[],
-    params: Record<string, string>,
-    idPrefix: string,
+    metas: Map<FsRouteTreeNode, NodeMeta>,
+    pageChain: Set<FsRouteTreeNode>,
+    pageParams: Record<string, string>,
   ): RouteDefinition[] {
-    return nodes.map((node, index): RouteDefinition => {
+    return nodes.map((node): RouteDefinition => {
+      const meta = metas.get(node)!;
       const Component = node.module.default;
-      // Unique id (by tree position) so that the route object passed to the
-      // component resolves to this route's context in the typed hooks; the
-      // file path is appended for legible debugging output.
-      const id = `${idPrefix}${index}${
-        node.filePath === undefined ? "" : ` ${node.filePath}`
-      }`;
       const definition: {
         id: string;
         path?: string;
         component?: React.ComponentType<object> | React.ReactNode;
         children?: RouteDefinition[];
-      } = { id };
+      } = { id: meta.id };
       if (node.path !== undefined) {
         definition.path = node.path;
       }
@@ -113,23 +220,33 @@ export function createFsRoutesEntries(
           definition.component = Component as React.ComponentType<object>;
         } else {
           // A Server Component crosses the RSC boundary only as its rendered
-          // output, so it must be rendered here with the build-time params.
-          // The route object lets Client Components below it read the live
-          // params through FUNSTACK Router's typed hooks.
-          // The typed hooks resolve a route object by its runtime `id`; the
-          // branding symbol of `RouteHandle` is type-level only.
-          const route = { id } as unknown as FsRouteObject;
-          definition.component = createElement(
-            Component as React.ComponentType<FsRouteComponentProps>,
-            { params, route },
-          );
+          // output, so a client slot stands in for it: it renders the
+          // build-time output while the current params match this page's,
+          // and fetches the destination's pre-rendered chunk after a soft
+          // client-side navigation. Output is inlined only for nodes this
+          // page renders through; other nodes always resolve via chunks.
+          const slotProps: FsRouteSlotProps = {
+            route: meta.route,
+            paramNames: meta.paramNames,
+            chunks: meta.chunks,
+          };
+          if (pageChain.has(node)) {
+            const params = pickParams(pageParams, meta.paramNames);
+            slotProps.initialKey = paramsKey(meta.paramNames, pageParams);
+            slotProps.initial = createElement(
+              Component as React.ComponentType<FsRouteComponentProps>,
+              { params, route: meta.route },
+            );
+          }
+          definition.component = createElement(host.RouteSlot, slotProps);
         }
       }
       if (node.children) {
         definition.children = buildRouteDefinitions(
           node.children,
-          params,
-          `${idPrefix}${index}.`,
+          metas,
+          pageChain,
+          pageParams,
         );
       }
       return definition;
@@ -138,15 +255,24 @@ export function createFsRoutesEntries(
 
   function FsRoutesApp({
     tree,
-    path,
-    params,
+    metas,
+    page,
   }: {
     tree: FsRouteTreeNode[];
-    path: string;
-    params: Record<string, string>;
+    metas: Map<FsRouteTreeNode, NodeMeta>;
+    page: StaticPage;
   }): React.ReactNode {
-    const routes = buildRouteDefinitions(tree, params, "");
-    return createElement(Router, { routes, fallback: "static", ssr: { path } });
+    const routes = buildRouteDefinitions(
+      tree,
+      metas,
+      new Set(page.chain),
+      page.params,
+    );
+    return createElement(Router, {
+      routes,
+      fallback: "static",
+      ssr: { path: page.urlPath },
+    });
   }
 
   return async function* getEntries(): AsyncGenerator<EntryDefinition> {
@@ -156,11 +282,14 @@ export function createFsRoutesEntries(
     const files = modulesToRouteFiles(modules, base, warn);
     const tree = adapter.buildRoutes(files);
     const pages = await collectStaticPaths(tree);
-    for (const { urlPath, params } of pages) {
+    const metas = new Map<FsRouteTreeNode, NodeMeta>();
+    buildNodeMetas(tree, [], "", metas);
+    registerChunks(pages, metas, host);
+    for (const page of pages) {
       yield {
-        path: urlPathToFilePath(urlPath),
+        path: urlPathToFilePath(page.urlPath),
         root: { default: Root },
-        app: createElement(FsRoutesApp, { tree, path: urlPath, params }),
+        app: createElement(FsRoutesApp, { tree, metas, page }),
       };
     }
   };
