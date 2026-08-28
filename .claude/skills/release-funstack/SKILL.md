@@ -25,6 +25,7 @@ To release a new version of the `@funstack/static` package, follow these steps:
 
 - The release notes should summarize the changes made since the last release.
 - Especially, highlight any breaking changes, new features, or important fixes.
+- Identify external contributors (see "Acknowledging External Contributors" below) and thank them in the release notes.
 
 4. Use the `gh` CLI to create a new release on GitHub with the new version and the generated release notes.
 
@@ -51,6 +52,10 @@ When writing release notes, consider the following structure:
 
 - Simplify RSC payload path (#15)
 
+### Thanks
+
+A big thank you to @contributor for contributing the cache busting feature (#16) and for reporting #13, which drove the changes in this release. 🎉
+
 **Full Changelog**: https://github.com/uhyo/funstack-static/compare/0.0.1...0.0.2
 ```
 
@@ -60,3 +65,20 @@ Notes:
 - Group changes into categories like "Features", "Improvements", "Fixes", etc.
 - Documentation updates and dependency updates should be omitted unless they are significant (e.g. breaking changes).
 - Provide a link to the full changelog comparing the previous version and the new version.
+- Include a "Thanks" section praising external contributors when there are any (see below). Omit the section if there are none.
+
+## Acknowledging External Contributors
+
+The repository owner is `uhyo`. Anyone else who contributed to the release deserves a shout-out.
+
+To find external contributors:
+
+- List the authors of commits since the last tag (`git log --format='%an <%ae>' <last-tag>..HEAD`) and the authors of the merged PRs (`gh pr view <number> --json author`). Squash-merged PRs are committed under the PR author's name, so check both.
+- For each PR, also check the issues it references (`Closes #N`, `Addresses #N`, etc.) and note who reported them (`gh api repos/uhyo/funstack-static/issues/<N> -q .user.login`). Reporting the issue that drove a change counts as a contribution.
+- Exclude `uhyo` and bots such as `dependabot[bot]`.
+
+When writing the "Thanks" section:
+
+- Mention each contributor by GitHub handle (`@handle`) so they get credited on the release page.
+- Say concretely what they did — which PR they authored and/or which issue they reported — rather than a generic "thanks to everyone".
+- Place the section after the change categories and before the "Full Changelog" link.
