@@ -56,4 +56,25 @@ test.describe("File-system routing (dev server)", () => {
     await page.getByTestId("link-en").click();
     await expect(page.getByTestId("live-lang")).toHaveText("en");
   });
+
+  test("a Server Component page re-renders with the destination's params", async ({
+    page,
+  }) => {
+    await page.goto("/ja");
+    await expect(page.getByTestId("lang-page-lang")).toHaveText("ja");
+
+    await page.getByTestId("link-en").click();
+    await expect(page.getByTestId("lang-page-lang")).toHaveText("en");
+  });
+
+  test("a Server Component layout under a dynamic segment updates on soft navigation", async ({
+    page,
+  }) => {
+    await page.goto("/en/info");
+    await expect(page.getByTestId("info-layout-lang")).toHaveText("en");
+
+    await page.getByTestId("link-ja-info").click();
+    await expect(page.getByTestId("info-layout-lang")).toHaveText("ja");
+    await expect(page.getByTestId("info-page-lang")).toHaveText("ja");
+  });
 });

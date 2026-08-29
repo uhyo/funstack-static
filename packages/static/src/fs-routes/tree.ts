@@ -58,13 +58,19 @@ export interface StaticPage {
   urlPath: string;
   /** Resolved dynamic params for this page (empty for static routes). */
   params: Record<string, string>;
+  /**
+   * The route tree nodes this page renders through, root-first, ending with
+   * the page node itself. Contains the same node objects as the tree passed
+   * to {@link collectStaticPaths}.
+   */
+  chain: FsRouteTreeNode[];
 }
 
 /**
  * Splits a FUNSTACK Router path (e.g. `"/blog/:slug"`) into its non-empty
  * segments. A pathless or `"/"` path yields no segments.
  */
-function splitRoutePath(path: string): string[] {
+export function splitRoutePath(path: string): string[] {
   return path.split("/").filter(Boolean);
 }
 
@@ -84,14 +90,14 @@ function segmentsToUrl(segments: string[]): string {
  * Extracts the param name from a dynamic segment.
  * `":slug"` → `"slug"`, `":slug*"` (catch-all) → `"slug"`.
  */
-function paramName(segment: string): string {
+export function paramName(segment: string): string {
   return segment.slice(1).replace(/\*$/, "");
 }
 
 /**
  * Whether a router segment is dynamic (`:param` or catch-all `:param*`).
  */
-function isDynamicSegment(segment: string): boolean {
+export function isDynamicSegment(segment: string): boolean {
   return segment.startsWith(":");
 }
 
@@ -107,11 +113,12 @@ async function addPagesForLeaf(
   module: FsRouteModule,
   pages: StaticPage[],
   filePath: string | undefined,
+  chain: FsRouteTreeNode[],
 ): Promise<void> {
   const dynamicSegments = segments.filter(isDynamicSegment);
 
   if (dynamicSegments.length === 0) {
-    pages.push({ urlPath: segmentsToUrl(segments), params: {} });
+    pages.push({ urlPath: segmentsToUrl(segments), params: {}, chain });
     return;
   }
 
@@ -147,24 +154,26 @@ async function addPagesForLeaf(
       }
       return value;
     });
-    pages.push({ urlPath: segmentsToUrl(concreteSegments), params });
+    pages.push({ urlPath: segmentsToUrl(concreteSegments), params, chain });
   }
 }
 
 async function walk(
   nodes: FsRouteTreeNode[],
   prefixSegments: string[],
+  prefixChain: FsRouteTreeNode[],
   pages: StaticPage[],
 ): Promise<void> {
   for (const node of nodes) {
     const ownSegments =
       node.path !== undefined ? splitRoutePath(node.path) : [];
     const segments = [...prefixSegments, ...ownSegments];
+    const chain = [...prefixChain, node];
     if (node.page) {
-      await addPagesForLeaf(segments, node.module, pages, node.filePath);
+      await addPagesForLeaf(segments, node.module, pages, node.filePath, chain);
     }
     if (node.children) {
-      await walk(node.children, segments, pages);
+      await walk(node.children, segments, chain, pages);
     }
   }
 }
@@ -182,7 +191,7 @@ export async function collectStaticPaths(
   tree: FsRouteTreeNode[],
 ): Promise<StaticPage[]> {
   const pages: StaticPage[] = [];
-  await walk(tree, [], pages);
+  await walk(tree, [], [], pages);
   return pages;
 }
 

@@ -134,10 +134,14 @@ export { default } from "./_page"; // _page.tsx is marked "use client"
 
 ## Params on Client-Side Navigation
 
-Loading any generated URL directly always renders the correct params. During soft client-side navigation between pages of the _same_ dynamic route (say, from `/blog/hello` to `/blog/world`), what the `params` prop holds depends on the kind of the component:
+Loading any generated URL directly always renders the correct params, and so does soft client-side navigation between pages of the _same_ dynamic route (say, from `/blog/hello` to `/blog/world`) — through two different mechanisms depending on the kind of the component:
 
-- **Client Components** (pages and layouts marked `"use client"`) are rendered by FUNSTACK Router in the browser, so they receive the **live** params of the URL currently shown. They stay correct across soft navigation.
-- **Server Components** render once at build time, so their `params` prop — and their entire rendered output — currently reflects the values the page was generated with after such a navigation. This is a temporary limitation, not the intended end state: the destination page's pre-rendered RSC payload exists in the build output, and loading it on client-side navigation so that Server Component pages update too is being worked on ([#174](https://github.com/uhyo/funstack-static/issues/174)). Until then, use the route object below to read live params, or make the page body a Client Component if it must fully react to param changes.
+- **Client Components** (pages and layouts marked `"use client"`) are rendered by FUNSTACK Router in the browser, so they receive the **live** params of the URL currently shown.
+- **Server Components** are pre-rendered at build time, once per params combination enumerated by `generateStaticParams`. On soft navigation, the destination's pre-rendered output is fetched as a static RSC chunk and swapped in, so the `params` prop — and the entire rendered output — matches the URL shown. The output for the params a chunk covers is shared: navigating between pages under the same Server Component layout re-uses the layout's chunk instead of fetching it again.
+
+Because a Server Component's output is pre-rendered per params combination, a Server Component **layout** receives only the params of the dynamic segments at or above it — a layout at `[lang]/` sees `{ lang }`, not the `{ slug }` of a page below it. (Client Component layouts receive the router's live params of the current match.)
+
+Soft navigation can only render params combinations that were statically generated. If a navigation targets a combination that was never generated — or a chunk fetch fails, for example because a new deployment replaced the build output — the router falls back to a full page load of the destination URL.
 
 ### Reading Live Params with the Route Object
 

@@ -32,6 +32,12 @@ function clientPageModule(): FsRouteModule {
   };
 }
 
+function withoutChain(
+  pages: Awaited<ReturnType<typeof collectStaticPaths>>,
+): Array<{ urlPath: string; params: Record<string, string> }> {
+  return pages.map(({ urlPath, params }) => ({ urlPath, params }));
+}
+
 describe("collectStaticPaths", () => {
   it("collects static pages, including index pages under a layout", async () => {
     const tree: FsRouteTreeNode[] = [
@@ -46,10 +52,25 @@ describe("collectStaticPaths", () => {
       },
     ];
     const pages = await collectStaticPaths(tree);
-    expect(pages).toEqual([
+    expect(withoutChain(pages)).toEqual([
       { urlPath: "/", params: {} },
       { urlPath: "/about", params: {} },
     ]);
+  });
+
+  it("records the route node chain of every page, root-first", async () => {
+    const page: FsRouteTreeNode = { path: "/", page: true, module: component };
+    const layout: FsRouteTreeNode = {
+      path: "/dashboard",
+      page: false,
+      module: component,
+      children: [page],
+    };
+    const pages = await collectStaticPaths([layout]);
+    expect(pages).toHaveLength(1);
+    expect(pages[0]!.chain).toHaveLength(2);
+    expect(pages[0]!.chain[0]).toBe(layout);
+    expect(pages[0]!.chain[1]).toBe(page);
   });
 
   it("accumulates the path of a nested layout for its children", async () => {
@@ -80,7 +101,7 @@ describe("collectStaticPaths", () => {
       },
     ];
     const pages = await collectStaticPaths(tree);
-    expect(pages).toEqual([
+    expect(withoutChain(pages)).toEqual([
       { urlPath: "/blog/hello", params: { slug: "hello" } },
       { urlPath: "/blog/world", params: { slug: "world" } },
     ]);
@@ -95,7 +116,9 @@ describe("collectStaticPaths", () => {
       },
     ];
     const pages = await collectStaticPaths(tree);
-    expect(pages).toEqual([{ urlPath: "/u/1", params: { id: "1" } }]);
+    expect(withoutChain(pages)).toEqual([
+      { urlPath: "/u/1", params: { id: "1" } },
+    ]);
   });
 
   it("substitutes catch-all values that contain slashes", async () => {
@@ -107,7 +130,7 @@ describe("collectStaticPaths", () => {
       },
     ];
     const pages = await collectStaticPaths(tree);
-    expect(pages).toEqual([
+    expect(withoutChain(pages)).toEqual([
       { urlPath: "/docs/guide/intro", params: { slug: "guide/intro" } },
     ]);
   });
@@ -142,7 +165,7 @@ describe("collectStaticPaths", () => {
       },
     ];
     const pages = await collectStaticPaths(tree);
-    expect(pages).toEqual([{ urlPath: "/about", params: {} }]);
+    expect(withoutChain(pages)).toEqual([{ urlPath: "/about", params: {} }]);
   });
 
   it('explains that a "use client" page cannot export generateStaticParams', async () => {

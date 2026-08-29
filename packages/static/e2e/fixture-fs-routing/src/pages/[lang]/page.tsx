@@ -24,6 +24,9 @@ export default function LangPage({
       </a>{" "}
       <a href="/en/client" data-testid="link-en-client">
         English client page
+      </a>{" "}
+      <a href="/en/info" data-testid="link-en-info">
+        English info
       </a>
     </div>
   );
