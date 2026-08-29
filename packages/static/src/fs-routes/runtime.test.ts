@@ -224,4 +224,19 @@ describe("createFsRoutesEntries route definitions", () => {
       expect(ids).toEqual(idsPerEntry[0]);
     }
   });
+
+  it("throws for a page module without a default export", async () => {
+    await expect(entriesFor({ "./pages/about/page.tsx": {} })).rejects.toThrow(
+      /page module "about\/page\.tsx" has no default export/,
+    );
+  });
+
+  it("throws for a layout module without a default export", async () => {
+    await expect(
+      entriesFor({
+        "./pages/layout.tsx": { notDefault: () => null },
+        "./pages/page.tsx": { default: () => null },
+      }),
+    ).rejects.toThrow(/layout module "layout\.tsx" has no default export/);
+  });
 });

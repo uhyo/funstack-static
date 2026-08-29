@@ -202,6 +202,47 @@ describe("nextRoutes adapter", () => {
     ).toThrow(/Intercepting routes/);
   });
 
+  it("rejects param names URL patterns cannot express", () => {
+    const adapter = nextRoutes();
+    expect(() =>
+      adapter.buildRoutes(makeFiles(["blog/[foo-bar]/page.tsx"])),
+    ).toThrow(/Invalid param name "foo-bar"/);
+    expect(() =>
+      adapter.buildRoutes(makeFiles(["docs/[...foo.bar]/page.tsx"])),
+    ).toThrow(/Invalid param name "foo\.bar"/);
+  });
+
+  it("allows param names with letters, digits, underscore, and dollar", () => {
+    const adapter = nextRoutes();
+    const tree = adapter.buildRoutes(makeFiles(["u/[$user_1]/page.tsx"]));
+    expect(simplify(tree)).toEqual([
+      { path: "/u/:$user_1", page: true, id: "u/[$user_1]/page.tsx" },
+    ]);
+  });
+
+  it("rejects a param name used twice on one route path", () => {
+    const adapter = nextRoutes();
+    expect(() =>
+      adapter.buildRoutes(makeFiles(["[slug]/x/[slug]/page.tsx"])),
+    ).toThrow(/Duplicate param name "slug"/);
+    // Also across a layout boundary, where the inner value would shadow
+    // the outer one.
+    expect(() =>
+      adapter.buildRoutes(
+        makeFiles(["[id]/layout.tsx", "[id]/sub/[id]/page.tsx"]),
+      ),
+    ).toThrow(/Duplicate param name "id"/);
+  });
+
+  it("rejects static directory names containing URL pattern characters", () => {
+    const adapter = nextRoutes();
+    for (const dir of ["a+b", "a?b", "a*b", "a:b", "a(b)c", "a{b}"]) {
+      expect(() => adapter.buildRoutes(makeFiles([`${dir}/page.tsx`]))).toThrow(
+        /special meaning in URL patterns/,
+      );
+    }
+  });
+
   it("rejects two pages resolving to the same route via route groups", () => {
     const adapter = nextRoutes();
     expect(() =>

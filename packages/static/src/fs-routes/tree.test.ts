@@ -144,6 +144,95 @@ describe("collectStaticPaths", () => {
     );
   });
 
+  it("throws when a non-catch-all value contains a slash", async () => {
+    const tree: FsRouteTreeNode[] = [
+      {
+        path: "/blog/:slug",
+        page: true,
+        module: pageModule(() => [{ slug: "a/b" }]),
+      },
+    ];
+    await expect(collectStaticPaths(tree)).rejects.toThrow(/"a\/b".*catch-all/);
+  });
+
+  it("throws for an empty param value", async () => {
+    const tree: FsRouteTreeNode[] = [
+      {
+        path: "/blog/:slug",
+        page: true,
+        module: pageModule(() => [{ slug: "" }]),
+      },
+    ];
+    await expect(collectStaticPaths(tree)).rejects.toThrow(/empty value/);
+  });
+
+  it("throws for an empty catch-all value, suggesting a parent page", async () => {
+    const tree: FsRouteTreeNode[] = [
+      {
+        path: "/docs/:slug*",
+        page: true,
+        module: pageModule(() => [{ slug: "" }]),
+      },
+    ];
+    await expect(collectStaticPaths(tree)).rejects.toThrow(
+      /parent route instead/,
+    );
+  });
+
+  it("throws for a non-string param value", async () => {
+    const tree: FsRouteTreeNode[] = [
+      {
+        path: "/blog/:id",
+        page: true,
+        module: pageModule(() => [
+          { id: 5 } as unknown as Record<string, string>,
+        ]),
+      },
+    ];
+    await expect(collectStaticPaths(tree)).rejects.toThrow(
+      /returned a number.*"id"/,
+    );
+  });
+
+  it("throws for a catch-all value with leading, trailing, or repeated slashes", async () => {
+    for (const slug of ["/a", "a/", "a//b"]) {
+      const tree: FsRouteTreeNode[] = [
+        {
+          path: "/docs/:slug*",
+          page: true,
+          module: pageModule(() => [{ slug }]),
+        },
+      ];
+      await expect(collectStaticPaths(tree)).rejects.toThrow(/slashes/);
+    }
+  });
+
+  it('throws for param values containing "." or ".." segments', async () => {
+    for (const slug of ["..", ".", "a/../b"]) {
+      const tree: FsRouteTreeNode[] = [
+        {
+          path: "/docs/:slug*",
+          page: true,
+          module: pageModule(() => [{ slug }]),
+        },
+      ];
+      await expect(collectStaticPaths(tree)).rejects.toThrow(/"\."/);
+    }
+  });
+
+  it('throws for param values containing "?" or "#"', async () => {
+    for (const slug of ["a?b", "a#b"]) {
+      const tree: FsRouteTreeNode[] = [
+        {
+          path: "/blog/:slug",
+          page: true,
+          module: pageModule(() => [{ slug }]),
+        },
+      ];
+      await expect(collectStaticPaths(tree)).rejects.toThrow(/URL path/);
+    }
+  });
+
   it("throws when generateStaticParams is missing a param value", async () => {
     const tree: FsRouteTreeNode[] = [
       {

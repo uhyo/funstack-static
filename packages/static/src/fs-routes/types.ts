@@ -54,11 +54,12 @@ export interface FsRouteComponentProps<
  * for dynamic routes (modeled after Next.js).
  */
 export interface FsRouteModule {
-  /** The component for this page or layout. */
-  default?:
-    | ComponentType<FsRouteComponentProps>
-    | ComponentType<{ params: Record<string, string> }>
-    | ComponentType;
+  /**
+   * The component for this page or layout. Components taking fewer props
+   * (or none) are assignable; the framework always passes
+   * {@link FsRouteComponentProps}.
+   */
+  default?: ComponentType<FsRouteComponentProps>;
   /**
    * Function used to statically generate a dynamic route. Required for pages
    * whose route contains a dynamic segment; the build fails without it, since
@@ -69,8 +70,11 @@ export interface FsRouteModule {
    * module and re-export it as `default` instead.
    *
    * Returns the list of concrete params to pre-render. Each entry maps every
-   * dynamic param name in the route's path to a concrete string value. For a
-   * catch-all segment, the value may contain slashes.
+   * dynamic param name in the route's path to a concrete string value. Values
+   * must be non-empty and must not contain `.` or `..` segments, `?`, or
+   * `#`. Only a catch-all segment's value may contain slashes (but not
+   * leading, trailing, or repeated ones). The build fails on any other
+   * value, which would generate a page its own route cannot match.
    */
   generateStaticParams?: () => MaybePromise<Array<Record<string, string>>>;
   [key: string]: unknown;

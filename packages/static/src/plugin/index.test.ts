@@ -136,6 +136,24 @@ describe("virtual module path escaping", () => {
     expect(code).toContain('import adapter from "/pro\\"ject/src/adapter.ts";');
   });
 
+  it("rejects an fsRoutes.dir outside the Vite root", () => {
+    for (const dir of ["../pages", "."]) {
+      expect(() =>
+        loadVirtualModule(
+          {
+            fsRoutes: {
+              dir,
+              root: "./src/root.tsx",
+              adapter: "./src/adapter.ts",
+            },
+          },
+          "/project",
+          "\0virtual:funstack/entries",
+        ),
+      ).toThrow(/must be a subdirectory of the Vite root/);
+    }
+  });
+
   it("escapes the clientInit path in the client-init module", () => {
     const code = loadVirtualModule(
       {

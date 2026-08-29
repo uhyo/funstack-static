@@ -221,7 +221,18 @@ export default function funstackStatic(
           const relativeDir = normalizePath(
             path.relative(config.root, resolvedDir),
           );
-          const globBase = `/${relativeDir.replace(/^\.?\/?/, "").replace(/\/$/, "")}`;
+          if (
+            relativeDir === "" ||
+            relativeDir === "." ||
+            relativeDir.startsWith("..") ||
+            path.isAbsolute(relativeDir)
+          ) {
+            throw new Error(
+              `[funstack] fsRoutes.dir ("${fsRoutes.dir}") must be a subdirectory ` +
+                `of the Vite root ("${config.root}").`,
+            );
+          }
+          const globBase = `/${relativeDir}`;
           // The adapter may be a bare module specifier (e.g. the built-in
           // `@funstack/static/fs-routes/next-adapter`) or a path to a local module.
           // Resolve only the latter against the Vite root.
