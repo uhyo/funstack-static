@@ -108,6 +108,71 @@ function inFile(filePath: string | undefined): string {
   return filePath === undefined ? "" : ` ("${filePath}")`;
 }
 
+/**
+ * Validates one param value returned by `generateStaticParams()` and returns
+ * it. Values are substituted verbatim into URL paths (and output file
+ * paths), so a value the route's own URLPattern cannot match back — or one
+ * that escapes the output directory — must fail the build instead of
+ * producing a silently broken page.
+ */
+function substituteParamValue(
+  segment: string,
+  params: Record<string, string>,
+  routePath: string,
+  filePath: string | undefined,
+): string {
+  const name = paramName(segment);
+  const where = `generateStaticParams() for "${routePath}"${inFile(filePath)}`;
+  const value: unknown = params[name];
+  if (value === undefined) {
+    throw new Error(`${where} is missing a value for param "${name}".`);
+  }
+  if (typeof value !== "string") {
+    throw new Error(
+      `${where} returned a ${typeof value} for param "${name}". ` +
+        `Param values must be strings.`,
+    );
+  }
+  const isCatchAll = segment.endsWith("*");
+  if (value === "") {
+    throw new Error(
+      isCatchAll
+        ? `${where} returned an empty value for catch-all param "${name}". ` +
+            `A zero-segment catch-all page cannot be statically served; ` +
+            `create a page for the parent route instead.`
+        : `${where} returned an empty value for param "${name}".`,
+    );
+  }
+  const parts = value.split("/");
+  if (!isCatchAll && parts.length > 1) {
+    throw new Error(
+      `${where} returned "${value}" for param "${name}", which contains "/". ` +
+        `Only a catch-all param (":${name}*") may span multiple URL segments.`,
+    );
+  }
+  for (const part of parts) {
+    if (part === "") {
+      throw new Error(
+        `${where} returned "${value}" for catch-all param "${name}". ` +
+          `Values must not contain leading, trailing, or repeated slashes.`,
+      );
+    }
+    if (part === "." || part === "..") {
+      throw new Error(
+        `${where} returned "${value}" for param "${name}". ` +
+          `Values must not contain "." or ".." segments.`,
+      );
+    }
+  }
+  if (value.includes("?") || value.includes("#")) {
+    throw new Error(
+      `${where} returned "${value}" for param "${name}". ` +
+        `Values must not contain "?" or "#", which cannot appear in a URL path.`,
+    );
+  }
+  return value;
+}
+
 async function addPagesForLeaf(
   segments: string[],
   module: FsRouteModule,
@@ -142,17 +207,11 @@ async function addPagesForLeaf(
   }
 
   const paramSets = await generate();
+  const routePath = segmentsToUrl(segments);
   for (const params of paramSets) {
     const concreteSegments = segments.map((segment) => {
       if (!isDynamicSegment(segment)) return segment;
-      const name = paramName(segment);
-      const value = params[name];
-      if (value === undefined) {
-        throw new Error(
-          `generateStaticParams() for "${segmentsToUrl(segments)}"${inFile(filePath)} is missing a value for param "${name}".`,
-        );
-      }
-      return value;
+      return substituteParamValue(segment, params, routePath, filePath);
     });
     pages.push({ urlPath: segmentsToUrl(concreteSegments), params, chain });
   }

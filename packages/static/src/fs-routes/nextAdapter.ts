@@ -58,8 +58,23 @@ function classify(
 }
 
 /**
+ * Param names FUNSTACK Router (via URLPattern) can express. Anything else —
+ * e.g. `[foo-bar]` — is parsed by URLPattern as a shorter param followed by
+ * literal text, silently producing a route that never matches its pages.
+ */
+const VALID_PARAM_NAME = /^[A-Za-z0-9_$]+$/;
+
+/**
+ * Characters with special meaning in URLPattern pathname patterns. A static
+ * directory name containing one would either fail URLPattern construction at
+ * match time (`?`, `+`) or silently match the wrong URLs (`:`, `*`, `(`…).
+ */
+const URL_PATTERN_SPECIAL_CHARS = /[:*?+(){}\\]/;
+
+/**
  * Rejects directory segments using Next.js syntaxes that this adapter does not
- * support, so they fail loudly instead of silently producing broken routes.
+ * support, and segments FUNSTACK Router's URL patterns cannot express, so they
+ * fail loudly instead of silently producing broken routes.
  */
 function validateSegment(segment: string, filePath: string): void {
   if (/^\[\[.*\]\]$/.test(segment)) {
@@ -76,6 +91,28 @@ function validateSegment(segment: string, filePath: string): void {
   if (/^\(\.{1,3}\)/.test(segment)) {
     throw new Error(
       `Intercepting routes ("${segment}" in "${filePath}") are not supported.`,
+    );
+  }
+  // Route groups do not reach the URL, so their names are unconstrained.
+  if (segment.startsWith("(") && segment.endsWith(")")) {
+    return;
+  }
+  const dynamic = /^\[(?:\.\.\.)?(.+)\]$/.exec(segment);
+  if (dynamic) {
+    if (!VALID_PARAM_NAME.test(dynamic[1]!)) {
+      throw new Error(
+        `Invalid param name "${dynamic[1]}" ("${segment}" in "${filePath}"). ` +
+          `Param names may only contain letters, digits, "_", and "$".`,
+      );
+    }
+    return;
+  }
+  const special = URL_PATTERN_SPECIAL_CHARS.exec(segment);
+  if (special) {
+    throw new Error(
+      `Directory name "${segment}" (in "${filePath}") contains "${special[0]}", ` +
+        `which has a special meaning in URL patterns and cannot be routed. ` +
+        `Rename the directory.`,
     );
   }
 }
@@ -254,8 +291,6 @@ export function nextRoutes(options: NextRoutesOptions = {}): FsRoutesAdapter {
     name: "next",
     buildRoutes(files: FsRouteFile[]): FsRouteTreeNode[] {
       const root: TrieNode = { segment: "", children: new Map() };
-      // Route position each page/layout occupies, with dynamic segments
-      // normalized so that e.g. `[a]` and `[b]` at the same position conflict.
       // Exact directory each page/layout file lives in, to detect duplicate
       // files for the same node (e.g. `page.tsx` next to `page.jsx`).
       const filesByDir = new Map<string, string>();
@@ -268,8 +303,22 @@ export function nextRoutes(options: NextRoutesOptions = {}): FsRoutesAdapter {
         const { dirs, base } = splitFilePath(file.filePath);
         const kind = classify(base, pageFileName, layoutFileName);
         if (!kind) continue;
+        const seenParamNames = new Set<string>();
         for (const segment of dirs) {
           validateSegment(segment, file.filePath);
+          const dynamic = /^\[(?:\.\.\.)?(.+)\]$/.exec(segment);
+          if (dynamic) {
+            // A param name used twice on one path either fails URLPattern
+            // construction (within one route) or shadows the outer value
+            // (across a layout boundary), so reject it up front.
+            if (seenParamNames.has(dynamic[1]!)) {
+              throw new Error(
+                `Duplicate param name "${dynamic[1]}" in "${file.filePath}": ` +
+                  `a route may use each param name only once.`,
+              );
+            }
+            seenParamNames.add(dynamic[1]!);
+          }
         }
         const dirKey = `${kind} ${dirs.join("/")}`;
         const sameDir = filesByDir.get(dirKey);

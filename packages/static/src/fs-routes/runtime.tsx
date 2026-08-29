@@ -3,7 +3,6 @@ import { Router } from "@funstack/router";
 import type { RouteDefinition } from "@funstack/router/server";
 import type {
   FsRootComponent,
-  FsRouteComponentProps,
   FsRouteModule,
   FsRouteObject,
   FsRoutesAdapter,
@@ -99,6 +98,30 @@ interface NodeMeta {
   chunks: Record<string, string>;
 }
 
+/**
+ * Rejects route modules without a default export. Rendering would silently
+ * skip the missing component (producing a blank page, or a pass-through
+ * layout), so a typo'd or forgotten export must fail the build instead.
+ */
+function validateRouteModules(nodes: FsRouteTreeNode[]): void {
+  for (const node of nodes) {
+    if (node.module.default === undefined) {
+      const kind = node.page ? "page" : "layout";
+      const which =
+        node.filePath === undefined
+          ? `for route "${node.path ?? "(pathless)"}"`
+          : `"${node.filePath}"`;
+      throw new Error(
+        `Route ${kind} module ${which} has no default export. ` +
+          `Page and layout modules must \`export default\` a React component.`,
+      );
+    }
+    if (node.children) {
+      validateRouteModules(node.children);
+    }
+  }
+}
+
 function buildNodeMetas(
   nodes: FsRouteTreeNode[],
   inheritedParamNames: string[],
@@ -162,8 +185,7 @@ function registerChunks(
   }
   for (const [node, nodeCombos] of combos) {
     const meta = metas.get(node)!;
-    const Component = node.module
-      .default as ComponentType<FsRouteComponentProps>;
+    const Component = node.module.default!;
     for (const [key, params] of nodeCombos) {
       const element = createElement(Component, { params, route: meta.route });
       meta.chunks[key] = host.registerChunk(
@@ -233,10 +255,10 @@ export function createFsRoutesEntriesWithHost(
           if (pageChain.has(node)) {
             const params = pickParams(pageParams, meta.paramNames);
             slotProps.initialKey = paramsKey(meta.paramNames, pageParams);
-            slotProps.initial = createElement(
-              Component as React.ComponentType<FsRouteComponentProps>,
-              { params, route: meta.route },
-            );
+            slotProps.initial = createElement(Component, {
+              params,
+              route: meta.route,
+            });
           }
           definition.component = createElement(host.RouteSlot, slotProps);
         }
@@ -281,6 +303,7 @@ export function createFsRoutesEntriesWithHost(
     };
     const files = modulesToRouteFiles(modules, base, warn);
     const tree = adapter.buildRoutes(files);
+    validateRouteModules(tree);
     const pages = await collectStaticPaths(tree);
     const metas = new Map<FsRouteTreeNode, NodeMeta>();
     buildNodeMetas(tree, [], "", metas);
