@@ -79,6 +79,8 @@ The adapter fails the build with a clear error instead of producing broken route
 - **Parallel route slots** (`@slot`) and **intercepting routes** (`(.)segment`) — these Next.js features are not supported.
 - **Conflicting pages** — two pages resolving to the same route, such as `(a)/foo/page.tsx` + `(b)/foo/page.tsx`, or sibling dynamic pages with different param names (`[a]` + `[b]`).
 - **Duplicate files** — two page (or layout) files in the same directory, such as `page.tsx` next to `page.jsx`.
+- **Segment names routes cannot match** — param names may only contain letters, digits, `_`, and `$` (so `[foo-bar]` is rejected); the same param name may appear only once on a route path; and static directory names must not contain URL-pattern characters (`:`, `*`, `?`, `+`, parentheses, braces, or backslash).
+- **Route modules without a default export** — a `page.tsx` or `layout.tsx` that does not `export default` a component would silently render an empty page.
 
 Multiple root layouts via route groups (e.g. `(marketing)/layout.tsx` and `(shop)/layout.tsx`) are supported.
 
@@ -121,6 +123,8 @@ export default function BlogPost({ params }: { params: { slug: string } }) {
 This generates `blog/hello.html` and `blog/world.html`. Each page component receives the resolved `params` as a prop (see [Params on Client-Side Navigation](#params-on-client-side-navigation) for how `params` behaves when navigating in the browser).
 
 A dynamic route **must** export `generateStaticParams`; the build fails otherwise. A static site can only serve pages that were enumerated at build time, so a dynamic route without it would produce no output.
+
+Param values must be non-empty strings that stay within their URL segment: a regular param value must not contain `/`, and no value may contain `.` or `..` segments, `?`, or `#`. A catch-all param value may contain `/` to span multiple segments, but not leading, trailing, or repeated slashes. The build fails on any other value, since it would generate a page that its own route can never match (or a file outside the output directory).
 
 Because `generateStaticParams` runs on the server at build time, a page module that exports it cannot be marked `"use client"`. If the page body needs to be a Client Component, move it into a separate `"use client"` module and re-export it from the page:
 
