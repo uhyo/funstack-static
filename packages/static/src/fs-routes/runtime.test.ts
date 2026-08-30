@@ -1,5 +1,5 @@
 import { isValidElement, type ReactElement } from "react";
-import { describe, expect, it } from "vitest";
+import { describe, expect, it, vi } from "vitest";
 import {
   createFsRoutesEntriesWithHost,
   type FsRoutesRuntimeHost,
@@ -30,8 +30,13 @@ interface RegisteredChunk {
 function fakeHost(): {
   host: FsRoutesRuntimeHost;
   registered: RegisteredChunk[];
+  restored: RegisteredChunk[];
+  /** The chunks currently live in the (fake) defer registry, by ID. */
+  live: Map<string, ReactElement<FsRouteComponentProps>>;
 } {
   const registered: RegisteredChunk[] = [];
+  const restored: RegisteredChunk[] = [];
+  const live = new Map<string, ReactElement<FsRouteComponentProps>>();
   const host: FsRoutesRuntimeHost = {
     registerChunk(element, name) {
       const id = `fun__rsc-payload/chunk-${registered.length}`;
@@ -40,11 +45,21 @@ function fakeHost(): {
         name,
         id,
       });
+      live.set(id, element as ReactElement<FsRouteComponentProps>);
       return id;
+    },
+    hasChunk: (id) => live.has(id),
+    restoreChunk(element, id, name) {
+      restored.push({
+        element: element as ReactElement<FsRouteComponentProps>,
+        name,
+        id,
+      });
+      live.set(id, element as ReactElement<FsRouteComponentProps>);
     },
     RouteSlot: FakeSlot,
   };
-  return { host, registered };
+  return { host, registered, restored, live };
 }
 
 interface DefinitionLike {
@@ -238,5 +253,112 @@ describe("createFsRoutesEntries route definitions", () => {
         "./pages/page.tsx": { default: () => null },
       }),
     ).rejects.toThrow(/layout module "layout\.tsx" has no default export/);
+  });
+});
+
+describe("createFsRoutesEntries enumeration caching", () => {
+  function factoryFor(
+    modules: Record<string, FsRouteModule>,
+    host: FsRoutesRuntimeHost,
+  ) {
+    return createFsRoutesEntriesWithHost(
+      { modules, base: "./pages", root: Root },
+      host,
+    );
+  }
+
+  async function drain(
+    getEntries: () =>
+      AsyncIterable<EntryDefinition> | Iterable<EntryDefinition>,
+  ): Promise<EntryDefinition[]> {
+    const entries: EntryDefinition[] = [];
+    for await (const entry of getEntries()) {
+      entries.push(entry);
+    }
+    return entries;
+  }
+
+  it("enumerates the site once and reuses chunk IDs across iterations", async () => {
+    const generateStaticParams = vi.fn(() => [{ lang: "en" }, { lang: "ja" }]);
+    const { host, registered } = fakeHost();
+    const getEntries = factoryFor(
+      {
+        "./pages/[lang]/page.tsx": {
+          default: () => null,
+          generateStaticParams,
+        },
+        "./pages/about/page.tsx": { default: () => null },
+      },
+      host,
+    );
+
+    const first = await drain(getEntries);
+    const second = await drain(getEntries);
+
+    // The dev server iterates getEntries() per request; generateStaticParams
+    // and chunk registration must not run again.
+    expect(generateStaticParams).toHaveBeenCalledTimes(1);
+    expect(registered).toHaveLength(3);
+
+    // The second iteration serves the same chunk IDs, so payloads held by
+    // earlier requests stay consistent with the registry.
+    const chunksOf = (entries: EntryDefinition[], path: string) => {
+      const routes = routesOfEntry(entries.find((e) => e.path === path)!);
+      const definitions = collectDefinitions(routes);
+      const page = definitions.find((d) => d.path === "/:lang")!;
+      return slotOf(page).chunks;
+    };
+    expect(chunksOf(second, "en.html")).toEqual(chunksOf(first, "en.html"));
+  });
+
+  it("re-registers evicted chunks under their original IDs", async () => {
+    const { host, registered, restored, live } = fakeHost();
+    const getEntries = factoryFor(
+      {
+        "./pages/[lang]/page.tsx": {
+          default: () => null,
+          generateStaticParams: () => [{ lang: "en" }, { lang: "ja" }],
+        },
+      },
+      host,
+    );
+    await drain(getEntries);
+    expect(registered).toHaveLength(2);
+
+    // Simulate the dev defer registry evicting one chunk between requests.
+    const evicted = registered[0]!;
+    live.delete(evicted.id);
+
+    await drain(getEntries);
+    expect(restored).toHaveLength(1);
+    expect(restored[0]!.id).toBe(evicted.id);
+    expect(restored[0]!.name).toBe(evicted.name);
+    expect(restored[0]!.element).toBe(evicted.element);
+    expect(live.has(evicted.id)).toBe(true);
+  });
+
+  it("does not cache a failed enumeration", async () => {
+    const generateStaticParams = vi
+      .fn<() => { lang: string }[]>()
+      .mockImplementationOnce(() => {
+        throw new Error("CMS is down");
+      })
+      .mockImplementation(() => [{ lang: "en" }]);
+    const { host } = fakeHost();
+    const getEntries = factoryFor(
+      {
+        "./pages/[lang]/page.tsx": {
+          default: () => null,
+          generateStaticParams,
+        },
+      },
+      host,
+    );
+
+    await expect(drain(getEntries)).rejects.toThrow("CMS is down");
+    // The next request retries instead of replaying the cached failure.
+    const entries = await drain(getEntries);
+    expect(entries.map((e) => e.path)).toEqual(["en.html"]);
+    expect(generateStaticParams).toHaveBeenCalledTimes(2);
   });
 });

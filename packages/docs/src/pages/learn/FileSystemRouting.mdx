@@ -128,6 +128,8 @@ Param values must be non-empty strings that stay within their URL segment: a reg
 
 If `generateStaticParams` returns the same params more than once, the duplicates are collapsed and the page is generated once. However, if two _different_ pages generate the same URL — such as a static `blog/hello/page.tsx` next to a `blog/[slug]/page.tsx` whose `generateStaticParams` also returns `{ slug: "hello" }` — the build fails: the two pages would fight over one output file, and route precedence makes one of them unreachable.
 
+During development, the site's route enumeration — including every `generateStaticParams` call — runs once and is cached, rather than on every request. Editing any file under the routes directory refreshes the cache automatically. If `generateStaticParams` derives its result from external data (say, a CMS), pages added to that data appear after you edit a routed file or restart the dev server.
+
 Because `generateStaticParams` runs on the server at build time, a page module that exports it cannot be marked `"use client"`. If the page body needs to be a Client Component, move it into a separate `"use client"` module and re-export it from the page:
 
 ```tsx

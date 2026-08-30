@@ -236,7 +236,17 @@ export async function serveRSC(request: Request): Promise<Response> {
   }
 
   const deferLoadStart = performance.now();
-  const entry = deferRegistry.load(moduleId);
+  let entry = deferRegistry.load(moduleId);
+  if (!entry) {
+    // The entry may be an fs-route chunk that evictStale dropped (settled
+    // entries expire after ttlMs) while its ID is still baked into a page
+    // held by an open tab. Iterating the entries re-registers the current
+    // chunk set under its original IDs (cheap: the fs-routes enumeration is
+    // cached), so retry once after. An ID from before a dev-server restart
+    // or a routed-file edit stays missing and 404s as before.
+    await loadEntriesList();
+    entry = deferRegistry.load(moduleId);
+  }
   if (!entry) {
     throw new ServeRSCError(`RSC component not found: ${moduleId}`, 404);
   }
