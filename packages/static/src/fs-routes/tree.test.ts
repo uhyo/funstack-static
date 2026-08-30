@@ -244,6 +244,55 @@ describe("collectStaticPaths", () => {
     await expect(collectStaticPaths(tree)).rejects.toThrow(/slug/);
   });
 
+  it("dedupes duplicate params returned by generateStaticParams", async () => {
+    const tree: FsRouteTreeNode[] = [
+      {
+        path: "/blog/:slug",
+        page: true,
+        module: pageModule(() => [
+          { slug: "hello" },
+          { slug: "hello" },
+          { slug: "world" },
+        ]),
+      },
+    ];
+    const pages = await collectStaticPaths(tree);
+    expect(withoutChain(pages)).toEqual([
+      { urlPath: "/blog/hello", params: { slug: "hello" } },
+      { urlPath: "/blog/world", params: { slug: "world" } },
+    ]);
+  });
+
+  it("throws when two different routes generate the same URL", async () => {
+    const tree: FsRouteTreeNode[] = [
+      {
+        path: "/blog/hello",
+        page: true,
+        module: component,
+        filePath: "blog/hello/page.tsx",
+      },
+      {
+        path: "/blog/:slug",
+        page: true,
+        module: pageModule(() => [{ slug: "hello" }]),
+        filePath: "blog/[slug]/page.tsx",
+      },
+    ];
+    await expect(collectStaticPaths(tree)).rejects.toThrow(
+      /\("blog\/hello\/page\.tsx" and "blog\/\[slug\]\/page\.tsx"\) generate the same URL "\/blog\/hello"/,
+    );
+  });
+
+  it("describes a conflicting page by its route path when it has no file", async () => {
+    const tree: FsRouteTreeNode[] = [
+      { path: "/about", page: true, module: component },
+      { path: "/about", page: true, module: component },
+    ];
+    await expect(collectStaticPaths(tree)).rejects.toThrow(
+      /\(route "\/about" and route "\/about"\) generate the same URL "\/about"/,
+    );
+  });
+
   it("allows a client component page on a static route", async () => {
     const tree: FsRouteTreeNode[] = [
       {
