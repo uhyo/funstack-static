@@ -83,6 +83,7 @@ async function renderEntryToResponse(
   >("ssr");
   timings.push(`ssr-module;dur=${performance.now() - ssrModuleStart}`);
 
+  let ssrResult: Awaited<ReturnType<typeof ssrEntryModule.renderHTML>>;
   if (ssrEnabled) {
     // SSR on: single RSC stream with full tree
     const rscStart = performance.now();
@@ -92,21 +93,13 @@ async function renderEntryToResponse(
     timings.push(`rsc;dur=${performance.now() - rscStart}`);
 
     const ssrStart = performance.now();
-    const ssrResult = await ssrEntryModule.renderHTML(rootRscStream, {
+    ssrResult = await ssrEntryModule.renderHTML(rootRscStream, {
       appEntryMarker: marker,
       build: false,
       ssr: true,
       deferRegistry,
     });
     timings.push(`ssr;dur=${performance.now() - ssrStart}`);
-
-    return new Response(ssrResult.stream, {
-      status: ssrResult.status,
-      headers: {
-        "Content-type": "text/html",
-        "Server-Timing": timings.join(", "),
-      },
-    });
   } else {
     // SSR off: shell RSC for SSR, full RSC for client
     const rscStart = performance.now();
@@ -123,22 +116,22 @@ async function renderEntryToResponse(
     timings.push(`rsc;dur=${performance.now() - rscStart}`);
 
     const ssrStart = performance.now();
-    const ssrResult = await ssrEntryModule.renderHTML(shellRscStream, {
+    ssrResult = await ssrEntryModule.renderHTML(shellRscStream, {
       appEntryMarker: marker,
       build: false,
       ssr: false,
       clientRscStream,
     });
     timings.push(`ssr;dur=${performance.now() - ssrStart}`);
-
-    return new Response(ssrResult.stream, {
-      status: ssrResult.status,
-      headers: {
-        "Content-type": "text/html",
-        "Server-Timing": timings.join(", "),
-      },
-    });
   }
+
+  return new Response(ssrResult.stream, {
+    status: ssrResult.status,
+    headers: {
+      "Content-type": "text/html",
+      "Server-Timing": timings.join(", "),
+    },
+  });
 }
 
 /**
@@ -184,6 +177,19 @@ export function isServeRSCError(error: unknown): error is ServeRSCError {
 }
 
 /**
+ * Builds an RSC payload response with Server-Timing headers.
+ */
+function rscResponse(body: BodyInit, timings: string[]): Response {
+  return new Response(body, {
+    status: 200,
+    headers: {
+      "content-type": "text/x-component;charset=utf-8",
+      "Server-Timing": timings.join(", "),
+    },
+  });
+}
+
+/**
  * Serves an RSC stream response
  */
 export async function serveRSC(request: Request): Promise<Response> {
@@ -221,13 +227,7 @@ export async function serveRSC(request: Request): Promise<Response> {
     });
     timings.push(`rsc;dur=${performance.now() - rscStart}`);
 
-    return new Response(rootRscStream, {
-      status: 200,
-      headers: {
-        "content-type": "text/x-component;charset=utf-8",
-        "Server-Timing": timings.join(", "),
-      },
-    });
+    return rscResponse(rootRscStream, timings);
   }
 
   const moduleId = extractIDFromModulePath(pathname);
@@ -255,22 +255,10 @@ export async function serveRSC(request: Request): Promise<Response> {
   const { state } = entry;
   switch (state.state) {
     case "streaming": {
-      return new Response(state.stream, {
-        status: 200,
-        headers: {
-          "content-type": "text/x-component;charset=utf-8",
-          "Server-Timing": timings.join(", "),
-        },
-      });
+      return rscResponse(state.stream, timings);
     }
     case "ready": {
-      return new Response(await entry.drainPromise, {
-        status: 200,
-        headers: {
-          "content-type": "text/x-component;charset=utf-8",
-          "Server-Timing": timings.join(", "),
-        },
-      });
+      return rscResponse(await entry.drainPromise, timings);
     }
     case "error": {
       throw new ServeRSCError(
