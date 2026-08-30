@@ -78,6 +78,18 @@ export interface FsRoutesRuntimeHost {
    */
   registerChunk(element: ReactElement, name: string): string;
   /**
+   * Whether the chunk registered under `id` is still available. In dev the
+   * defer registry evicts entries over time, so a chunk registered by an
+   * earlier request may be gone by the next one.
+   */
+  hasChunk(id: string): boolean;
+  /**
+   * Re-registers an evicted chunk under its original payload ID, so that
+   * payloads already served to clients (whose `chunks` maps bake in that ID)
+   * can still fetch it on soft navigation.
+   */
+  restoreChunk(element: ReactElement, id: string, name: string): void;
+  /**
    * The client component standing in for Server Component route nodes,
    * resolving the chunk for the current match's params. A client reference
    * to `FsRouteSlot` from `#rsc-client` in the real host.
@@ -156,16 +168,30 @@ function buildNodeMetas(
 }
 
 /**
+ * A registered chunk kept for re-registration: the dev defer registry may
+ * evict the chunk while its payload ID is still baked into payloads held by
+ * open tabs, and re-registering the same element under the same ID lets
+ * those tabs keep soft-navigating.
+ */
+interface RegisteredChunk {
+  element: ReactElement;
+  name: string;
+}
+
+/**
  * Registers one pre-rendered RSC chunk per Server Component node per params
  * combination occurring among the generated pages, filling each node's
  * `chunks` map. Client-side soft navigation fetches these chunks to render
  * Server Component output for the destination's params.
+ *
+ * Returns the registered chunks by payload ID, for later restoration of
+ * entries the dev registry has evicted.
  */
 function registerChunks(
   pages: StaticPage[],
   metas: Map<FsRouteTreeNode, NodeMeta>,
   host: FsRoutesRuntimeHost,
-): void {
+): Map<string, RegisteredChunk> {
   const combos = new Map<
     FsRouteTreeNode,
     Map<string, Record<string, string>>
@@ -188,17 +214,30 @@ function registerChunks(
       }
     }
   }
+  const registered = new Map<string, RegisteredChunk>();
   for (const [node, nodeCombos] of combos) {
     const meta = metas.get(node)!;
     const Component = node.module.default!;
     for (const [key, params] of nodeCombos) {
       const element = createElement(Component, { params, route: meta.route });
-      meta.chunks[key] = host.registerChunk(
-        element,
-        `fs-route ${node.filePath ?? meta.id} ${key}`,
-      );
+      const name = `fs-route ${node.filePath ?? meta.id} ${key}`;
+      const id = host.registerChunk(element, name);
+      meta.chunks[key] = id;
+      registered.set(id, { element, name });
     }
   }
+  return registered;
+}
+
+/**
+ * The result of enumerating the whole site once: the route tree, per-node
+ * metadata, every statically-generated page, and the registered chunks.
+ */
+interface EnumeratedRoutes {
+  tree: FsRouteTreeNode[];
+  metas: Map<FsRouteTreeNode, NodeMeta>;
+  pages: StaticPage[];
+  chunks: Map<string, RegisteredChunk>;
 }
 
 /**
@@ -209,6 +248,11 @@ function registerChunks(
  * The route tree is built once via the adapter; the router route definitions
  * are rebuilt per page so that the page's own Server Component output can be
  * inlined into its payload.
+ *
+ * The enumeration itself (route tree, `generateStaticParams()` of every
+ * dynamic route, chunk registration) runs once and is cached for the
+ * lifetime of the module instance, however many times `getEntries()` is
+ * iterated — see the comment on `enumerated` below.
  *
  * This is the host-parameterized implementation behind
  * `createFsRoutesEntries` (see `./entries`), kept free of RSC-runtime
@@ -302,7 +346,7 @@ export function createFsRoutesEntriesWithHost(
     });
   }
 
-  return async function* getEntries(): AsyncGenerator<EntryDefinition> {
+  async function enumerateRoutes(): Promise<EnumeratedRoutes> {
     const warn = (message: string) => {
       console.warn(`[funstack] ${message}`);
     };
@@ -312,7 +356,43 @@ export function createFsRoutesEntriesWithHost(
     const pages = await collectStaticPaths(tree);
     const metas = new Map<FsRouteTreeNode, NodeMeta>();
     buildNodeMetas(tree, [], "", metas);
-    registerChunks(pages, metas, host);
+    const chunks = registerChunks(pages, metas, host);
+    return { tree, metas, pages, chunks };
+  }
+
+  // The enumeration is cached for the lifetime of this module instance. The
+  // dev server iterates getEntries() on every request; without the cache,
+  // each request would re-run every generateStaticParams() and register a
+  // fresh set of chunks under new IDs, flooding the dev defer registry
+  // until chunk IDs held by other (or long-idle) tabs are evicted and their
+  // soft navigation falls back to hard navigation. Editing a routed
+  // file invalidates the entries module in dev, so a fresh module instance
+  // re-enumerates; a build iterates getEntries() once, making the cache
+  // inert there.
+  let enumerated: Promise<EnumeratedRoutes> | undefined;
+
+  return async function* getEntries(): AsyncGenerator<EntryDefinition> {
+    if (enumerated === undefined) {
+      const attempt = enumerateRoutes();
+      // A failed enumeration (e.g. a transient error thrown by a
+      // generateStaticParams() fetching data) is not cached, so the next
+      // request retries instead of failing for the rest of the session.
+      attempt.catch(() => {
+        if (enumerated === attempt) {
+          enumerated = undefined;
+        }
+      });
+      enumerated = attempt;
+    }
+    const { tree, metas, pages, chunks } = await enumerated;
+    // Re-register any chunk the dev registry evicted since enumeration,
+    // under its original ID: payloads already served bake chunk IDs into
+    // their slots, and restoring the ID keeps those pages soft-navigable.
+    for (const [id, { element, name }] of chunks) {
+      if (!host.hasChunk(id)) {
+        host.restoreChunk(element, id, name);
+      }
+    }
     for (const page of pages) {
       yield {
         path: urlPathToFilePath(page.urlPath),
