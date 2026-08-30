@@ -75,15 +75,13 @@ export function splitRoutePath(path: string): string[] {
 }
 
 /**
- * Joins URL segments into a normalized absolute URL path.
+ * Joins URL segments into an absolute URL path. Segments are non-empty and
+ * carry no leading or trailing slashes ({@link splitRoutePath} filters
+ * empties, and substituted param values are validated), so joining yields a
+ * normalized path; only catch-all values contribute interior slashes.
  */
 function segmentsToUrl(segments: string[]): string {
-  const joined = segments
-    .join("/")
-    .replace(/\/+/g, "/")
-    .replace(/^\//, "")
-    .replace(/\/$/, "");
-  return joined === "" ? "/" : `/${joined}`;
+  return segments.length === 0 ? "/" : `/${segments.join("/")}`;
 }
 
 /**

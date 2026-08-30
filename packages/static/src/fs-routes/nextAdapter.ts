@@ -72,6 +72,26 @@ const VALID_PARAM_NAME = /^[A-Za-z0-9_$]+$/;
 const URL_PATTERN_SPECIAL_CHARS = /[:*?+(){}\\]/;
 
 /**
+ * Whether a segment is a route group (`(group)`), which does not reach the
+ * URL.
+ */
+function isRouteGroup(segment: string): boolean {
+  return segment.startsWith("(") && segment.endsWith(")");
+}
+
+/**
+ * Parses a dynamic segment (`[param]` or catch-all `[...param]`) into its
+ * param name, or returns `null` for any other segment.
+ */
+function parseDynamicSegment(
+  segment: string,
+): { name: string; catchAll: boolean } | null {
+  const match = /^\[(\.\.\.)?(.+)\]$/.exec(segment);
+  if (!match) return null;
+  return { name: match[2]!, catchAll: match[1] !== undefined };
+}
+
+/**
  * Rejects directory segments using Next.js syntaxes that this adapter does not
  * support, and segments FUNSTACK Router's URL patterns cannot express, so they
  * fail loudly instead of silently producing broken routes.
@@ -94,14 +114,14 @@ function validateSegment(segment: string, filePath: string): void {
     );
   }
   // Route groups do not reach the URL, so their names are unconstrained.
-  if (segment.startsWith("(") && segment.endsWith(")")) {
+  if (isRouteGroup(segment)) {
     return;
   }
-  const dynamic = /^\[(?:\.\.\.)?(.+)\]$/.exec(segment);
+  const dynamic = parseDynamicSegment(segment);
   if (dynamic) {
-    if (!VALID_PARAM_NAME.test(dynamic[1]!)) {
+    if (!VALID_PARAM_NAME.test(dynamic.name)) {
       throw new Error(
-        `Invalid param name "${dynamic[1]}" ("${segment}" in "${filePath}"). ` +
+        `Invalid param name "${dynamic.name}" ("${segment}" in "${filePath}"). ` +
           `Param names may only contain letters, digits, "_", and "$".`,
       );
     }
@@ -129,11 +149,9 @@ function validateSegment(segment: string, filePath: string): void {
  */
 function urlSegment(segment: string): string | null {
   if (segment === "") return null;
-  if (segment.startsWith("(") && segment.endsWith(")")) return null;
-  const catchAll = /^\[\.\.\.(.+)\]$/.exec(segment);
-  if (catchAll) return `:${catchAll[1]}*`;
-  const dynamic = /^\[(.+)\]$/.exec(segment);
-  if (dynamic) return `:${dynamic[1]}`;
+  if (isRouteGroup(segment)) return null;
+  const dynamic = parseDynamicSegment(segment);
+  if (dynamic) return `:${dynamic.name}${dynamic.catchAll ? "*" : ""}`;
   return segment;
 }
 
@@ -183,6 +201,46 @@ function compareNodes(a: FsRouteTreeNode, b: FsRouteTreeNode): number {
   return rankA.length - rankB.length;
 }
 
+/**
+ * Validates every directory segment of a route file's path, including that no
+ * param name is used twice: a param name repeated on one path either fails
+ * URLPattern construction (within one route) or shadows the outer value
+ * (across a layout boundary), so it is rejected up front.
+ */
+function validateFilePath(dirs: string[], filePath: string): void {
+  const seenParamNames = new Set<string>();
+  for (const segment of dirs) {
+    validateSegment(segment, filePath);
+    const dynamic = parseDynamicSegment(segment);
+    if (dynamic) {
+      if (seenParamNames.has(dynamic.name)) {
+        throw new Error(
+          `Duplicate param name "${dynamic.name}" in "${filePath}": ` +
+            `a route may use each param name only once.`,
+        );
+      }
+      seenParamNames.add(dynamic.name);
+    }
+  }
+}
+
+/**
+ * Normalized route position of a page's directory path: route groups are
+ * dropped and dynamic segments are reduced to their kind, so that two pages
+ * get the same key exactly when they resolve to the same route (e.g. `[a]`
+ * and `[b]` at the same position, or the same path through different route
+ * groups).
+ */
+function pagePositionKey(dirs: string[]): string {
+  const parts: string[] = [];
+  for (const segment of dirs) {
+    if (isRouteGroup(segment)) continue;
+    const dynamic = parseDynamicSegment(segment);
+    parts.push(dynamic ? (dynamic.catchAll ? "[...]" : "[]") : segment);
+  }
+  return parts.join("/");
+}
+
 function ensureDir(root: TrieNode, dirs: string[]): TrieNode {
   let current = root;
   for (const segment of dirs) {
@@ -194,6 +252,13 @@ function ensureDir(root: TrieNode, dirs: string[]): TrieNode {
     current = next;
   }
   return current;
+}
+
+/**
+ * Builds the route tree node for a trie node's page, at the given path.
+ */
+function pageNode(node: TrieNode, path: string): FsRouteTreeNode {
+  return { path, module: node.page!, filePath: node.pageFile, page: true };
 }
 
 /**
@@ -217,12 +282,7 @@ function emit(node: TrieNode, prefix: string[]): FsRouteTreeNode[] {
   if (node.layout) {
     const children: FsRouteTreeNode[] = [];
     if (node.page) {
-      children.push({
-        path: "/",
-        module: node.page,
-        filePath: node.pageFile,
-        page: true,
-      });
+      children.push(pageNode(node, "/"));
     }
     for (const child of childNodes) {
       children.push(...emit(child, []));
@@ -242,13 +302,7 @@ function emit(node: TrieNode, prefix: string[]): FsRouteTreeNode[] {
 
   const result: FsRouteTreeNode[] = [];
   if (node.page) {
-    const path = here.length === 0 ? "/" : `/${here.join("/")}`;
-    result.push({
-      path,
-      module: node.page,
-      filePath: node.pageFile,
-      page: true,
-    });
+    result.push(pageNode(node, here.length === 0 ? "/" : `/${here.join("/")}`));
   }
   for (const child of childNodes) {
     result.push(...emit(child, here));
@@ -294,32 +348,16 @@ export function nextRoutes(options: NextRoutesOptions = {}): FsRoutesAdapter {
       // Exact directory each page/layout file lives in, to detect duplicate
       // files for the same node (e.g. `page.tsx` next to `page.jsx`).
       const filesByDir = new Map<string, string>();
-      // Route position of each page, with dynamic segments normalized so that
-      // e.g. `[a]` and `[b]` pages at the same position conflict. Layouts are
-      // exempt: multiple layouts at one position via route groups are valid
-      // (e.g. `(marketing)/layout.tsx` and `(shop)/layout.tsx`).
+      // Each page's normalized position (see pagePositionKey), to detect
+      // pages resolving to the same route. Layouts are exempt: multiple
+      // layouts at one position via route groups are valid (e.g.
+      // `(marketing)/layout.tsx` and `(shop)/layout.tsx`).
       const pagePositions = new Map<string, string>();
       for (const file of files) {
         const { dirs, base } = splitFilePath(file.filePath);
         const kind = classify(base, pageFileName, layoutFileName);
         if (!kind) continue;
-        const seenParamNames = new Set<string>();
-        for (const segment of dirs) {
-          validateSegment(segment, file.filePath);
-          const dynamic = /^\[(?:\.\.\.)?(.+)\]$/.exec(segment);
-          if (dynamic) {
-            // A param name used twice on one path either fails URLPattern
-            // construction (within one route) or shadows the outer value
-            // (across a layout boundary), so reject it up front.
-            if (seenParamNames.has(dynamic[1]!)) {
-              throw new Error(
-                `Duplicate param name "${dynamic[1]}" in "${file.filePath}": ` +
-                  `a route may use each param name only once.`,
-              );
-            }
-            seenParamNames.add(dynamic[1]!);
-          }
-        }
+        validateFilePath(dirs, file.filePath);
         const dirKey = `${kind} ${dirs.join("/")}`;
         const sameDir = filesByDir.get(dirKey);
         if (sameDir !== undefined) {
@@ -330,17 +368,7 @@ export function nextRoutes(options: NextRoutesOptions = {}): FsRoutesAdapter {
         }
         filesByDir.set(dirKey, file.filePath);
         if (kind === "page") {
-          const position = dirs
-            .map(urlSegment)
-            .filter((segment) => segment !== null)
-            .map((segment) =>
-              segment.startsWith(":")
-                ? segment.endsWith("*")
-                  ? "[...]"
-                  : "[]"
-                : segment,
-            )
-            .join("/");
+          const position = pagePositionKey(dirs);
           const conflicting = pagePositions.get(position);
           if (conflicting !== undefined) {
             throw new Error(

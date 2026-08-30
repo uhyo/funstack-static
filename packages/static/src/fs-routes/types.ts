@@ -1,7 +1,8 @@
 import type { RouteHandle } from "@funstack/router";
 import type { ComponentType, ReactNode } from "react";
+import type { MaybePromise } from "../entryDefinition";
 
-export type MaybePromise<T> = T | Promise<T>;
+export type { MaybePromise };
 
 /**
  * Opaque route object identifying the route of a page or layout, received as
