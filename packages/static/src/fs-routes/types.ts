@@ -75,6 +75,10 @@ export interface FsRouteModule {
    * `#`. Only a catch-all segment's value may contain slashes (but not
    * leading, trailing, or repeated ones). The build fails on any other
    * value, which would generate a page its own route cannot match.
+   *
+   * Entries resolving to the same URL are deduplicated. A value resolving to
+   * a URL that a *different* page also generates (e.g. a static sibling
+   * route) fails the build instead.
    */
   generateStaticParams?: () => MaybePromise<Array<Record<string, string>>>;
   [key: string]: unknown;

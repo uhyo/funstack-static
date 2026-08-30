@@ -1,4 +1,9 @@
-import { createElement, type ComponentType, type ReactElement } from "react";
+import {
+  createElement,
+  type ComponentType,
+  type ReactElement,
+  type ReactNode,
+} from "react";
 import { Router } from "@funstack/router";
 import type { RouteDefinition } from "@funstack/router/server";
 import type {
@@ -227,7 +232,7 @@ export function createFsRoutesEntriesWithHost(
       const definition: {
         id: string;
         path?: string;
-        component?: React.ComponentType<object> | React.ReactNode;
+        component?: ComponentType<object> | ReactNode;
         children?: RouteDefinition[];
       } = { id: meta.id };
       if (node.path !== undefined) {
@@ -239,7 +244,7 @@ export function createFsRoutesEntriesWithHost(
           // the router can render it in the browser. Pass the component
           // itself so it receives the params of the current match, keeping
           // them live across soft client-side navigation.
-          definition.component = Component as React.ComponentType<object>;
+          definition.component = Component as ComponentType<object>;
         } else {
           // A Server Component crosses the RSC boundary only as its rendered
           // output, so a client slot stands in for it: it renders the
@@ -283,7 +288,7 @@ export function createFsRoutesEntriesWithHost(
     tree: FsRouteTreeNode[];
     metas: Map<FsRouteTreeNode, NodeMeta>;
     page: StaticPage;
-  }): React.ReactNode {
+  }): ReactNode {
     const routes = buildRouteDefinitions(
       tree,
       metas,

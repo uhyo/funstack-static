@@ -1,7 +1,5 @@
 import { FsRouteSlot } from "#rsc-client";
-import { rscPayloadDir } from "virtual:funstack/config";
-import { deferRegistry } from "../rsc/defer";
-import { getPayloadIDFor } from "../rsc/rscModule";
+import { registerDeferredPayload } from "../rsc/defer";
 import type { GetEntriesResult } from "../entryDefinition";
 import {
   createFsRoutesEntriesWithHost,
@@ -16,11 +14,7 @@ import {
  * render through the `FsRouteSlot` client reference.
  */
 const rscRuntimeHost: FsRoutesRuntimeHost = {
-  registerChunk(element, name) {
-    const id = getPayloadIDFor(crypto.randomUUID(), rscPayloadDir);
-    deferRegistry.register(element, id, name);
-    return id;
-  },
+  registerChunk: registerDeferredPayload,
   RouteSlot: FsRouteSlot,
 };
 

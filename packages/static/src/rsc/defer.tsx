@@ -34,6 +34,25 @@ export const deferRegistry = new DeferRegistry((element) =>
 );
 
 /**
+ * Registers a Server Component element as a separate RSC payload in the
+ * shared defer registry and returns the payload ID under which it is served.
+ * The sanitized `name` is included in the dev payload file name for
+ * debugging.
+ */
+export function registerDeferredPayload(
+  element: ReactElement,
+  name?: string,
+): string {
+  const sanitizedName = name ? sanitizeName(name) : undefined;
+  const rawId = sanitizedName
+    ? `${sanitizedName}-${crypto.randomUUID()}`
+    : crypto.randomUUID();
+  const id = getPayloadIDFor(rawId, rscPayloadDir);
+  deferRegistry.register(element, id, name);
+  return id;
+}
+
+/**
  * Renders given Server Component into a separate RSC payload.
  *
  * During the client side rendering, fetching of the payload will be
@@ -47,13 +66,6 @@ export function defer(
   element: ReactElement,
   options?: DeferOptions,
 ): ReactNode {
-  const name = options?.name;
-  const sanitizedName = name ? sanitizeName(name) : undefined;
-  const rawId = sanitizedName
-    ? `${sanitizedName}-${crypto.randomUUID()}`
-    : crypto.randomUUID();
-  const id = getPayloadIDFor(rawId, rscPayloadDir);
-  deferRegistry.register(element, id, name);
-
+  const id = registerDeferredPayload(element, options?.name);
   return <DeferredComponent moduleID={id} />;
 }

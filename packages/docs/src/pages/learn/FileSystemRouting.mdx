@@ -126,6 +126,8 @@ A dynamic route **must** export `generateStaticParams`; the build fails otherwis
 
 Param values must be non-empty strings that stay within their URL segment: a regular param value must not contain `/`, and no value may contain `.` or `..` segments, `?`, or `#`. A catch-all param value may contain `/` to span multiple segments, but not leading, trailing, or repeated slashes. The build fails on any other value, since it would generate a page that its own route can never match (or a file outside the output directory).
 
+If `generateStaticParams` returns the same params more than once, the duplicates are collapsed and the page is generated once. However, if two _different_ pages generate the same URL — such as a static `blog/hello/page.tsx` next to a `blog/[slug]/page.tsx` whose `generateStaticParams` also returns `{ slug: "hello" }` — the build fails: the two pages would fight over one output file, and route precedence makes one of them unreachable.
+
 Because `generateStaticParams` runs on the server at build time, a page module that exports it cannot be marked `"use client"`. If the page body needs to be a Client Component, move it into a separate `"use client"` module and re-export it from the page:
 
 ```tsx
