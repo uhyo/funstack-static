@@ -5,7 +5,6 @@ import { defineConfig } from "vite";
 export default defineConfig({
   plugins: [
     funstackStatic({
-      // Required for file-system routing to render in the dev server.
       ssr: true,
       fsRoutes: {
         dir: "./src/pages",
