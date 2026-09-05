@@ -53,3 +53,23 @@ code {
     background: #333;
   }
 }
+
+table {
+  border-collapse: collapse;
+  width: 100%;
+}
+
+th,
+td {
+  text-align: left;
+  vertical-align: top;
+  padding: 0.4em 0.6em;
+  border-bottom: 1px solid #ddd;
+}
+
+@media (prefers-color-scheme: dark) {
+  th,
+  td {
+    border-bottom-color: #444;
+  }
+}

@@ -12,7 +12,7 @@ export default function Root({ children }: { children: React.ReactNode }) {
       <body>
         <nav>
           <a href="/">Home</a> | <a href="/about">About</a> |{" "}
-          <a href="/blog">Blog</a>
+          <a href="/blog">Blog</a> | <a href="/docs/en">Docs</a>
         </nav>
         <main>{children}</main>
       </body>
