@@ -73,11 +73,11 @@ importers:
         specifier: ^2.0.14
         version: 2.0.14
       '@types/react':
-        specifier: ^19.2.18
-        version: 19.2.18
+        specifier: ^19.3.0
+        version: 19.3.0
       '@types/react-dom':
         specifier: ^19.3.0
-        version: 19.3.0(@types/react@19.2.18)
+        version: 19.3.0(@types/react@19.3.0)
       '@vitejs/plugin-react':
         specifier: 'catalog:'
         version: 6.1.1(vite@8.2.2(@types/node@26.5.1)(esbuild@0.28.1)(terser@5.47.1)(tsx@4.21.0))
@@ -110,11 +110,11 @@ importers:
         version: 19.3.0(react@19.3.0)
     devDependencies:
       '@types/react':
-        specifier: ^19.2.18
-        version: 19.2.18
+        specifier: ^19.3.0
+        version: 19.3.0
       '@types/react-dom':
         specifier: ^19.3.0
-        version: 19.3.0(@types/react@19.2.18)
+        version: 19.3.0(@types/react@19.3.0)
       '@vitejs/plugin-react':
         specifier: 'catalog:'
         version: 6.1.1(vite@8.2.2(@types/node@26.5.1)(esbuild@0.28.1)(terser@5.47.1)(tsx@4.21.0))
@@ -141,11 +141,11 @@ importers:
         version: 19.3.0(react@19.3.0)
     devDependencies:
       '@types/react':
-        specifier: ^19.2.18
-        version: 19.2.18
+        specifier: ^19.3.0
+        version: 19.3.0
       '@types/react-dom':
         specifier: ^19.3.0
-        version: 19.3.0(@types/react@19.2.18)
+        version: 19.3.0(@types/react@19.3.0)
       '@vitejs/plugin-react':
         specifier: 'catalog:'
         version: 6.1.1(vite@8.2.2(@types/node@26.5.1)(esbuild@0.28.1)(terser@5.47.1)(tsx@4.21.0))
@@ -163,7 +163,7 @@ importers:
         version: 0.5.34(react-dom@19.3.0(react@19.3.0))(react@19.3.0)(vite@8.2.2(@types/node@26.5.1)(esbuild@0.28.1)(terser@5.47.1)(tsx@4.21.0))
       react-error-boundary:
         specifier: ^6.1.5
-        version: 6.1.5(@types/react@19.2.18)(react@19.3.0)
+        version: 6.1.5(@types/react@19.3.0)(react@19.3.0)
       rsc-html-stream:
         specifier: ^0.0.8
         version: 0.0.8
@@ -181,11 +181,11 @@ importers:
         specifier: 'catalog:'
         version: 26.5.1
       '@types/react':
-        specifier: ^19.2.18
-        version: 19.2.18
+        specifier: ^19.3.0
+        version: 19.3.0
       '@types/react-dom':
         specifier: ^19.3.0
-        version: 19.3.0(@types/react@19.2.18)
+        version: 19.3.0(@types/react@19.3.0)
       react:
         specifier: 'catalog:'
         version: 19.3.0
@@ -211,11 +211,11 @@ importers:
         specifier: workspace:*
         version: link:../..
       '@types/react':
-        specifier: ^19.2.18
-        version: 19.2.18
+        specifier: ^19.3.0
+        version: 19.3.0
       '@types/react-dom':
         specifier: ^19.3.0
-        version: 19.3.0(@types/react@19.2.18)
+        version: 19.3.0(@types/react@19.3.0)
       '@vitejs/plugin-react':
         specifier: 'catalog:'
         version: 6.1.1(vite@8.2.2(@types/node@26.5.1)(esbuild@0.28.1)(terser@5.47.1)(tsx@4.21.0))
@@ -238,11 +238,11 @@ importers:
         specifier: workspace:*
         version: link:../..
       '@types/react':
-        specifier: ^19.2.18
-        version: 19.2.18
+        specifier: ^19.3.0
+        version: 19.3.0
       '@types/react-dom':
         specifier: ^19.3.0
-        version: 19.3.0(@types/react@19.2.18)
+        version: 19.3.0(@types/react@19.3.0)
       '@vitejs/plugin-react':
         specifier: 'catalog:'
         version: 6.1.1(vite@8.2.2(@types/node@26.5.1)(esbuild@0.28.1)(terser@5.47.1)(tsx@4.21.0))
@@ -262,11 +262,11 @@ importers:
         specifier: workspace:*
         version: link:../..
       '@types/react':
-        specifier: ^19.2.18
-        version: 19.2.18
+        specifier: ^19.3.0
+        version: 19.3.0
       '@types/react-dom':
         specifier: ^19.3.0
-        version: 19.3.0(@types/react@19.2.18)
+        version: 19.3.0(@types/react@19.3.0)
       '@vitejs/plugin-react':
         specifier: 'catalog:'
         version: 6.1.1(vite@8.2.2(@types/node@26.5.1)(esbuild@0.28.1)(terser@5.47.1)(tsx@4.21.0))
@@ -286,11 +286,11 @@ importers:
         specifier: workspace:*
         version: link:../..
       '@types/react':
-        specifier: ^19.2.18
-        version: 19.2.18
+        specifier: ^19.3.0
+        version: 19.3.0
       '@types/react-dom':
         specifier: ^19.3.0
-        version: 19.3.0(@types/react@19.2.18)
+        version: 19.3.0(@types/react@19.3.0)
       '@vitejs/plugin-react':
         specifier: 'catalog:'
         version: 6.1.1(vite@8.2.2(@types/node@26.5.1)(esbuild@0.28.1)(terser@5.47.1)(tsx@4.21.0))
@@ -1655,8 +1655,8 @@ packages:
     peerDependencies:
       '@types/react': ^19.3.0
 
-  '@types/react@19.2.18':
-    resolution: {integrity: sha512-AnzbBERsrLKtk2XSfTbYRLjQPdy116Sty4q+T+Bp3IC4l6jNBvreVPAHmpq9qhXQM7CXZPjLVmGMw9sy+hxQ3w==}
+  '@types/react@19.3.0':
+    resolution: {integrity: sha512-N0rFCuH9YoxG9/m61l9MfpJKfmLOVU0em7ipIz6TRgSSkvReLB9vL85GB+yr8Bs5leqpvg96JSwF4ZS1s4viQg==}
 
   '@types/unist@2.0.11':
     resolution: {integrity: sha512-CmBKiL6NNo/OqgmMn95Fk9Whlp2mtvIv+KNpQKN2F4SjvrEesubTRWGYSg+BnWZOnlCaSTU1sMpsBOzgbYhnsA==}
@@ -3928,11 +3928,11 @@ snapshots:
     dependencies:
       undici-types: 8.9.0
 
-  '@types/react-dom@19.3.0(@types/react@19.2.18)':
+  '@types/react-dom@19.3.0(@types/react@19.3.0)':
     dependencies:
-      '@types/react': 19.2.18
+      '@types/react': 19.3.0
 
-  '@types/react@19.2.18':
+  '@types/react@19.3.0':
     dependencies:
       csstype: 3.2.3
 
@@ -4942,11 +4942,11 @@ snapshots:
       react: 19.3.0
       scheduler: 0.28.0
 
-  react-error-boundary@6.1.5(@types/react@19.2.18)(react@19.3.0):
+  react-error-boundary@6.1.5(@types/react@19.3.0)(react@19.3.0):
     dependencies:
       react: 19.3.0
     optionalDependencies:
-      '@types/react': 19.2.18
+      '@types/react': 19.3.0
 
   react@19.3.0: {}
 
