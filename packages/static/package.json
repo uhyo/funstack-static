@@ -74,14 +74,14 @@
     "tsdown": "^0.23.0",
     "typescript": "catalog:",
     "vite": "catalog:",
-    "vitest": "^5.0.0"
+    "vitest": "^5.0.1"
   },
   "dependencies": {
     "@funstack/skill-installer": "^1.1.0",
-    "@vitejs/plugin-rsc": "^0.5.34",
+    "@vitejs/plugin-rsc": "^0.5.35",
     "react-error-boundary": "^6.1.5",
     "rsc-html-stream": "^0.0.8",
-    "srvx": "^1.0.4"
+    "srvx": "^1.0.5"
   },
   "peerDependencies": {
     "@funstack/router": "^1.4.0",
