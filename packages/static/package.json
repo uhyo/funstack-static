@@ -74,7 +74,7 @@
     "tsdown": "^0.23.0",
     "typescript": "catalog:",
     "vite": "catalog:",
-    "vitest": "^5.0.1"
+    "vitest": "^5.0.3"
   },
   "dependencies": {
     "@funstack/skill-installer": "^1.1.0",
