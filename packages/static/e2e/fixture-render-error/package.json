@@ -1,0 +1,14 @@
+{
+  "name": "e2e-fixture-render-error",
+  "private": true,
+  "type": "module",
+  "devDependencies": {
+    "@funstack/static": "workspace:*",
+    "@types/react": "^19.3.0",
+    "@types/react-dom": "^19.3.0",
+    "@vitejs/plugin-react": "catalog:",
+    "react": "catalog:",
+    "react-dom": "catalog:",
+    "vite": "catalog:"
+  }
+}

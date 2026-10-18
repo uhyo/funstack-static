@@ -54,6 +54,20 @@ interface FunstackStaticBaseOptions {
    * The module runs in the RSC environment.
    */
   build?: string;
+  /**
+   * Fail the production build when React reports an error while rendering
+   * (a Server Component throws, an invalid prop is passed to a Client
+   * Component, SSR of a component fails, etc.).
+   *
+   * React recovers from such errors by embedding them in the output (an
+   * error in the RSC payload, a client-rendered Suspense boundary in the
+   * HTML). A static build has no server to retry the render later, so by
+   * default the build fails instead of emitting the broken output.
+   * Set to `false` to only log these errors and emit the output anyway.
+   *
+   * @default true
+   */
+  failOnRenderError?: boolean;
 }
 
 interface SingleEntryOptions {
@@ -152,6 +166,7 @@ export default function funstackStatic(
     ssr = false,
     clientInit,
     rscPayloadDir = defaultRscPayloadDir,
+    failOnRenderError = true,
   } = options;
 
   // Validate rscPayloadDir to prevent path traversal or invalid segments
@@ -393,7 +408,7 @@ export default function funstackStatic(
     {
       name: "@funstack/static:build",
       async buildApp(builder) {
-        await buildApp(builder, this, { rscPayloadDir });
+        await buildApp(builder, this, { rscPayloadDir, failOnRenderError });
       },
     },
   ];

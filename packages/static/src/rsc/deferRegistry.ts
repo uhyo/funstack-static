@@ -37,9 +37,11 @@ type DeferEntryState =
 /**
  * Renders a React element to an RSC payload stream.
  * Injected so the registry does not depend on the RSC runtime directly.
+ * `name` is the debug name given to `defer()`, if any.
  */
 export type RenderToStream = (
   element: ReactElement,
+  name: string | undefined,
 ) => ReadableStream<Uint8Array>;
 
 export interface EvictStaleOptions {
@@ -99,7 +101,7 @@ export class DeferRegistry {
     const { state } = entry;
     switch (state.state) {
       case "pending": {
-        const stream = this.#render(state.element);
+        const stream = this.#render(state.element, entry.name);
         const [stream1, stream2] = stream.tee();
         entry.state = { state: "streaming", stream: stream1 };
         const drainPromise = drainStream(stream2);
