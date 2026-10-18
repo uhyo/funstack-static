@@ -29,9 +29,26 @@ function sanitizeName(name: string): string {
     .slice(0, 50);
 }
 
-export const deferRegistry = new DeferRegistry((element) =>
-  renderToReadableStream<ReactNode>(element),
-);
+let deferRenderErrorHandler:
+  ((error: unknown, name: string | undefined) => void) | undefined;
+
+/**
+ * Sets the handler for errors reported while rendering deferred payloads.
+ * Used by the build to collect render errors; when unset, React's default
+ * (`console.error`) applies.
+ */
+export function setDeferRenderErrorHandler(
+  handler: ((error: unknown, name: string | undefined) => void) | undefined,
+) {
+  deferRenderErrorHandler = handler;
+}
+
+export const deferRegistry = new DeferRegistry((element, name) => {
+  const handler = deferRenderErrorHandler;
+  return renderToReadableStream<ReactNode>(element, {
+    onError: handler && ((error: unknown) => handler(error, name)),
+  });
+});
 
 /**
  * Registers a Server Component element as a separate RSC payload in the

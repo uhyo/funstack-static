@@ -323,6 +323,25 @@ funstackStatic({
 });
 ```
 
+### failOnRenderError (optional)
+
+**Type:** `boolean`
+**Default:** `true`
+
+Whether `vite build` fails when React reports an error while rendering a page. Examples include a Server Component that throws, a function passed as a prop to a Client Component, a [deferred](/api/defer) component that throws, or a Client Component that throws during [SSR](/advanced/ssr).
+
+React recovers from these errors without stopping the render. It puts an error into the RSC payload, or with SSR, leaves the affected `<Suspense>` boundary to be rendered on the client. A server could try the render again on a later request, but a static build has no later request, so the broken page would be deployed as is. That's why the build fails by default: the errors are logged, the build stops before writing the affected pages, and it ends with an error that lists each failure and where it happened.
+
+Set this to `false` to log the errors and write the output anyway. This was the behavior before this option existed.
+
+```typescript
+funstackStatic({
+  root: "./src/root.tsx",
+  app: "./src/App.tsx",
+  failOnRenderError: false,
+});
+```
+
 ## Full Example
 
 ### Single-Entry

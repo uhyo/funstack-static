@@ -40,7 +40,7 @@ Without SSR, `{children}` must be the only content of its parent element in the 
 
 When SSR is enabled, your client components run during the build process to generate HTML. This means they must work in a server-like environment where browser APIs are not available.
 
-Components that directly access browser-only APIs will cause build errors:
+Components that directly access browser-only APIs will cause build errors. This includes errors inside a `<Suspense>` boundary, which React would otherwise recover from by rendering that part on the client (see [`failOnRenderError`](/api/funstack-static#failonrendererror-optional)):
 
 ```tsx
 "use client";

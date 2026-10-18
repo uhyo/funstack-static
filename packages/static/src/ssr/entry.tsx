@@ -19,6 +19,11 @@ export async function renderHTML(
     nonce?: string;
     deferRegistry?: DeferRegistry;
     clientRscStream?: ReadableStream<Uint8Array>;
+    /**
+     * Receives errors reported while prerendering (build only). Without it,
+     * React logs them with `console.error`.
+     */
+    onError?: (error: unknown) => void;
   },
 ): Promise<{ stream: ReadableStream<Uint8Array>; status?: number }> {
   // Tee only when the second branch is actually consumed (dev without a
@@ -77,6 +82,7 @@ export async function renderHTML(
     if (options.build) {
       const { prelude, postponed } = await prerender(<SsrRoot />, {
         bootstrapScriptContent,
+        onError: options.onError,
       });
       if (postponed !== null) {
         throw new Error("Unexpected postponed state during prerendering");

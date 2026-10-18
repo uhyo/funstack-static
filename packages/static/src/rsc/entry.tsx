@@ -2,13 +2,18 @@ import "./defer";
 import { renderToReadableStream } from "@vitejs/plugin-rsc/rsc";
 import { devMainRscPath } from "./request";
 import { generateAppMarker } from "./marker";
-import { deferRegistry } from "./defer";
+import { deferRegistry, setDeferRenderErrorHandler } from "./defer";
 import { devDeferEvictionOptions } from "./deferRegistry";
 import { extractIDFromModulePath } from "./rscModule";
 import { stripBasePath } from "../util/basePath";
 import { urlPathToFileCandidates } from "../util/urlPath";
 import { resolveRoot, resolveApp } from "./resolveEntry";
 import type { EntryDefinition, GetEntriesResult } from "../entryDefinition";
+import {
+  createRenderErrorHandler,
+  reportRenderError,
+  type RenderError,
+} from "../build/renderErrors";
 
 export type RscPayload = {
   root: React.ReactNode;
@@ -272,9 +277,25 @@ export async function serveRSC(request: Request): Promise<Response> {
 /**
  * Build handler — iterates over all entries and returns per-entry results
  * along with the shared defer registry.
+ *
+ * `renderErrors` collects errors React reports while rendering (RSC, SSR
+ * prerender and deferred payloads). React recovers from them in the output,
+ * so they do not reject; the array keeps filling while the returned streams
+ * and deferred payloads are drained.
  */
 export async function build() {
   const getEntries = (await import("virtual:funstack/entries")).default;
+
+  const renderErrors: RenderError[] = [];
+  setDeferRenderErrorHandler((error, name) =>
+    reportRenderError(
+      renderErrors,
+      name === undefined
+        ? "a deferred component"
+        : `deferred component "${name}"`,
+      error,
+    ),
+  );
 
   const ssrEntryModule = await import.meta.viteRsc.loadModule<
     typeof import("../ssr/entry")
@@ -290,25 +311,40 @@ export async function build() {
     let rootRscStream: ReadableStream<Uint8Array>;
     let appRscStream: ReadableStream<Uint8Array>;
 
+    const rscOnError = createRenderErrorHandler(
+      renderErrors,
+      `RSC payload of "${entry.path}"`,
+    );
+
     if (ssrEnabled) {
       // SSR on: render the full tree once and tee the stream — one branch
       // for SSR HTML, one for the app RSC payload. Rendering twice would
       // execute every server component (and defer()) twice per entry (#147).
-      [rootRscStream, appRscStream] = renderToReadableStream<RscPayload>({
-        root: <Root>{appNode}</Root>,
-      }).tee();
+      [rootRscStream, appRscStream] = renderToReadableStream<RscPayload>(
+        { root: <Root>{appNode}</Root> },
+        { onError: rscOnError },
+      ).tee();
     } else {
       // SSR off: root stream has shell, app stream has App only
-      rootRscStream = renderToReadableStream<RscPayload>({
-        root: (
-          <Root>
-            <span id={marker} />
-          </Root>
-        ),
-      });
-      appRscStream = renderToReadableStream<RscPayload>({
-        root: appNode,
-      });
+      rootRscStream = renderToReadableStream<RscPayload>(
+        {
+          root: (
+            <Root>
+              <span id={marker} />
+            </Root>
+          ),
+        },
+        {
+          onError: createRenderErrorHandler(
+            renderErrors,
+            `RSC shell of "${entry.path}"`,
+          ),
+        },
+      );
+      appRscStream = renderToReadableStream<RscPayload>(
+        { root: appNode },
+        { onError: rscOnError },
+      );
     }
 
     const ssrResult = await ssrEntryModule.renderHTML(rootRscStream, {
@@ -316,6 +352,10 @@ export async function build() {
       build: true,
       ssr: ssrEnabled,
       deferRegistry,
+      onError: createRenderErrorHandler(
+        renderErrors,
+        `HTML of "${entry.path}"`,
+      ),
     });
 
     results.push({
@@ -328,6 +368,7 @@ export async function build() {
   return {
     entries: results,
     deferRegistry,
+    renderErrors,
   };
 }
 

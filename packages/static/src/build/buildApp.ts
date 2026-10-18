@@ -9,12 +9,13 @@ import { replaceIdsInContent } from "./idReplacement";
 import { computeContentHash } from "./contentHash";
 import { drainStream } from "../util/drainStream";
 import { validateEntryPath, checkDuplicatePaths } from "./validateEntryPath";
+import { createRenderErrorsError } from "./renderErrors";
 import type { EntryBuildResult } from "../rsc/entry";
 
 export async function buildApp(
   builder: ViteBuilder,
   context: MinimalPluginContextWithoutEnvironment,
-  options: { rscPayloadDir: string },
+  options: { rscPayloadDir: string; failOnRenderError: boolean },
 ) {
   const { config } = builder;
   // import server entry
@@ -35,7 +36,17 @@ export async function buildApp(
   const base = normalizeBase(config.base);
 
   async function doBuild() {
-    const { entries, deferRegistry } = await entry.build();
+    const { entries, deferRegistry, renderErrors } = await entry.build();
+
+    // React reports render errors through `onError` and recovers in the
+    // output (an error row in the RSC payload, a client-rendered boundary in
+    // the HTML), so they are collected as streams drain. Check before each
+    // write so broken output is not emitted.
+    const checkRenderErrors = () => {
+      if (options.failOnRenderError && renderErrors.length > 0) {
+        throw createRenderErrorsError(renderErrors);
+      }
+    };
 
     // Validate all entry paths
     const paths: string[] = [];
@@ -57,6 +68,7 @@ export async function buildApp(
       options.rscPayloadDir,
       context,
     );
+    checkRenderErrors();
 
     // Write each entry's HTML and RSC payload
     for (const result of entries) {
@@ -67,6 +79,7 @@ export async function buildApp(
         base,
         options.rscPayloadDir,
         context,
+        checkRenderErrors,
       );
     }
 
@@ -99,6 +112,7 @@ async function buildSingleEntry(
   base: string,
   rscPayloadDir: string,
   context: MinimalPluginContextWithoutEnvironment,
+  checkRenderErrors: () => void,
 ) {
   const { path: entryPath, html, appRsc } = result;
 
@@ -108,6 +122,7 @@ async function buildSingleEntry(
   // Drain and process RSC payload: replace temp IDs with final hashed IDs
   const rawAppRscContent = await drainStream(appRsc);
   const appRscContent = replaceIdsInContent(rawAppRscContent, idMapping);
+  checkRenderErrors();
 
   // Compute hash for this entry's RSC payload
   const mainPayloadHash = await computeContentHash(appRscContent);

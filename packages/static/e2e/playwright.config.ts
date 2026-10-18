@@ -45,6 +45,11 @@ export default defineConfig({
       },
       testMatch: /\/fs-routing\.spec\.ts$/,
     },
+    {
+      // Runs `vite build` itself; needs no web server
+      name: "render-error",
+      testMatch: /\/render-error\.spec\.ts$/,
+    },
   ],
 
   webServer: [
