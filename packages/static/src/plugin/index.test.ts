@@ -136,6 +136,27 @@ describe("virtual module path escaping", () => {
     expect(code).toContain('import adapter from "/pro\\"ject/src/adapter.ts";');
   });
 
+  it("passes fsRoutes.mode through to createFsRoutesEntries", () => {
+    const base = {
+      dir: "./src/pages",
+      root: "./src/root.tsx",
+      adapter: "./src/adapter.ts",
+    };
+    const mpa = loadVirtualModule(
+      { fsRoutes: { ...base, mode: "mpa" } },
+      "/project",
+      "\0virtual:funstack/entries",
+    );
+    expect(mpa).toContain('mode: "mpa",');
+    // Unset, the runtime default applies (no `mode` line is generated).
+    const unset = loadVirtualModule(
+      { fsRoutes: base },
+      "/project",
+      "\0virtual:funstack/entries",
+    );
+    expect(unset).not.toContain("mode:");
+  });
+
   it("rejects an fsRoutes.dir outside the Vite root", () => {
     for (const dir of ["../pages", "."]) {
       expect(() =>

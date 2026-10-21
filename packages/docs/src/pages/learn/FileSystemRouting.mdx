@@ -39,15 +39,45 @@ export default defineConfig({
 });
 ```
 
-All `fsRoutes` fields are required, so each choice is explicit in your config:
+`dir`, `root` and `adapter` are required, so each choice is explicit in your config:
 
 - `dir` — the directory scanned for route files (commonly `./src/pages`).
 - `root` — the HTML shell component (`<html>…<body>{children}</body></html>`).
 - `adapter` — a module that `export default`s the adapter defining the directory / file-name convention. The bundled `@funstack/static/fs-routes/next-adapter` provides the built-in Next.js-like convention with default options; see [Custom Conventions](#custom-conventions-adapters) to configure it or write your own.
+- `mode` (optional) — `"spa"` (default) or `"mpa"`: whether the generated pages ship the client runtime and navigate in the browser, or ship no JavaScript at all. See [SPA or MPA](#spa-or-mpa).
 
 `fsRoutes` is mutually exclusive with the `root` + `app` (single-entry) and `entries` (multiple entries) modes.
 
-> **Consider enabling [`ssr`](/api/funstack-static).** Pages are server components rendered through FUNSTACK Router. `ssr` is optional and works the same in dev (`vite dev`), production builds, and preview either way, but enabling it (`ssr: true`) is recommended for SEO and faster initial load.
+> **Consider enabling [`ssr`](/api/funstack-static).** Pages are server components rendered through FUNSTACK Router. `ssr` is optional and works the same in dev (`vite dev`), production builds, and preview either way, but enabling it (`ssr: true`) is recommended for SEO and faster initial load. (In [`mode: "mpa"`](#spa-or-mpa) every page is always fully rendered to HTML, and `ssr` has no effect.)
+
+## SPA or MPA
+
+File-system routing can produce two kinds of sites, chosen with the `mode` option.
+
+**`"spa"` (default)** — a single-page application. Every generated page loads the client runtime, and FUNSTACK Router hydrates it and takes over navigation in the browser: clicking a link to another page swaps the content in place instead of loading a new document, fetching pre-rendered RSC chunks for Server Components as needed (see [Params on Client-Side Navigation](#params-on-client-side-navigation)). Client Components are interactive.
+
+**`"mpa"`** — a multi-page application that ships **no JavaScript**. This suits content sites — blogs, documentation, articles — where every page is a complete document and nothing needs to run in the browser:
+
+```typescript
+// vite.config.ts
+funstackStatic({
+  fsRoutes: {
+    dir: "./src/pages",
+    root: "./src/root.tsx",
+    adapter: "@funstack/static/fs-routes/next-adapter",
+    mode: "mpa",
+  },
+});
+```
+
+In `"mpa"` mode:
+
+- Every page is a complete HTML document rendered at build time, whatever the `ssr` option says. The output has no `<script>` tags and no RSC payload files; links are ordinary navigations that load the destination's HTML.
+- Client Components (`"use client"`) still render, to their initial HTML, but are never hydrated: `useState`, event handlers and effects never run in the browser, so they are not interactive.
+- FUNSTACK Router's APIs keep working while rendering, because the router matches the page's own URL at build time: layouts render `<Outlet />`, and hooks such as `useRouteParams(route)` or `useLocation()` return the values of the page being generated. There is no client-side navigation, so the [Params on Client-Side Navigation](#params-on-client-side-navigation) section does not apply.
+- In development, each page carries a small script that only reloads the page when you edit a file (and shows Vite's error overlay). Production builds carry none, and Client Components are not interactive in development either, so what you see is what you ship.
+
+Under the hood, `mode: "mpa"` sets [`clientScript: false`](/api/entry-definition#clientscript) on every generated entry definition. The same flag is available for hand-written entries in [multiple entries mode](/advanced/multiple-entrypoints).
 
 ## The Next.js-like Convention
 
@@ -141,6 +171,8 @@ export { default } from "./_page"; // _page.tsx is marked "use client"
 ```
 
 ## Params on Client-Side Navigation
+
+> This section applies to the default [`"spa"` mode](#spa-or-mpa). In `"mpa"` mode there is no client-side navigation: every page is loaded as its own document, with the params it was generated for.
 
 Loading any generated URL directly always renders the correct params, and so does soft client-side navigation between pages of the _same_ dynamic route (say, from `/blog/hello` to `/blog/world`) — through two different mechanisms depending on the kind of the component:
 

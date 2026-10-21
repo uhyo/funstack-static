@@ -362,3 +362,92 @@ describe("createFsRoutesEntries enumeration caching", () => {
     expect(generateStaticParams).toHaveBeenCalledTimes(2);
   });
 });
+
+describe('createFsRoutesEntries in "mpa" mode', () => {
+  const clientLayout = clientReference();
+  const serverLayout = () => null;
+  const modules: Record<string, FsRouteModule> = {
+    "./pages/[lang]/layout.tsx": { default: clientLayout },
+    "./pages/[lang]/page.tsx": {
+      default: () => null,
+      generateStaticParams: () => [{ lang: "en" }, { lang: "ja" }],
+    },
+    "./pages/docs/layout.tsx": { default: serverLayout },
+    "./pages/docs/page.tsx": { default: () => null },
+  };
+
+  async function mpaEntries(
+    host: FsRoutesRuntimeHost = fakeHost().host,
+  ): Promise<EntryDefinition[]> {
+    const getEntries = createFsRoutesEntriesWithHost(
+      { modules, base: "./pages", root: Root, mode: "mpa" },
+      host,
+    );
+    const entries: EntryDefinition[] = [];
+    for await (const entry of getEntries()) {
+      entries.push(entry);
+    }
+    return entries;
+  }
+
+  it("marks every page as shipping no client JavaScript", async () => {
+    const entries = await mpaEntries();
+    expect(entries.map((e) => e.path).sort()).toEqual([
+      "docs.html",
+      "en.html",
+      "ja.html",
+    ]);
+    for (const entry of entries) {
+      expect(entry.clientScript).toBe(false);
+    }
+  });
+
+  it('leaves clientScript unset in the default "spa" mode', async () => {
+    const entries = await entriesFor(modules);
+    for (const entry of entries) {
+      expect(entry.clientScript).toBeUndefined();
+    }
+  });
+
+  it("registers no chunks", async () => {
+    const { host, registered } = fakeHost();
+    await mpaEntries(host);
+    expect(registered).toEqual([]);
+  });
+
+  it("renders a Server Component on the page's chain directly with its params and route object", async () => {
+    const entries = await mpaEntries();
+    const routes = routesOfEntry(entries.find((e) => e.path === "ja.html")!);
+    const layout = routes.find((d) => d.path === "/:lang")!;
+    const page = layout.children!.find((d) => d.path === "/")!;
+    expect(isValidElement(page.component)).toBe(true);
+    const element = page.component as ReactElement<FsRouteComponentProps>;
+    expect(element.type).toBe(modules["./pages/[lang]/page.tsx"]!.default);
+    expect(element.props.params).toEqual({ lang: "ja" });
+    expect(element.props.route).toEqual({ id: page.id });
+  });
+
+  it("gives Server Components off the page's chain no component", async () => {
+    const entries = await mpaEntries();
+    const routes = routesOfEntry(entries.find((e) => e.path === "ja.html")!);
+    const docs = routes.find((d) => d.path === "/docs")!;
+    expect(docs.component).toBeUndefined();
+    expect(docs.children![0]!.component).toBeUndefined();
+
+    // ...and the docs page gets its own chain rendered, not the lang page.
+    const docsRoutes = routesOfEntry(
+      entries.find((e) => e.path === "docs.html")!,
+    );
+    const docsLayout = docsRoutes.find((d) => d.path === "/docs")!;
+    expect((docsLayout.component as ReactElement).type).toBe(serverLayout);
+    const lang = docsRoutes.find((d) => d.path === "/:lang")!;
+    expect(lang.children![0]!.component).toBeUndefined();
+  });
+
+  it("still passes a Client Component as a component type", async () => {
+    const entries = await mpaEntries();
+    const routes = routesOfEntry(entries.find((e) => e.path === "en.html")!);
+    const layout = routes.find((d) => d.path === "/:lang")!;
+    expect(layout.component).toBe(clientLayout);
+  });
+});

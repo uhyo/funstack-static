@@ -102,6 +102,10 @@ Common browser APIs to watch for:
 - You prefer simpler client component development
 - Initial paint speed is not a priority
 
+## Going Further: No JavaScript at All
+
+SSR still ships the client runtime and hydrates the page. If a page needs no interactivity, you can leave JavaScript out entirely: set [`clientScript: false`](/api/entry-definition#clientscript) on an entry in [multiple entries mode](/advanced/multiple-entrypoints), or use [`mode: "mpa"`](/learn/file-system-routing#spa-or-mpa) with file-system routing. Such pages are complete HTML documents with no `<script>` and no RSC payload. Client Components render to their initial HTML but are not hydrated, so the SSR considerations above apply to them as well.
+
 ## See Also
 
 - [How It Works](/learn/how-it-works) - Understanding the build process

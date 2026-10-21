@@ -161,6 +161,23 @@ app: <BlogPost slug="hello-world" />,
 
 The React node form is especially useful for parameterized SSG, where each entry renders the same component with different data.
 
+### clientScript
+
+**Type:** `boolean` (default: `true`)
+
+Set to `false` to generate the page as a complete HTML document with **no JavaScript**: the whole tree is rendered to HTML at build time regardless of the `ssr` option, no RSC payload is written, and nothing is hydrated — Client Components render their initial HTML but are not interactive. Handy for pages such as legal notices or articles in an otherwise interactive site:
+
+```tsx
+{
+  path: "privacy.html",
+  root: () => import("./root"),
+  app: () => import("./pages/Privacy"),
+  clientScript: false,
+}
+```
+
+See [EntryDefinition › clientScript](/api/entry-definition#clientscript) for details.
+
 ## Advanced: Async Generators
 
 For sites with many pages generated from external data, use an async generator to stream entries without building the full array in memory:
@@ -213,7 +230,7 @@ dist/public/
     └── client.js                 # Client bundle (shared)
 ```
 
-All pages share the same client JavaScript bundle. Only the HTML and RSC payloads differ per entry.
+All pages share the same client JavaScript bundle. Only the HTML and RSC payloads differ per entry. A page with [`clientScript: false`](#clientscript) consists of its HTML file alone: it references no JavaScript and has no RSC payload.
 
 ## See Also
 

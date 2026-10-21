@@ -11,6 +11,9 @@ export default defineConfig({
         dir: "./src/pages",
         root: "./src/root.tsx",
         adapter: "@funstack/static/fs-routes/next-adapter",
+        // Pages load the client runtime and navigate in the browser (the
+        // default, "spa"). Set `mode: "mpa"` for a site that ships no
+        // JavaScript at all: complete HTML pages linked by plain navigations.
       },
     }),
     react(),

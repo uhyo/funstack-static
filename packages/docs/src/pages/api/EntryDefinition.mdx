@@ -1,6 +1,6 @@
 # EntryDefinition
 
-The `EntryDefinition` type defines a single entry in a multi-page static site. Each entry produces one HTML file with its own RSC payload.
+The `EntryDefinition` type defines a single entry in a multi-page static site. Each entry produces one HTML file with its own RSC payload (or, with `clientScript: false`, a complete HTML file and nothing else).
 
 ## Import
 
@@ -36,6 +36,7 @@ interface EntryDefinition {
   path: string;
   root: MaybePromise<RootModule> | (() => MaybePromise<RootModule>);
   app: ReactNode | MaybePromise<AppModule> | (() => MaybePromise<AppModule>);
+  clientScript?: boolean;
 }
 
 type MaybePromise<T> = T | Promise<T>;
@@ -108,6 +109,39 @@ app: <BlogPost slug="hello-world" content={content} />,
 ```
 
 The React node form enables parameterized rendering for SSG, where each entry passes different data to the same component without needing a separate module file.
+
+### clientScript
+
+**Type:** `boolean`
+**Default:** `true`
+
+Whether the generated page loads the client-side JavaScript runtime.
+
+When `false`, the page is a complete HTML document with **no `<script>`**: the whole tree (Root and App, Client Components included) is rendered to HTML at build time regardless of the [`ssr`](/api/funstack-static#ssr-optional) option, no RSC payload is written for the page, and nothing runs in the browser. Client Components render their initial HTML but are never hydrated, so they are not interactive. Links in such a page are ordinary navigations.
+
+Use this for content pages that need no JavaScript, while other entries of the same site keep the default:
+
+```tsx
+export default function getEntries(): EntryDefinition[] {
+  return [
+    {
+      path: "index.html",
+      root: () => import("./root"),
+      app: () => import("./pages/Home"),
+    },
+    {
+      path: "privacy.html",
+      root: () => import("./root"),
+      app: () => import("./pages/Privacy"),
+      clientScript: false, // plain HTML, no JavaScript
+    },
+  ];
+}
+```
+
+In development, a page with `clientScript: false` carries only a small dev-server script that reloads it when you edit a file; the production build carries none.
+
+[File-system routing](/learn/file-system-routing#spa-or-mpa) sets this flag on every page in `mode: "mpa"`.
 
 ## Return Type of getEntries
 

@@ -10,6 +10,7 @@ import { computeContentHash } from "./contentHash";
 import { drainStream } from "../util/drainStream";
 import { validateEntryPath, checkDuplicatePaths } from "./validateEntryPath";
 import { createRenderErrorsError } from "./renderErrors";
+import { stripModulePreloads } from "./stripModulePreloads";
 import type { EntryBuildResult } from "../rsc/entry";
 
 export async function buildApp(
@@ -118,6 +119,19 @@ async function buildSingleEntry(
 
   // Drain HTML stream to string
   const htmlContent = await drainStream(html);
+
+  if (appRsc === undefined) {
+    // A page without client JavaScript: complete HTML, no payload to write
+    // and no payload path to fill in. Nothing imports the client chunks the
+    // SSR runtime preloaded for Client Components, so drop those too.
+    checkRenderErrors();
+    await writeFileNormal(
+      path.join(baseDir, entryPath),
+      stripModulePreloads(htmlContent),
+      context,
+    );
+    return;
+  }
 
   // Drain and process RSC payload: replace temp IDs with final hashed IDs
   const rawAppRscContent = await drainStream(appRsc);

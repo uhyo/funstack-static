@@ -22,7 +22,11 @@ export type RscPayload = {
 export type EntryBuildResult = {
   path: string;
   html: ReadableStream<Uint8Array>;
-  appRsc: ReadableStream<Uint8Array>;
+  /**
+   * The page's RSC payload, fetched by the client runtime. Absent for a page
+   * without client JavaScript (`clientScript: false`), which has none.
+   */
+  appRsc?: ReadableStream<Uint8Array>;
 };
 
 import { ssr as ssrEnabled } from "virtual:funstack/config";
@@ -89,7 +93,25 @@ async function renderEntryToResponse(
   timings.push(`ssr-module;dur=${performance.now() - ssrModuleStart}`);
 
   let ssrResult: Awaited<ReturnType<typeof ssrEntryModule.renderHTML>>;
-  if (ssrEnabled) {
+  if (entry.clientScript === false) {
+    // No client JavaScript: the full tree is rendered to HTML (whatever the
+    // `ssr` option says) and no payload is sent to the browser.
+    const rscStart = performance.now();
+    const rootRscStream = renderToReadableStream<RscPayload>({
+      root: <Root>{appNode}</Root>,
+    });
+    timings.push(`rsc;dur=${performance.now() - rscStart}`);
+
+    const ssrStart = performance.now();
+    ssrResult = await ssrEntryModule.renderHTML(rootRscStream, {
+      appEntryMarker: marker,
+      build: false,
+      ssr: true,
+      clientScript: false,
+      deferRegistry,
+    });
+    timings.push(`ssr;dur=${performance.now() - ssrStart}`);
+  } else if (ssrEnabled) {
     // SSR on: single RSC stream with full tree
     const rscStart = performance.now();
     const rootRscStream = renderToReadableStream<RscPayload>({
@@ -309,14 +331,23 @@ export async function build() {
     const marker = generateAppMarker();
 
     let rootRscStream: ReadableStream<Uint8Array>;
-    let appRscStream: ReadableStream<Uint8Array>;
+    let appRscStream: ReadableStream<Uint8Array> | undefined;
 
     const rscOnError = createRenderErrorHandler(
       renderErrors,
       `RSC payload of "${entry.path}"`,
     );
 
-    if (ssrEnabled) {
+    const clientScript = entry.clientScript !== false;
+
+    if (!clientScript) {
+      // No client JavaScript: the full tree is rendered to HTML (whatever
+      // the `ssr` option says) and no RSC payload is written for the page.
+      rootRscStream = renderToReadableStream<RscPayload>(
+        { root: <Root>{appNode}</Root> },
+        { onError: rscOnError },
+      );
+    } else if (ssrEnabled) {
       // SSR on: render the full tree once and tee the stream — one branch
       // for SSR HTML, one for the app RSC payload. Rendering twice would
       // execute every server component (and defer()) twice per entry (#147).
@@ -350,7 +381,8 @@ export async function build() {
     const ssrResult = await ssrEntryModule.renderHTML(rootRscStream, {
       appEntryMarker: marker,
       build: true,
-      ssr: ssrEnabled,
+      ssr: ssrEnabled || !clientScript,
+      clientScript,
       deferRegistry,
       onError: createRenderErrorHandler(
         renderErrors,

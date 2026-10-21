@@ -131,6 +131,23 @@ export interface FsRoutesConfig {
    * `@funstack/static/fs-routes`) in your own module and point this at it.
    */
   adapter: string;
+  /**
+   * How the generated pages behave in the browser.
+   *
+   * - `"spa"`: every page loads the client runtime, and FUNSTACK Router takes
+   *   over navigation in the browser. Clicking a link to another page swaps
+   *   the content in place (fetching pre-rendered RSC chunks for Server
+   *   Components) instead of loading a new document.
+   * - `"mpa"`: pages ship **no JavaScript**. Every page is a complete HTML
+   *   document regardless of the `ssr` option, links are ordinary
+   *   navigations, and no RSC payloads are emitted. Client Components render
+   *   their initial HTML but are never hydrated, so they are not
+   *   interactive; FUNSTACK Router's hooks and `<Outlet />` still work while
+   *   rendering.
+   *
+   * @default "spa"
+   */
+  mode?: "spa" | "mpa";
 }
 
 interface FsRoutesOptions {
@@ -187,7 +204,8 @@ export default function funstackStatic(
   let resolvedBuildEntry: string | undefined;
   // Resolved configuration for file-system routing (fsRoutes mode).
   let resolvedFsRoutes:
-    { root: string; adapter: string; globBase: string } | undefined;
+    | { root: string; adapter: string; globBase: string; mode?: "spa" | "mpa" }
+    | undefined;
 
   // Determine which entry mode the user selected.
   const isFsRoutes = "fsRoutes" in options && options.fsRoutes !== undefined;
@@ -254,7 +272,12 @@ export default function funstackStatic(
           const adapter = isBareSpecifier(fsRoutes.adapter)
             ? fsRoutes.adapter
             : normalizePath(path.resolve(config.root, fsRoutes.adapter));
-          resolvedFsRoutes = { root: resolvedRoot, adapter, globBase };
+          resolvedFsRoutes = {
+            root: resolvedRoot,
+            adapter,
+            globBase,
+            mode: fsRoutes.mode,
+          };
         } else if (isMultiEntry) {
           resolvedEntriesModule = normalizePath(
             path.resolve(config.root, options.entries),
@@ -355,7 +378,7 @@ export default function funstackStatic(
             // The import.meta.glob call is emitted here so users don't have to
             // wire it up themselves; Vite transforms the glob in this virtual
             // module just like in user code.
-            const { root, adapter, globBase } = resolvedFsRoutes;
+            const { root, adapter, globBase, mode } = resolvedFsRoutes;
             const globPattern = `${globBase}/**/*.{tsx,jsx}`;
             const lines = [
               `import Root from ${JSON.stringify(root)};`,
@@ -367,6 +390,9 @@ export default function funstackStatic(
               `  base: ${JSON.stringify(globBase)},`,
               `  root: Root,`,
               `  adapter,`,
+              ...(mode === undefined
+                ? []
+                : [`  mode: ${JSON.stringify(mode)},`]),
               `});`,
             ];
             return lines.join("\n");

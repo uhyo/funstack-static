@@ -209,13 +209,14 @@ funstackStatic({
 });
 ```
 
-`FsRoutesConfig` fields (all required — you must be explicit about each):
+`FsRoutesConfig` fields:
 
 - **`dir`** (required) — directory scanned for route files, relative to the Vite root. Commonly `"./src/pages"`.
 - **`root`** (required) — path to the root (HTML shell) component module.
 - **`adapter`** (required) — a module that `export default`s an `FsRoutesAdapter`, given as a bare module specifier or a path relative to the Vite root. Use the bundled `@funstack/static/fs-routes/next-adapter` for the built-in Next.js-like convention, or point it at your own module for a custom one.
+- **`mode`** (optional, default `"spa"`) — how the generated pages behave in the browser. `"spa"`: every page loads the client runtime and FUNSTACK Router navigates between pages in the browser. `"mpa"`: pages ship no JavaScript at all — each is a complete HTML document (regardless of `ssr`), links are ordinary navigations, and Client Components render to static HTML without being hydrated. See [SPA or MPA](/learn/file-system-routing#spa-or-mpa).
 
-Enabling [`ssr`](#ssr-optional) alongside `fsRoutes` is optional but recommended for SEO and faster initial load.
+Enabling [`ssr`](#ssr-optional) alongside `fsRoutes` is optional but recommended for SEO and faster initial load (it has no effect in `mode: "mpa"`, where pages are always fully rendered).
 
 See [File-System Routing](/learn/file-system-routing) for the conventions, dynamic routes, and writing custom adapters.
 
