@@ -73,6 +73,7 @@ export default defineConfig({
         dir: "./src/pages",
         root: "./src/root.tsx",
         adapter: "@funstack/static/fs-routes/next-adapter",
+        mode: "spa",
       },
     }),
     react(),
@@ -205,6 +206,7 @@ funstackStatic({
     dir: "./src/pages",
     root: "./src/root.tsx",
     adapter: "@funstack/static/fs-routes/next-adapter",
+    mode: "spa",
   },
 });
 ```
@@ -214,6 +216,7 @@ funstackStatic({
 - **`dir`** (required) — directory scanned for route files, relative to the Vite root. Commonly `"./src/pages"`.
 - **`root`** (required) — path to the root (HTML shell) component module.
 - **`adapter`** (required) — a module that `export default`s an `FsRoutesAdapter`, given as a bare module specifier or a path relative to the Vite root. Use the bundled `@funstack/static/fs-routes/next-adapter` for the built-in Next.js-like convention, or point it at your own module for a custom one.
+- **`mode`** (required) — `"spa"` renders pages with FUNSTACK Router's `<Router>`, so links within the site are followed by soft client-side navigation (with the Server Component output of every page pre-rendered as RSC chunks fetched on navigation). `"mpa"` renders pages with `<RouteDisplay>`, which never intercepts navigations: every link loads the destination's own HTML, and only each page's own RSC payload is emitted. See [SPA or MPA](/learn/file-system-routing#spa-or-mpa).
 
 Enabling [`ssr`](#ssr-optional) alongside `fsRoutes` is optional but recommended for SEO and faster initial load.
 

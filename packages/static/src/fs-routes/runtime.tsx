@@ -4,7 +4,7 @@ import {
   type ReactElement,
   type ReactNode,
 } from "react";
-import { Router } from "@funstack/router";
+import { RouteDisplay, Router } from "@funstack/router";
 import type { RouteDefinition } from "@funstack/router/server";
 import type {
   FsRootComponent,
@@ -26,6 +26,22 @@ import {
 } from "./tree";
 import { isClientReference } from "../util/clientReference";
 import { paramsKey, pickParams, type FsRouteSlotProps } from "./slot";
+
+/**
+ * How navigation between generated pages works.
+ *
+ * - `"spa"`: pages are rendered with FUNSTACK Router's `<Router>`, which
+ *   intercepts link clicks for soft client-side navigation. Server Component
+ *   output for every page is pre-rendered as RSC chunks the client fetches on
+ *   navigation.
+ * - `"mpa"`: pages are rendered with `<RouteDisplay>`, which never intercepts
+ *   navigations: every link click loads the destination's own HTML. No RSC
+ *   chunks are generated beyond each page's payload.
+ *
+ * @experimental File-system routing is experimental and not yet subject to
+ * semantic versioning.
+ */
+export type FsRoutesMode = "spa" | "mpa";
 
 /**
  * Options for {@link createFsRoutesEntries}.
@@ -61,6 +77,14 @@ export interface CreateFsRoutesOptions {
    * @default nextRoutes()
    */
   adapter?: FsRoutesAdapter;
+  /**
+   * Whether the generated site is a single-page application with soft
+   * client-side navigation (`"spa"`) or a multi-page application where every
+   * navigation loads a new document (`"mpa"`). See {@link FsRoutesMode}.
+   *
+   * @default "spa"
+   */
+  mode?: FsRoutesMode;
 }
 
 /**
@@ -307,17 +331,77 @@ function buildRouteDefinitions(
   });
 }
 
+/**
+ * Builds the route definitions of one page in MPA mode: the page's own route
+ * chain, nested root-first, with every node's component inlined.
+ *
+ * Each page is its own document and `RouteDisplay` never navigates away from
+ * it, so only the chain the page renders through can match its URL; sibling
+ * routes are left out. Without soft navigation there is no destination whose
+ * params could differ from the page's own, so a Server Component's build-time
+ * output is inlined directly rather than through a slot resolving chunks.
+ */
+function buildMpaRouteDefinitions(
+  chain: readonly FsRouteTreeNode[],
+  metas: Map<FsRouteTreeNode, NodeMeta>,
+  pageParams: Record<string, string>,
+): RouteDefinition[] {
+  let children: RouteDefinition[] | undefined;
+  for (let index = chain.length - 1; index >= 0; index--) {
+    const node = chain[index]!;
+    const meta = metas.get(node)!;
+    const Component = node.module.default;
+    const definition: {
+      id: string;
+      path?: string;
+      component?: ComponentType<object> | ReactNode;
+      children?: RouteDefinition[];
+    } = { id: meta.id };
+    if (node.path !== undefined) {
+      definition.path = node.path;
+    }
+    if (Component) {
+      if (isClientReference(Component)) {
+        // Rendered by the router in the browser (and during SSR, via the
+        // `ssr` path) with the params of the current match.
+        definition.component = Component as ComponentType<object>;
+      } else {
+        definition.component = createElement(Component, {
+          params: pickParams(pageParams, meta.paramNames),
+          route: meta.route,
+        });
+      }
+    }
+    if (children) {
+      definition.children = children;
+    }
+    children = [definition];
+  }
+  return children ?? [];
+}
+
 function FsRoutesApp({
+  mode,
   tree,
   metas,
   page,
   RouteSlot,
 }: {
+  mode: FsRoutesMode;
   tree: FsRouteTreeNode[];
   metas: Map<FsRouteTreeNode, NodeMeta>;
   page: StaticPage;
   RouteSlot: ComponentType<FsRouteSlotProps>;
 }): ReactNode {
+  if (mode === "mpa") {
+    // RouteDisplay matches the page's URL (the `ssr` path during SSR and
+    // hydration, `window.location` afterwards) without ever intercepting a
+    // navigation, so links load the destination's own HTML.
+    return createElement(RouteDisplay, {
+      routes: buildMpaRouteDefinitions(page.chain, metas, page.params),
+      ssr: { path: page.urlPath },
+    });
+  }
   const routes = buildRouteDefinitions(tree, {
     metas,
     pageChain: new Set(page.chain),
@@ -338,7 +422,9 @@ function FsRoutesApp({
  *
  * The route tree is built once via the adapter; the router route definitions
  * are rebuilt per page so that the page's own Server Component output can be
- * inlined into its payload.
+ * inlined into its payload. In `"mpa"` mode (see {@link FsRoutesMode}) each
+ * page's definitions cover only its own route chain, since no navigation ever
+ * renders another route within the same document.
  *
  * The enumeration itself (route tree, `generateStaticParams()` of every
  * dynamic route, chunk registration) runs once and is cached for the
@@ -353,7 +439,13 @@ export function createFsRoutesEntriesWithHost(
   options: CreateFsRoutesOptions,
   host: FsRoutesRuntimeHost,
 ): () => GetEntriesResult {
-  const { modules, base, root: Root, adapter = nextRoutes() } = options;
+  const {
+    modules,
+    base,
+    root: Root,
+    adapter = nextRoutes(),
+    mode = "spa",
+  } = options;
 
   async function enumerateRoutes(): Promise<EnumeratedRoutes> {
     const warn = (message: string) => {
@@ -365,7 +457,10 @@ export function createFsRoutesEntriesWithHost(
     const pages = await collectStaticPaths(tree);
     const metas = new Map<FsRouteTreeNode, NodeMeta>();
     buildNodeMetas(tree, [], "", metas);
-    const chunks = registerChunks(pages, metas, host);
+    // Chunks exist only to serve Server Component output on soft navigation;
+    // an MPA loads each destination's own HTML and payload instead.
+    const chunks =
+      mode === "spa" ? registerChunks(pages, metas, host) : new Map();
     return { tree, metas, pages, chunks };
   }
 
@@ -407,6 +502,7 @@ export function createFsRoutesEntriesWithHost(
         path: urlPathToFilePath(page.urlPath),
         root: { default: Root },
         app: createElement(FsRoutesApp, {
+          mode,
           tree,
           metas,
           page,

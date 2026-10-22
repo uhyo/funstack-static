@@ -131,6 +131,20 @@ export interface FsRoutesConfig {
    * `@funstack/static/fs-routes`) in your own module and point this at it.
    */
   adapter: string;
+  /**
+   * Whether the generated site is a single-page application or a multi-page
+   * application.
+   *
+   * - `"spa"`: pages are rendered with FUNSTACK Router's `<Router>`. Link
+   *   clicks are intercepted for soft client-side navigation, and the Server
+   *   Component output of every page is pre-rendered as RSC chunks that the
+   *   client fetches on navigation.
+   * - `"mpa"`: pages are rendered with FUNSTACK Router's `<RouteDisplay>`,
+   *   which never intercepts navigations: every link click loads the
+   *   destination's own HTML, like a classic multi-page site. Only each
+   *   page's own RSC payload is generated.
+   */
+  mode: "spa" | "mpa";
 }
 
 interface FsRoutesOptions {
@@ -187,7 +201,8 @@ export default function funstackStatic(
   let resolvedBuildEntry: string | undefined;
   // Resolved configuration for file-system routing (fsRoutes mode).
   let resolvedFsRoutes:
-    { root: string; adapter: string; globBase: string } | undefined;
+    | { root: string; adapter: string; globBase: string; mode: "spa" | "mpa" }
+    | undefined;
 
   // Determine which entry mode the user selected.
   const isFsRoutes = "fsRoutes" in options && options.fsRoutes !== undefined;
@@ -254,7 +269,19 @@ export default function funstackStatic(
           const adapter = isBareSpecifier(fsRoutes.adapter)
             ? fsRoutes.adapter
             : normalizePath(path.resolve(config.root, fsRoutes.adapter));
-          resolvedFsRoutes = { root: resolvedRoot, adapter, globBase };
+          // Required (like the other fsRoutes fields) so the choice between
+          // soft client-side navigation and full page loads is explicit.
+          const mode: unknown = fsRoutes.mode;
+          if (mode !== "spa" && mode !== "mpa") {
+            throw new Error(
+              mode === undefined
+                ? `[funstack] fsRoutes.mode is required. Set it to "spa" ` +
+                    `(soft client-side navigation) or "mpa" (full page loads).`
+                : `[funstack] Invalid fsRoutes.mode: ${JSON.stringify(mode)}. ` +
+                    `Expected "spa" or "mpa".`,
+            );
+          }
+          resolvedFsRoutes = { root: resolvedRoot, adapter, globBase, mode };
         } else if (isMultiEntry) {
           resolvedEntriesModule = normalizePath(
             path.resolve(config.root, options.entries),
@@ -355,7 +382,7 @@ export default function funstackStatic(
             // The import.meta.glob call is emitted here so users don't have to
             // wire it up themselves; Vite transforms the glob in this virtual
             // module just like in user code.
-            const { root, adapter, globBase } = resolvedFsRoutes;
+            const { root, adapter, globBase, mode } = resolvedFsRoutes;
             const globPattern = `${globBase}/**/*.{tsx,jsx}`;
             const lines = [
               `import Root from ${JSON.stringify(root)};`,
@@ -367,6 +394,7 @@ export default function funstackStatic(
               `  base: ${JSON.stringify(globBase)},`,
               `  root: Root,`,
               `  adapter,`,
+              `  mode: ${JSON.stringify(mode)},`,
               `});`,
             ];
             return lines.join("\n");

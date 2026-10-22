@@ -19,4 +19,4 @@ export type {
 } from "./types";
 export { collectStaticPaths, urlPathToFilePath, type StaticPage } from "./tree";
 export { createFsRoutesEntries } from "./entries";
-export type { CreateFsRoutesOptions } from "./runtime";
+export type { CreateFsRoutesOptions, FsRoutesMode } from "./runtime";

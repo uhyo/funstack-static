@@ -46,6 +46,7 @@ const fsRoutesOptions: FunstackStaticOptions = {
     dir: "./src/pages",
     root: "./src/root.tsx",
     adapter: "@funstack/static/fs-routes/next-adapter",
+    mode: "spa",
   },
 };
 
@@ -127,6 +128,7 @@ describe("virtual module path escaping", () => {
           dir: "./src/pages",
           root: "./src/root.tsx",
           adapter: "./src/adapter.ts",
+          mode: "spa",
         },
       },
       trickyRoot,
@@ -134,6 +136,43 @@ describe("virtual module path escaping", () => {
     );
     expect(code).toContain('import Root from "/pro\\"ject/src/root.tsx";');
     expect(code).toContain('import adapter from "/pro\\"ject/src/adapter.ts";');
+  });
+
+  it("emits the configured fsRoutes.mode in the fsRoutes entries module", () => {
+    for (const mode of ["spa", "mpa"] as const) {
+      const code = loadVirtualModule(
+        { fsRoutes: { ...fsRoutesOptions.fsRoutes!, mode } },
+        "/project",
+        "\0virtual:funstack/entries",
+      );
+      expect(code).toContain(`mode: "${mode}",`);
+    }
+  });
+
+  it("rejects a missing fsRoutes.mode", () => {
+    const { mode: _mode, ...withoutMode } = fsRoutesOptions.fsRoutes!;
+    expect(() =>
+      loadVirtualModule(
+        { fsRoutes: withoutMode as unknown as typeof fsRoutesOptions.fsRoutes },
+        "/project",
+        "\0virtual:funstack/entries",
+      ),
+    ).toThrow(/fsRoutes\.mode is required/);
+  });
+
+  it("rejects an unknown fsRoutes.mode", () => {
+    expect(() =>
+      loadVirtualModule(
+        {
+          fsRoutes: {
+            ...fsRoutesOptions.fsRoutes!,
+            mode: "ssg" as unknown as "spa",
+          },
+        },
+        "/project",
+        "\0virtual:funstack/entries",
+      ),
+    ).toThrow(/Invalid fsRoutes.mode: "ssg"/);
   });
 
   it("rejects an fsRoutes.dir outside the Vite root", () => {
@@ -145,6 +184,7 @@ describe("virtual module path escaping", () => {
               dir,
               root: "./src/root.tsx",
               adapter: "./src/adapter.ts",
+              mode: "spa",
             },
           },
           "/project",
