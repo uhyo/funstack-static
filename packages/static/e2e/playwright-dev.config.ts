@@ -45,6 +45,14 @@ export default defineConfig({
       },
       testMatch: /\/fs-routing\.spec\.ts$/,
     },
+    {
+      name: "fs-routing-mpa-dev",
+      use: {
+        ...devices["Desktop Chrome"],
+        baseURL: "http://localhost:4182",
+      },
+      testMatch: /\/fs-routing-mpa\.spec\.ts$/,
+    },
   ],
 
   webServer: [
@@ -71,6 +79,13 @@ export default defineConfig({
       command:
         "cd fixture-fs-routing && pnpm vite dev --port 4180 --strictPort",
       url: "http://localhost:4180/@vite/client",
+      reuseExistingServer: !process.env.CI,
+      timeout: 120000,
+    },
+    {
+      command:
+        "cd fixture-fs-routing-mpa && pnpm vite dev --port 4182 --strictPort",
+      url: "http://localhost:4182/@vite/client",
       reuseExistingServer: !process.env.CI,
       timeout: 120000,
     },

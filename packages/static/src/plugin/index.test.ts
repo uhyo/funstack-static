@@ -136,6 +136,39 @@ describe("virtual module path escaping", () => {
     expect(code).toContain('import adapter from "/pro\\"ject/src/adapter.ts";');
   });
 
+  it("emits the default spa mode in the fsRoutes entries module", () => {
+    const code = loadVirtualModule(
+      fsRoutesOptions,
+      "/project",
+      "\0virtual:funstack/entries",
+    );
+    expect(code).toContain('mode: "spa",');
+  });
+
+  it("emits the configured fsRoutes.mode in the fsRoutes entries module", () => {
+    const code = loadVirtualModule(
+      { fsRoutes: { ...fsRoutesOptions.fsRoutes!, mode: "mpa" } },
+      "/project",
+      "\0virtual:funstack/entries",
+    );
+    expect(code).toContain('mode: "mpa",');
+  });
+
+  it("rejects an unknown fsRoutes.mode", () => {
+    expect(() =>
+      loadVirtualModule(
+        {
+          fsRoutes: {
+            ...fsRoutesOptions.fsRoutes!,
+            mode: "ssg" as unknown as "spa",
+          },
+        },
+        "/project",
+        "\0virtual:funstack/entries",
+      ),
+    ).toThrow(/Invalid fsRoutes.mode: "ssg"/);
+  });
+
   it("rejects an fsRoutes.dir outside the Vite root", () => {
     for (const dir of ["../pages", "."]) {
       expect(() =>

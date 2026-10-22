@@ -46,6 +46,14 @@ export default defineConfig({
       testMatch: /\/fs-routing\.spec\.ts$/,
     },
     {
+      name: "fs-routing-mpa",
+      use: {
+        ...devices["Desktop Chrome"],
+        baseURL: "http://localhost:4181",
+      },
+      testMatch: /\/fs-routing-mpa\.spec\.ts$/,
+    },
+    {
       // Runs `vite build` itself; needs no web server
       name: "render-error",
       testMatch: /\/render-error\.spec\.ts$/,
@@ -78,6 +86,13 @@ export default defineConfig({
       command:
         "cd fixture-fs-routing && pnpm vite build && pnpm dlx serve -p 4179 dist/public",
       url: "http://localhost:4179",
+      reuseExistingServer: !process.env.CI,
+      timeout: 120000,
+    },
+    {
+      command:
+        "cd fixture-fs-routing-mpa && pnpm vite build && pnpm dlx serve -p 4181 dist/public",
+      url: "http://localhost:4181",
       reuseExistingServer: !process.env.CI,
       timeout: 120000,
     },

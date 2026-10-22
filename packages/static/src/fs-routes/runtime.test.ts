@@ -1,7 +1,9 @@
 import { isValidElement, type ReactElement } from "react";
+import { RouteDisplay, Router } from "@funstack/router";
 import { describe, expect, it, vi } from "vitest";
 import {
   createFsRoutesEntriesWithHost,
+  type CreateFsRoutesOptions,
   type FsRoutesRuntimeHost,
 } from "./runtime";
 import type { EntryDefinition } from "../entryDefinition";
@@ -71,13 +73,22 @@ interface DefinitionLike {
 
 /**
  * Renders an entry's `FsRoutesApp` element (a plain function component) to
- * obtain the Router element and returns its route definitions.
+ * obtain the Router (or RouteDisplay) element.
  */
-function routesOfEntry(entry: EntryDefinition): DefinitionLike[] {
+function routerOfEntry(
+  entry: EntryDefinition,
+): React.ReactElement<{ routes: DefinitionLike[] }> {
   const app = entry.app as React.ReactElement<object> & {
     type: (props: object) => React.ReactElement<{ routes: DefinitionLike[] }>;
   };
-  return app.type(app.props).props.routes;
+  return app.type(app.props);
+}
+
+/**
+ * Returns the route definitions of an entry's Router (or RouteDisplay).
+ */
+function routesOfEntry(entry: EntryDefinition): DefinitionLike[] {
+  return routerOfEntry(entry).props.routes;
 }
 
 function collectDefinitions(
@@ -96,12 +107,14 @@ function collectDefinitions(
 async function entriesFor(
   modules: Record<string, FsRouteModule>,
   host: FsRoutesRuntimeHost = fakeHost().host,
+  options: Partial<CreateFsRoutesOptions> = {},
 ): Promise<EntryDefinition[]> {
   const getEntries = createFsRoutesEntriesWithHost(
     {
       modules,
       base: "./pages",
       root: Root,
+      ...options,
     },
     host,
   );
@@ -129,6 +142,12 @@ describe("createFsRoutesEntries route definitions", () => {
     },
     "./pages/about/page.tsx": { default: () => null },
   };
+
+  it("renders pages with Router in the default (spa) mode", async () => {
+    const entries = await entriesFor(modules);
+    const router = routerOfEntry(entries[0]!);
+    expect(router.type).toBe(Router);
+  });
 
   it("passes a Client Component as a component type so the router renders it with live params", async () => {
     const entries = await entriesFor(modules);
@@ -253,6 +272,124 @@ describe("createFsRoutesEntries route definitions", () => {
         "./pages/page.tsx": { default: () => null },
       }),
     ).rejects.toThrow(/layout module "layout\.tsx" has no default export/);
+  });
+});
+
+describe("createFsRoutesEntries in mpa mode", () => {
+  const clientLayout = clientReference();
+  const clientPage = clientReference();
+  const serverLayout = () => null;
+  const modules: Record<string, FsRouteModule> = {
+    "./pages/[lang]/layout.tsx": { default: clientLayout },
+    "./pages/[lang]/page.tsx": {
+      default: () => null,
+      generateStaticParams: () => [{ lang: "en" }, { lang: "ja" }],
+    },
+    "./pages/[lang]/client/page.tsx": {
+      default: clientPage,
+      generateStaticParams: () => [{ lang: "en" }],
+    },
+    "./pages/docs/layout.tsx": { default: serverLayout },
+    "./pages/docs/[slug]/page.tsx": {
+      default: () => null,
+      generateStaticParams: () => [{ slug: "a" }, { slug: "b" }],
+    },
+    "./pages/about/page.tsx": { default: () => null },
+  };
+
+  async function mpaEntriesFor(
+    host: FsRoutesRuntimeHost = fakeHost().host,
+  ): Promise<EntryDefinition[]> {
+    return entriesFor(modules, host, { mode: "mpa" });
+  }
+
+  function entryAt(entries: EntryDefinition[], path: string): EntryDefinition {
+    const entry = entries.find((e) => e.path === path);
+    expect(entry, `entry ${path}`).toBeDefined();
+    return entry!;
+  }
+
+  it("generates the same pages as spa mode", async () => {
+    const spa = await entriesFor(modules);
+    const mpa = await mpaEntriesFor();
+    expect(mpa.map((e) => e.path)).toEqual(spa.map((e) => e.path));
+  });
+
+  it("renders pages with RouteDisplay matching the page's own URL", async () => {
+    const entries = await mpaEntriesFor();
+    const router = routerOfEntry(entryAt(entries, "docs/a.html"));
+    expect(router.type).toBe(RouteDisplay);
+    expect(router.props).toMatchObject({ ssr: { path: "/docs/a" } });
+    expect(router.props).not.toHaveProperty("fallback");
+  });
+
+  it("defines only the page's own route chain, nested root-first", async () => {
+    const entries = await mpaEntriesFor();
+    const routes = routesOfEntry(entryAt(entries, "docs/b.html"));
+    expect(routes).toHaveLength(1);
+    const layout = routes[0]!;
+    expect(layout.path).toBe("/docs");
+    expect(layout.children).toHaveLength(1);
+    const page = layout.children![0]!;
+    expect(page.path).toBe("/:slug");
+    expect(page.children).toBeUndefined();
+  });
+
+  it("inlines a Server Component's build-time output with its params and route object", async () => {
+    const entries = await mpaEntriesFor();
+    const [layout] = routesOfEntry(entryAt(entries, "docs/b.html"));
+    const page = layout!.children![0]!;
+    expect(isValidElement(page.component)).toBe(true);
+    const element = page.component as ReactElement<FsRouteComponentProps>;
+    expect(element.type).not.toBe(FakeSlot);
+    expect(element.props.params).toEqual({ slug: "b" });
+    expect(element.props.route).toEqual({ id: page.id });
+    // The layout above the dynamic segment sees no params.
+    const layoutElement = layout!
+      .component as ReactElement<FsRouteComponentProps>;
+    expect(layoutElement.type).toBe(serverLayout);
+    expect(layoutElement.props.params).toEqual({});
+    expect(layoutElement.props.route).toEqual({ id: layout!.id });
+  });
+
+  it("passes a Client Component as a component type so the router renders it with the matched params", async () => {
+    const entries = await mpaEntriesFor();
+    const [layout] = routesOfEntry(entryAt(entries, "en/client.html"));
+    expect(layout!.path).toBe("/:lang");
+    expect(layout!.component).toBe(clientLayout);
+    const page = layout!.children![0]!;
+    expect(page.path).toBe("/client");
+    expect(page.component).toBe(clientPage);
+  });
+
+  it("registers no chunks, since nothing is fetched on navigation", async () => {
+    const { host, registered, restored } = fakeHost();
+    const getEntries = createFsRoutesEntriesWithHost(
+      { modules, base: "./pages", root: Root, mode: "mpa" },
+      host,
+    );
+    for (const _ of [1, 2]) {
+      for await (const _entry of getEntries()) {
+        // drain
+      }
+    }
+    expect(registered).toEqual([]);
+    expect(restored).toEqual([]);
+  });
+
+  it("assigns every route the same id as in spa mode so route objects stay portable", async () => {
+    const spa = await entriesFor(modules);
+    const mpa = await mpaEntriesFor();
+    const idByPath = (entry: EntryDefinition) =>
+      new Map(
+        collectDefinitions(routesOfEntry(entry)).map((d) => [d.id, d.path]),
+      );
+    const spaIds = idByPath(entryAt(spa, "docs/a.html"));
+    for (const entry of mpa) {
+      for (const [id, path] of idByPath(entry)) {
+        expect(spaIds.get(id), `id ${id} of ${entry.path}`).toBe(path);
+      }
+    }
   });
 });
 
