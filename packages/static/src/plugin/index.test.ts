@@ -46,6 +46,7 @@ const fsRoutesOptions: FunstackStaticOptions = {
     dir: "./src/pages",
     root: "./src/root.tsx",
     adapter: "@funstack/static/fs-routes/next-adapter",
+    mode: "spa",
   },
 };
 
@@ -127,6 +128,7 @@ describe("virtual module path escaping", () => {
           dir: "./src/pages",
           root: "./src/root.tsx",
           adapter: "./src/adapter.ts",
+          mode: "spa",
         },
       },
       trickyRoot,
@@ -136,22 +138,26 @@ describe("virtual module path escaping", () => {
     expect(code).toContain('import adapter from "/pro\\"ject/src/adapter.ts";');
   });
 
-  it("emits the default spa mode in the fsRoutes entries module", () => {
-    const code = loadVirtualModule(
-      fsRoutesOptions,
-      "/project",
-      "\0virtual:funstack/entries",
-    );
-    expect(code).toContain('mode: "spa",');
+  it("emits the configured fsRoutes.mode in the fsRoutes entries module", () => {
+    for (const mode of ["spa", "mpa"] as const) {
+      const code = loadVirtualModule(
+        { fsRoutes: { ...fsRoutesOptions.fsRoutes!, mode } },
+        "/project",
+        "\0virtual:funstack/entries",
+      );
+      expect(code).toContain(`mode: "${mode}",`);
+    }
   });
 
-  it("emits the configured fsRoutes.mode in the fsRoutes entries module", () => {
-    const code = loadVirtualModule(
-      { fsRoutes: { ...fsRoutesOptions.fsRoutes!, mode: "mpa" } },
-      "/project",
-      "\0virtual:funstack/entries",
-    );
-    expect(code).toContain('mode: "mpa",');
+  it("rejects a missing fsRoutes.mode", () => {
+    const { mode: _mode, ...withoutMode } = fsRoutesOptions.fsRoutes!;
+    expect(() =>
+      loadVirtualModule(
+        { fsRoutes: withoutMode as unknown as typeof fsRoutesOptions.fsRoutes },
+        "/project",
+        "\0virtual:funstack/entries",
+      ),
+    ).toThrow(/fsRoutes\.mode is required/);
   });
 
   it("rejects an unknown fsRoutes.mode", () => {
@@ -178,6 +184,7 @@ describe("virtual module path escaping", () => {
               dir,
               root: "./src/root.tsx",
               adapter: "./src/adapter.ts",
+              mode: "spa",
             },
           },
           "/project",

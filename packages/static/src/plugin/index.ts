@@ -135,18 +135,16 @@ export interface FsRoutesConfig {
    * Whether the generated site is a single-page application or a multi-page
    * application.
    *
-   * - `"spa"` (default): pages are rendered with FUNSTACK Router's `<Router>`.
-   *   Link clicks are intercepted for soft client-side navigation, and the
-   *   Server Component output of every page is pre-rendered as RSC chunks
-   *   that the client fetches on navigation.
+   * - `"spa"`: pages are rendered with FUNSTACK Router's `<Router>`. Link
+   *   clicks are intercepted for soft client-side navigation, and the Server
+   *   Component output of every page is pre-rendered as RSC chunks that the
+   *   client fetches on navigation.
    * - `"mpa"`: pages are rendered with FUNSTACK Router's `<RouteDisplay>`,
    *   which never intercepts navigations: every link click loads the
    *   destination's own HTML, like a classic multi-page site. Only each
    *   page's own RSC payload is generated.
-   *
-   * @default "spa"
    */
-  mode?: "spa" | "mpa";
+  mode: "spa" | "mpa";
 }
 
 interface FsRoutesOptions {
@@ -271,11 +269,16 @@ export default function funstackStatic(
           const adapter = isBareSpecifier(fsRoutes.adapter)
             ? fsRoutes.adapter
             : normalizePath(path.resolve(config.root, fsRoutes.adapter));
-          const mode = fsRoutes.mode ?? "spa";
+          // Required (like the other fsRoutes fields) so the choice between
+          // soft client-side navigation and full page loads is explicit.
+          const mode: unknown = fsRoutes.mode;
           if (mode !== "spa" && mode !== "mpa") {
             throw new Error(
-              `[funstack] Invalid fsRoutes.mode: ${JSON.stringify(mode)}. ` +
-                `Expected "spa" or "mpa".`,
+              mode === undefined
+                ? `[funstack] fsRoutes.mode is required. Set it to "spa" ` +
+                    `(soft client-side navigation) or "mpa" (full page loads).`
+                : `[funstack] Invalid fsRoutes.mode: ${JSON.stringify(mode)}. ` +
+                    `Expected "spa" or "mpa".`,
             );
           }
           resolvedFsRoutes = { root: resolvedRoot, adapter, globBase, mode };

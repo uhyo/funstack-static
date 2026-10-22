@@ -11,6 +11,7 @@ export default defineConfig({
         dir: "./src/pages",
         root: "./src/root.tsx",
         adapter: "@funstack/static/fs-routes/next-adapter",
+        mode: "spa",
       },
     }),
     react(),
