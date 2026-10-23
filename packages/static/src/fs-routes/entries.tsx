@@ -1,5 +1,9 @@
 import { FsRouteSlot } from "#rsc-client";
-import { deferRegistry, registerDeferredPayload } from "../rsc/defer";
+import {
+  deferRegistry,
+  registerDeferredPayload,
+  restoreDeferredPayload,
+} from "../rsc/defer";
 import type { GetEntriesResult } from "../entryDefinition";
 import {
   createFsRoutesEntriesWithHost,
@@ -16,9 +20,7 @@ import {
 const rscRuntimeHost: FsRoutesRuntimeHost = {
   registerChunk: registerDeferredPayload,
   hasChunk: (id) => deferRegistry.has(id),
-  restoreChunk: (element, id, name) => {
-    deferRegistry.register(element, id, name);
-  },
+  restoreChunk: restoreDeferredPayload,
   RouteSlot: FsRouteSlot,
 };
 

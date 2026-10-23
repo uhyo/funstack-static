@@ -2,7 +2,9 @@ import type { ReactElement, ReactNode } from "react";
 import { renderToReadableStream } from "@vitejs/plugin-rsc/react/rsc";
 import { DeferredComponent } from "#rsc-client";
 import { DeferRegistry } from "./deferRegistry";
+import { DeferIdentifierPrefixes } from "./identifierPrefix";
 import { getPayloadIDFor } from "./rscModule";
+import { sanitizeName } from "./sanitizeName";
 import { rscPayloadDir } from "virtual:funstack/config";
 
 /**
@@ -15,18 +17,6 @@ export interface DeferOptions {
    * In production: logged when the payload file is emitted.
    */
   name?: string;
-}
-
-/**
- * Sanitizes a name for use in file paths.
- * Replaces non-alphanumeric characters with underscores and limits length.
- */
-function sanitizeName(name: string): string {
-  return name
-    .replace(/[^a-zA-Z0-9_-]/g, "_")
-    .replace(/_+/g, "_")
-    .replace(/^_|_$/g, "")
-    .slice(0, 50);
 }
 
 let deferRenderErrorHandler:
@@ -43,12 +33,20 @@ export function setDeferRenderErrorHandler(
   deferRenderErrorHandler = handler;
 }
 
-export const deferRegistry = new DeferRegistry((element, name) => {
-  const handler = deferRenderErrorHandler;
-  return renderToReadableStream<ReactNode>(element, {
-    onError: handler && ((error: unknown) => handler(error, name)),
-  });
-});
+export const deferRegistry = new DeferRegistry(
+  (element, { name, identifierPrefix }) => {
+    const handler = deferRenderErrorHandler;
+    return renderToReadableStream<ReactNode>(element, {
+      // Each deferred payload is a Flight render of its own, so without a
+      // prefix its `useId()` ids would repeat those of the main payload and
+      // of other deferred payloads on the same page (#198).
+      identifierPrefix,
+      onError: handler && ((error: unknown) => handler(error, name)),
+    });
+  },
+);
+
+const identifierPrefixes = new DeferIdentifierPrefixes();
 
 /**
  * Registers a Server Component element as a separate RSC payload in the
@@ -65,8 +63,21 @@ export function registerDeferredPayload(
     ? `${sanitizedName}-${crypto.randomUUID()}`
     : crypto.randomUUID();
   const id = getPayloadIDFor(rawId, rscPayloadDir);
-  deferRegistry.register(element, id, name);
+  restoreDeferredPayload(element, id, name);
   return id;
+}
+
+/**
+ * Registers a Server Component element in the shared defer registry under
+ * an already-known payload ID (used to re-register entries the dev registry
+ * has evicted). The entry receives a fresh identifier prefix.
+ */
+export function restoreDeferredPayload(
+  element: ReactElement,
+  id: string,
+  name?: string,
+): void {
+  deferRegistry.register(element, id, name, identifierPrefixes.next(name));
 }
 
 /**

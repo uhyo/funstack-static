@@ -4,6 +4,10 @@ import { drainStream } from "../util/drainStream";
 export interface DeferEntry {
   state: DeferEntryState;
   name?: string;
+  /**
+   * Identifier prefix the entry was registered with; see `RenderOptions`.
+   */
+  identifierPrefix?: string;
   drainPromise?: Promise<string>;
   /**
    * Timestamp (ms) of the last registration or load of this entry.
@@ -34,14 +38,25 @@ type DeferEntryState =
       error: unknown;
     };
 
+export interface RenderOptions {
+  /** The debug name given to `defer()`, if any. */
+  name?: string;
+  /**
+   * React `identifierPrefix` for the render, so that `useId()` ids of this
+   * payload do not collide with those of other payloads on the same page.
+   * Fixed at registration so the entry renders the same ids whenever it is
+   * loaded.
+   */
+  identifierPrefix?: string;
+}
+
 /**
  * Renders a React element to an RSC payload stream.
  * Injected so the registry does not depend on the RSC runtime directly.
- * `name` is the debug name given to `defer()`, if any.
  */
 export type RenderToStream = (
   element: ReactElement,
-  name: string | undefined,
+  options: RenderOptions,
 ) => ReadableStream<Uint8Array>;
 
 export interface EvictStaleOptions {
@@ -80,10 +95,16 @@ export class DeferRegistry {
     this.#render = render;
   }
 
-  register(element: ReactElement, id: string, name?: string) {
+  register(
+    element: ReactElement,
+    id: string,
+    name?: string,
+    identifierPrefix?: string,
+  ) {
     this.#registry.set(id, {
       state: { element, state: "pending" },
       name,
+      identifierPrefix,
       lastAccessedAt: Date.now(),
     });
   }
@@ -101,7 +122,10 @@ export class DeferRegistry {
     const { state } = entry;
     switch (state.state) {
       case "pending": {
-        const stream = this.#render(state.element, entry.name);
+        const stream = this.#render(state.element, {
+          name: entry.name,
+          identifierPrefix: entry.identifierPrefix,
+        });
         const [stream1, stream2] = stream.tee();
         entry.state = { state: "streaming", stream: stream1 };
         const drainPromise = drainStream(stream2);

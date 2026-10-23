@@ -1,4 +1,5 @@
 import { defer } from "@funstack/static/entries/rsc";
+import IdProbe from "./IdProbe";
 import NestedDeferredSection from "./NestedDeferredSection";
 
 export default function DeferredSection() {
@@ -8,6 +9,7 @@ export default function DeferredSection() {
   return (
     <>
       <p data-testid="deferred-section">Deferred section content</p>
+      <IdProbe label="deferred" />
       {nested}
     </>
   );

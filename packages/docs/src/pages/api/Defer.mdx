@@ -108,3 +108,9 @@ By default, FUNSTACK Static puts the entire app (`<App />`) into one RSC payload
 When you use `defer(<Component />)`, FUNSTACK Static creates **additional RSC payloads** for the rendering result of the element. This results in an additional emit of RSC payload files like `/funstack__/fun__rsc-payload/b5698be72eea3c37`. If you provide a `name` option, the file name will include it (e.g., `/funstack__/fun__rsc-payload/HomePage-b5698be72eea3c37`).
 
 In the main RSC payload, the `defer` call is replaced with a client component `<DeferredComponent moduleId="fun__rsc-payload/b5698be72eea3c37" />`. This component is responsible for fetching the additional RSC payload from client and renders it when it's ready.
+
+### `useId()` in deferred components
+
+Each deferred payload is rendered by React separately from the main payload. Since `useId()` in Server Components numbers ids per render, FUNSTACK Static gives every deferred payload its own React `identifierPrefix`, so ids from deferred components never collide with ids from the main payload or from other deferred payloads on the same page. Ids from a named deferred payload look like `_HomePage_0S_1_`, and ids from an unnamed one like `_d0S_1_`.
+
+The prefix is numbered per `name`, so providing a `name` also keeps a payload's ids (and therefore the content hash of its payload file) stable when `defer()` calls with other names are added or removed elsewhere in the app.

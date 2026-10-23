@@ -32,4 +32,21 @@ test.describe("SSR with defer() (dev server)", () => {
 
     expect(errors).toEqual([]);
   });
+
+  test("server useId ids are unique across main and deferred payloads in SSR HTML", async ({
+    request,
+  }) => {
+    // Deferred payloads are separate Flight renders; each gets its own
+    // `useId()` prefix so their ids do not repeat the main payload's (#198).
+    const response = await request.get("/", { headers: htmlHeaders });
+    expect(response.ok()).toBe(true);
+    const html = await response.text();
+
+    const ids = [...html.matchAll(/data-probe-id="([^"]+)"/g)].map(
+      (match) => match[1]!,
+    );
+    // main-1, deferred-1, deferred-2, nested-1, main-2
+    expect(ids).toHaveLength(5);
+    expect(new Set(ids).size).toBe(ids.length);
+  });
 });

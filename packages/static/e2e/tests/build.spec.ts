@@ -89,4 +89,24 @@ test.describe("Build output verification", () => {
     const scriptResponse = await request.get(scriptPath);
     expect(scriptResponse.ok()).toBe(true);
   });
+  test("server useId ids in the Root shell, App and deferred payloads do not collide", async ({
+    page,
+  }) => {
+    // With SSR off, the Root shell HTML and the client-mounted App come from
+    // separate Flight renders (as do deferred payloads), so each needs its
+    // own `useId()` prefix (#198).
+    await page.goto("/");
+    await expect(page.getByTestId("id-probe-main")).toBeVisible();
+    await expect(page.getByTestId("id-probe-main-after")).toBeVisible();
+    await expect(page.getByTestId("id-probe-deferred")).toBeVisible();
+
+    const ids = await page
+      .locator("[data-probe-id]")
+      .evaluateAll((elements) =>
+        elements.map((element) => element.getAttribute("data-probe-id")),
+      );
+    // <html> (Root shell), main, deferred, main-after
+    expect(ids).toHaveLength(4);
+    expect(new Set(ids).size).toBe(ids.length);
+  });
 });
