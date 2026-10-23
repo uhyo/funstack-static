@@ -44,4 +44,75 @@ test.describe("SSR with defer()", () => {
     expect(errors).toEqual([]);
     expect(failedPayloadRequests).toEqual([]);
   });
+
+  // Server `useId()` counts from zero in every Flight render; deferred
+  // payloads are separate renders, so without a per-payload prefix their ids
+  // would repeat the main payload's (#198).
+  const probeLabels = [
+    "main-1",
+    "deferred-1",
+    "deferred-2",
+    "nested-1",
+    "main-2",
+  ];
+
+  test("server useId ids are unique across main and deferred payloads in SSR HTML", async ({
+    request,
+  }) => {
+    const response = await request.get("/");
+    expect(response.ok()).toBe(true);
+    const html = await response.text();
+
+    const ids = [...html.matchAll(/data-probe-id="([^"]+)"/g)].map(
+      (match) => match[1]!,
+    );
+    expect(ids).toHaveLength(probeLabels.length);
+    expect(new Set(ids).size).toBe(ids.length);
+    for (const id of ids) {
+      expect(id).toMatch(/^_[A-Za-z0-9_-]*S_[0-9a-v]+_$/);
+    }
+  });
+
+  test("server useId ids stay unique after hydration", async ({ page }) => {
+    const errors: string[] = [];
+    page.on("pageerror", (error) => {
+      errors.push(error.message);
+    });
+    // A mismatch between SSR HTML and the payloads' ids would be reported
+    // as a hydration error on the console.
+    page.on("console", (message) => {
+      if (message.type() === "error") {
+        errors.push(message.text());
+      }
+    });
+
+    await page.goto("/");
+    for (const label of probeLabels) {
+      await expect(page.getByTestId(`id-probe-${label}`)).toBeVisible();
+    }
+    // Let hydration of the deferred content settle before checking the DOM.
+    await page.waitForTimeout(500);
+
+    const ids = await page
+      .locator("[data-probe-id]")
+      .evaluateAll((elements) =>
+        elements.map((element) => element.getAttribute("data-probe-id")),
+      );
+    expect(ids).toHaveLength(probeLabels.length);
+    expect(new Set(ids).size).toBe(ids.length);
+
+    const duplicateDomIds = await page.evaluate(() => {
+      const seen = new Set<string>();
+      const duplicates: string[] = [];
+      for (const element of document.querySelectorAll("[id]")) {
+        if (seen.has(element.id)) {
+          duplicates.push(element.id);
+        }
+        seen.add(element.id);
+      }
+      return duplicates;
+    });
+    expect(duplicateDomIds).toEqual([]);
+    expect(errors).toEqual([]);
+  });
 });

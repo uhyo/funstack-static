@@ -4,6 +4,7 @@ import { devMainRscPath } from "./request";
 import { generateAppMarker } from "./marker";
 import { deferRegistry, setDeferRenderErrorHandler } from "./defer";
 import { devDeferEvictionOptions } from "./deferRegistry";
+import { shellIdentifierPrefix } from "./identifierPrefix";
 import { extractIDFromModulePath } from "./rscModule";
 import { stripBasePath } from "../util/basePath";
 import { urlPathToFileCandidates } from "../util/urlPath";
@@ -108,13 +109,19 @@ async function renderEntryToResponse(
   } else {
     // SSR off: shell RSC for SSR, full RSC for client
     const rscStart = performance.now();
-    const shellRscStream = renderToReadableStream<RscPayload>({
-      root: (
-        <Root>
-          <span id={marker} />
-        </Root>
-      ),
-    });
+    const shellRscStream = renderToReadableStream<RscPayload>(
+      {
+        root: (
+          <Root>
+            <span id={marker} />
+          </Root>
+        ),
+      },
+      // The shell and the App are separate Flight renders that share one
+      // document in a production build, so the shell's `useId()` ids get
+      // their own prefix (#198). Applied in dev too for parity.
+      { identifierPrefix: shellIdentifierPrefix },
+    );
     const clientRscStream = renderToReadableStream<RscPayload>({
       root: <Root>{appNode}</Root>,
     });
@@ -335,6 +342,10 @@ export async function build() {
           ),
         },
         {
+          // The shell's HTML stays in the document while the App payload
+          // (rendered separately, without a prefix) is mounted inside it, so
+          // the shell's `useId()` ids need a prefix of their own (#198).
+          identifierPrefix: shellIdentifierPrefix,
           onError: createRenderErrorHandler(
             renderErrors,
             `RSC shell of "${entry.path}"`,

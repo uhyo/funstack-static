@@ -1,7 +1,11 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { createElement } from "react";
 import type { ReactElement } from "react";
-import { DeferRegistry, devDeferEvictionOptions } from "./deferRegistry";
+import {
+  DeferRegistry,
+  devDeferEvictionOptions,
+  type RenderToStream,
+} from "./deferRegistry";
 
 const { ttlMs } = devDeferEvictionOptions;
 
@@ -50,6 +54,20 @@ describe("DeferRegistry", () => {
     expect(entry?.state.state).toBe("streaming");
     await expect(entry?.drainPromise).resolves.toBe("hello");
     expect(entry?.state.state).toBe("ready");
+  });
+
+  it("renders an entry with the name and identifier prefix it was registered with", async () => {
+    const render = vi.fn<RenderToStream>(fakeRender);
+    registry = new DeferRegistry(render);
+    registry.register(element("hello"), "id1", "Hello", "Hello_0");
+
+    await registry.load("id1")?.drainPromise;
+
+    expect(render).toHaveBeenCalledTimes(1);
+    expect(render.mock.calls[0]![1]).toEqual({
+      name: "Hello",
+      identifierPrefix: "Hello_0",
+    });
   });
 
   describe("evictStale", () => {
