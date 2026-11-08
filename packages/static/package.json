@@ -71,14 +71,14 @@
     "@types/react-dom": "^19.3.0",
     "react": "catalog:",
     "react-dom": "catalog:",
-    "tsdown": "^0.23.3",
+    "tsdown": "^0.23.5",
     "typescript": "catalog:",
     "vite": "catalog:",
-    "vitest": "^5.0.5"
+    "vitest": "^5.1.0"
   },
   "dependencies": {
     "@funstack/skill-installer": "^1.1.0",
-    "@vitejs/plugin-rsc": "^0.5.38",
+    "@vitejs/plugin-rsc": "^0.5.39",
     "react-error-boundary": "^6.1.6",
     "rsc-html-stream": "^0.0.8",
     "srvx": "^1.0.8"
