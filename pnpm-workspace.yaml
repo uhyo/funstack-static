@@ -6,6 +6,7 @@ packages:
   - packages/static/e2e/fixture-fs-routing
   - packages/static/e2e/fixture-fs-routing-mpa
   - packages/static/e2e/fixture-render-error
+  - packages/static/e2e/fixture-no-router
 
 catalog:
   "@types/node": ^26.6.6
