@@ -116,7 +116,7 @@ export interface FsRoutesRuntimeHost {
   /**
    * The client component standing in for Server Component route nodes,
    * resolving the chunk for the current match's params. A client reference
-   * to `FsRouteSlot` from `#rsc-client` in the real host.
+   * to `FsRouteSlot` from `#rsc-client/fs-routes` in the real host.
    */
   RouteSlot: ComponentType<FsRouteSlotProps>;
 }

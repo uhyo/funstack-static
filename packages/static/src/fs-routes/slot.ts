@@ -2,7 +2,7 @@ import type { ReactNode } from "react";
 import type { FsRouteObject } from "./types";
 
 /**
- * Props of the internal client component (`FsRouteSlot` in `#rsc-client`)
+ * Props of the internal client component (`FsRouteSlot` in `#rsc-client/fs-routes`)
  * that stands in for a Server Component page or layout in the route
  * definitions. All props are RSC-serializable so the slot can be baked into
  * each page's payload.
