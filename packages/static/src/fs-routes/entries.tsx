@@ -1,4 +1,4 @@
-import { FsRouteSlot } from "#rsc-client";
+import { FsRouteSlot } from "#rsc-client/fs-routes";
 import {
   deferRegistry,
   registerDeferredPayload,

@@ -45,6 +45,10 @@
     "#rsc-client": {
       "types": "./src/entries/rsc-client.ts",
       "default": "./dist/entries/rsc-client.mjs"
+    },
+    "#rsc-client/fs-routes": {
+      "types": "./src/entries/rsc-client-fs-routes.ts",
+      "default": "./dist/entries/rsc-client-fs-routes.mjs"
     }
   },
   "files": [

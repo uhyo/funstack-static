@@ -58,6 +58,14 @@ export default defineConfig({
       name: "render-error",
       testMatch: /\/render-error\.spec\.ts$/,
     },
+    {
+      name: "no-router",
+      use: {
+        ...devices["Desktop Chrome"],
+        baseURL: "http://localhost:4183",
+      },
+      testMatch: /\/no-router\.spec\.ts$/,
+    },
   ],
 
   webServer: [
@@ -93,6 +101,13 @@ export default defineConfig({
       command:
         "cd fixture-fs-routing-mpa && pnpm vite build && pnpm dlx serve -p 4181 dist/public",
       url: "http://localhost:4181",
+      reuseExistingServer: !process.env.CI,
+      timeout: 120000,
+    },
+    {
+      command:
+        "cd fixture-no-router && pnpm vite build && pnpm dlx serve -p 4183 dist/public",
+      url: "http://localhost:4183",
       reuseExistingServer: !process.env.CI,
       timeout: 120000,
     },
